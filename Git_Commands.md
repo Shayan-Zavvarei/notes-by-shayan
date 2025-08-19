@@ -509,3 +509,138 @@ Removes:
 * The remote reference
 * All remote-tracking branches
 * Associated configuration
+------------------
+## Tags
+Tags in Git are used to mark specific points in history — typically for releases (e.g., `v1.0`, `v2.0`). Unlike branches, tags are immutable and don’t change.
+### Listing Tags:
+```bash
+$ git tag
+```
+Search for tags matching a pattern (requires `-l` or `--list`):
+```bash 
+$ git tag -l "v1.8.5*"
+```
+Example output:
+```bash 
+v1.8.5
+v1.8.5-rc1
+v1.8.5.1
+```
+### Types of Tags:
+#### 1. Annotated Tags
+* Stored as full Git objects.
+* Include: tagger name, email, date, message, and checksum.
+* Can be signed with GPG for security.
+* Recommended for official releases.
+Create an annotated tag:
+```bash 
+$ git tag -a v1.4 -m "my version 1.4"
+```
+View tag data:
+```
+$ git show v1.4
+```
+Shows tag info + the commit it points to.
+
+#### 2. Lightweight Tags
+* Just a pointer to a commit (no extra metadata).
+* Useful for temporary or personal tags.
+Create a lightweight tag:
+```bash
+git tag v1.4-lw
+```
+`git show` only shows the commit, not tag details.
+
+### Tagging After the Fact
+You can tag any past commit using its hash:
+```bash
+$ git tag -a v1.2 9fceb02
+```
+This tags the commit `9fceb02` (e.g., “Update rakefile”) as `v1.2`.
+
+### Sharing Tags
+By default, git push does not send tags to remote repositories.
+Push a specific tag:
+```bash
+$ git push origin v1.5
+```
+Push all local tags:
+```bash
+$ git push origin --tags
+```
+This sends both annotated and lightweight tags. 
+To push only annotated tags, use: 
+```bash
+$ git push origin --follow-tags
+```
+### Deleting Tags
+#### Delete locally:
+```bash
+$ git tag -d v1.4-lw
+```
+#### Delete from remote:
+Two ways:
+```bash
+$ git push origin :refs/tags/v1.4-lw
+```
+or (more intuitive):
+```bash
+$ git push origin --delete v1.4-lw
+``` 
+### Checking Out Tags
+To view the project at a tagged version:
+```bash
+$ git checkout v2.0.0
+``` 
+This puts you in "detached HEAD" state:
+* You can view code and make changes.
+* But any new commits won’t belong to a branch and may be lost unless saved.
+#### Safe way: Create a branch from the tag
+```bash
+$ git checkout -b version2 v2.0.0
+```
+Now you’re on a new branch `version2` based on the `v2.0.0` tag, and can commit safely.
+
+## Git Aliases
+Git allows you to create custom shortcuts (aliases) for commands using `git config`. This makes frequently used commands faster and easier to type.
+### How to Set Up Aliases
+Use:
+```bash
+$ git config --global alias.<shortcut> <full-command>
+```
+#### Common Examples
+```bash
+$ git config --global alias.co checkout
+$ git config --global alias.br  branch
+$ git config --global alias.ci  commit
+$ git config --global alias.st  status
+```
+Now:
+`git co` = `git checkout`
+`git br = git branch`
+`git ci = git commit`
+`git st = git status`
+### Useful Custom Aliases
+Improve clarity or add missing commands:
+```bash
+$ git config --global alias.unstage 'reset HEAD --'
+```
+Now these are equivalent:
+```bash
+$ git unstage fileA
+$ git reset HEAD -- fileA
+```
+Another helpful alias:
+```bash
+$ git config --global alias.last 'log -1 HEAD'
+```
+View the most recent commit:
+```bash
+$ git last
+```
+### Running External Commands
+To run non-Git (external) commands, start the alias with `!`:
+```bash 
+$ git config --global alias.visual '!gitk'
+```
+Now `git visual` runs the external GUI tool `gitk`.
