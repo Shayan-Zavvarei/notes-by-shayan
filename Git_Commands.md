@@ -363,27 +363,149 @@ acd3b9e - Enhance hold_lock_file_for_{update,append}() API
 #### Summary: Most Useful Commands
 ```bash 
 # Show last 3 commits with diffs
-git log -p -3
+$ git log -p -3
 
 # Show stats per commit
-git log --stat
+$ git log --stat
 
 # Compact one-line history
-git log --oneline
+$ git log --oneline
 
 # Custom format with short hash and message
-git log --pretty=format:"%h - %an: %s"
+$ git log --pretty=format:"%h - %an: %s"
 
 # Show branch graph
-git log --graph --oneline
+$ git log --graph --oneline
 
 # Find commits modifying a specific function
-git log -S "initialize_system"
+$ git log -S "initialize_system"
 
 # Only show changes to a specific file
-git log -- README.md
+$ git log -- README.md
 
 # Search by author and date range
-git log --author="Ali" --since="last week" --grep="bug"
+$ git log --author="Ali" --since="last week" --grep="bug"
 ```
 ## Undoing things 
+Git provides powerful tools to undo changes at various stages — but some undos are irreversible, especially if commits haven’t been pushed or saved. Use these commands carefully to avoid losing work.
+### Amending the Last Commit 
+if you committed too early, forgot to add a file, or made a typo in the message:
+```bash
+$ git commit --amend
+```
+* Uses the current staging area to replace the last commit.
+* Opens the editor to edit the commit message (pre-filled with the previous one).
+* Results in one new commit — the old one is removed from history
+For example:
+```bash
+$ git commit -m "Initial commit"
+$ git add forgotten_file
+$ git commit --amend 
+```
+### Unstaging a Staged File
+If you accidentally stage a file with `git add`, you can unstage it without losing changes.
+```bash
+git restore --staged <file>
+```
+Example:
+```bash
+$ git add *
+$ git status
+# ... shows both files staged
+
+$ git restore --staged CONTRIBUTING.md
+```
+### Discarding Changes in a Modified File
+f you want to discard local changes and revert a file to its last committed/staged version:
+```bash
+git restore <file>
+```
+Example:
+```bash
+$ git restore CONTRIBUTING.md
+```
+#### Key Notes
+Committed changes are safe: Even deleted or amended commits can often be recovered (see Git’s `reflog` and Data Recovery tools).
+
+## Working with Remotes
+To collaborate in Git, you need to manage remote repositories — versions of your project hosted elsewhere (on the internet or even on your local machine). Remotes let you push, pull, and share changes with others.
+
+### Showing your Remotes 
+List configured remotes:
+```bash 
+$ git remote
+```
+#### Show remotes with their URLs:
+```bash 
+$ git remote -v
+```
+* `origin` is the default name for the remote when you clone a repo.
+* You can have multiple remotes (e.g., for different collaborators).
+
+### Adding a Remote 
+Add a new remote with a short name:
+```bash
+$ git remote add <shortname> <url>
+```
+Example:
+```bash
+$ git remote add pb https://github.com/paulboone/ticgit
+```
+Now you can use `pb` instead of the full URL.
+
+### Fetching and Pulling from Remotes
+Fetch (download data without merging):
+```bash
+$ git fetch <remote>
+```
+* Downloads all new data from the remote.
+* Does not automatically merge into your work.
+* Remote branches become accessible (e.g., `pb/master`).
+
+#### Pull (fetch + merge):
+```bash 
+$ git pull <remote> <branch>
+```
+* Automatically fetches and merges the remote branch into your current branch.
+* By default, `git clone` sets up your local branch to track the remote one, so `git pull` works out of the box.
+
+#### Pushing to a Remote:
+Push your commits to a remote branch:
+```bash
+$ git push <remote> <branch>
+```
+Example:
+```bash
+$ git push origin master
+```
+### Inspecting a Remote
+Get detailed info about a remote:
+```bash
+$ git remote show <remote>
+```
+Example:
+```bash
+$ git remote show origin
+```
+--------------------
+### Renaming and Removing Remotes
+Rename a remote:
+```bash
+$ git remote rename <old> <new>
+```
+Example:
+```bash
+$ git remote rename pb paul
+```
+Automatically updates remote-tracking branches (e.g., pb/master → paul/master). 
+
+#### Remove a remote:
+```bash
+git remote remove <name>
+# or
+git remote rm <name>
+```
+Removes:
+* The remote reference
+* All remote-tracking branches
+* Associated configuration
