@@ -190,6 +190,19 @@ or
 $ git diff --cached
 ```
 Shows what will be included in the next commit.
+#### VScode as difftool
+To make VS Code your default “everything”, first you need to ensure you can run VS Code from the command-line.
+
+Then, run the command `git config --global --edit` to edit the global config, and add the following:
+```bash
+[core]
+  editor = code --wait
+[diff]
+  tool = vscode
+[difftool "vscode"]
+  cmd = code --wait --diff $LOCAL $REMOTE
+```
+If you already have [core] section, just add the [diff] and [difftool] sections to it.
 ### Committing Changes
 Once files are staged:
 ```bash
@@ -263,3 +276,114 @@ $ mv old.txt new.txt
 $ git rm old.txt
 $ git add new.txt
 ```
+## Viewing the Commit History
+After making or cloning commits, you’ll want to review your project’s history. The main tool for this is ‍‍‍`git log`.
+
+By default `git log` shows:
+* Commits in reverse chronological order (newest first)
+* Full SHA-1 checksum
+* Author name and email
+* Commit date
+* Commit message
+Example:
+```bash
+$ git log
+commit ca82a6dff817ec66f44342007202690a93763949
+Author: Scott Chacon <schacon@gee-mail.com>
+Date:   Mon Mar 17 21:52:11 2008 -0700
+
+    Change version number
+```
+#### Useful Formatting Options:
+
+| Option | Purpose |
+|--------|---------|
+| `-p`, `--patch` | Shows the **patch (diff)** introduced in each commit. |
+| `-2`, `-n` | Limits output to last **n commits** (e.g., `-2` = last 2). |
+| `--stat` | Shows **statistics**: files changed, insertions/deletions. |
+| `--shortstat` | Only shows summary line from `--stat`. |
+| `--name-only` | Lists **files modified** after commit info. |
+| `--name-status` | Shows files with **A**dded / **M**odified / **D**eleted status. |
+| `--abbrev-commit` | Shows **shortened** commit hash (e.g., `ca82a6d`). |
+| `--relative-date` (`--date=relative`) | Shows dates like "2 weeks ago". |
+| `--graph` | Adds **ASCII graph** showing branch and merge history. |
+| `--pretty=<format>` | Customizes output format. |
+
+#### Common `--pretty` Formats:
+* `oneline`: One line per commit: <hash> <message>
+* `short`: Author and message only
+* `full`: Author + committer
+* `fuller`: Includes full dates
+* `format`:"...": Define custom format
+Example: Custom Format
+```bash 
+$ git log --pretty=format:"%h - %an, %ar : %s"
+ca82a6d - Scott Chacon, 6 years ago : Change version number
+```
+#### ASCII Graph Example
+```bash 
+$ git log --pretty=format:"%h %s" --graph
+* 2d3acf9 Ignore errors from SIGCHLD on trap
+*  5e3ee11 Merge branch 'master' of https://github.com/dustin/grit.git
+|\
+| * 420eac9 Add method for getting current branch
+* | 30e367c Timeout code and tests
+|/
+* d6016bc Require time for xmlschema
+```
+Great for visualizing branching and merging.
+####  Limiting Output (Filtering Commits)
+| Option | Description |
+|--------|-------------|
+| `-<n>` | Show last **n** commits (e.g., `-3` shows last 3 commits). |
+| `--since`, `--after` | Show commits made after a specific date (e.g., `2 weeks ago`, `2008-10-01`). |
+| `--until`, `--before` | Show commits made before a specific date. |
+| `--author="John"` | Only show commits where the author matches the given string (case-sensitive). |
+| `--committer="Jane"` | Filter commits by committer name. |
+| `--grep="fix"` | Show only commits whose message contains the specified keyword. |
+| `-S "function_name"` | Show commits that added or removed lines containing the given string (known as "pickaxe"). |
+| `--no-merges` | Exclude merge commits from the output. |
+| `-- path/to/file` | Only show commits that modified the specified file or directory. |
+#### Advanced Filter Example
+Find non-merge commits by Junio Hamano in October 2008 that modified test files:
+```bash
+$ git log --pretty="%h - %s" \
+          --author='Junio C Hamano' \
+          --since="2008-10-01" \
+          --before="2008-11-01" \
+          --no-merges \
+          -- t/
+```
+Output:
+```bash 
+5610e3b - Fix testcase failure when extended attributes are in use
+acd3b9e - Enhance hold_lock_file_for_{update,append}() API
+...
+```
+#### Summary: Most Useful Commands
+```bash 
+# Show last 3 commits with diffs
+git log -p -3
+
+# Show stats per commit
+git log --stat
+
+# Compact one-line history
+git log --oneline
+
+# Custom format with short hash and message
+git log --pretty=format:"%h - %an: %s"
+
+# Show branch graph
+git log --graph --oneline
+
+# Find commits modifying a specific function
+git log -S "initialize_system"
+
+# Only show changes to a specific file
+git log -- README.md
+
+# Search by author and date range
+git log --author="Ali" --since="last week" --grep="bug"
+```
+## Undoing things 
