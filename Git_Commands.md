@@ -644,3 +644,179 @@ To run non-Git (external) commands, start the alias with `!`:
 $ git config --global alias.visual '!gitk'
 ```
 Now `git visual` runs the external GUI tool `gitk`.
+
+## What is a Branch in Git?
+* A branch in Git is a lightweight, movable pointer to a commit.
+* The default branch is called `master` (but it’s not special—it’s just the default).
+* Each commit points to its parent(s), forming a chain of snapshots (not diffs).
+* Branching is fast and cheap because Git only stores a pointer (41 bytes) per branch.
+### How Git Stores Data
+* Git saves data as snapshots, not changesets.
+* When you commit:
+1. Files are stored as blobs (using SHA-1 hashes).
+2. Directories are stored as tree objects.
+3. A commit object is created with metadata and a pointer to the root tree and parent commit(s).
+### Creating a Branch
+* Use: `git branch <branch-name>`
+* Creates a new pointer to the current commit.
+* Does not switch to the new branch.
+Example:
+```bash
+$ git branch testing
+```
+### Switching Branches
+* Use: git checkout <branch-name> (or git switch in Git 2.23+)
+* Moves the HEAD pointer to the specified branch.
+* Updates your working directory to match that branch’s snapshot.
+Example:
+```bash
+$ git checkout testing
+```
+Or (with newer Git):
+```bash
+$ git switch testing
+```
+⚠️ Note: Switching branches changes your files! Git reverts the working directory to the state of the target branch. 
+
+### Making Commits on a Branch
+When you commit, the current branch’s pointer moves forward.
+* Other branches remain unchanged.
+* This creates divergent history between branches.
+Viewing Branch History
+* To see all branches and their positions:
+```bash
+$ git log --oneline --decorate --graph --all
+```
+#### This shows:
+* Commit history
+* Branch pointers
+* Divergence and merge points
+### Create & Switch in One Step
+Old way:
+```bash
+$ git checkout -b new-branch
+```
+#### New way (Git 2.23+):
+```bash
+$ git switch -c new-branch
+```
+### Why Git Branching is Powerful
+* Lightweight: Creating branches is instant (just a file with a hash).
+* Encourages frequent branching and merging.
+* Supports flexible workflows (e.g., feature branches, bug fixes).
+* Safe experimentation: switch between versions easily.
+### Key concept
+| Concept      | Description |
+|--------------|-------------|
+| HEAD         | A pointer to the currently checked-out branch. |
+| Branch       | A pointer to a commit; moves forward on new commits. |
+| Divergence   | Happens when different changes are made on separate branches. |
+| Merge Base   | Automatically determined when merging branches later. |
+
+## Basic Branching and Merging
+### Typical Branching Workflow
+* Work on `master` branch.
+* Create a feature branch for a new task (e.g., `iss53`).
+* Make changes and commit in the feature branch.
+* Get interrupted by a critical bug/hotfix.
+* Switch back to `master`, create a `hotfix` branch.
+* Fix the issue, test, then merge into master and deploy.
+* Delete the `hotfix` branch.
+* Return to the original feature branch and continue work.
+* When ready, merge the feature into master.
+### Creating and Switching Branches
+Create and switch to a new branch:
+```bash
+$ git checkout -b iss53
+```
+Equivalent to:
+```bash
+$ git branch iss53
+$ git checkout iss53
+```
+Or use modern syntax (Git 2.23+):
+```bash
+$ git switch -c iss53
+```
+### Hotfix Workflow
+When a critical fix is needed:
+```bash
+$ git checkout master
+$ git checkout -b hotfix
+$ vim index.html
+$ git commit -a -m "Fix broken email address"
+```
+After testing, merge hotfix into master:
+```bash
+$ git checkout master
+$ git merge hotfix
+```
+Output shows: `Fast-forward` (if no divergence).
+🔁 Fast-forward Merge: When the target branch is behind, Git simply moves the pointer forward—no merge commit is created. 
+
+#### Delete the hotfix branch:
+```bash
+$ git branch -d hotfix
+```
+### Merging a Feature Branch
+When feature is complete:
+```bash
+$ git checkout master
+$ git merge iss53
+```
+This creates a merge commit if history has diverged.
+A merge commit has two parents: one from master, one from iss53.
+🧩 Three-way merge: Git uses three snapshots: 
+
+* The common ancestor
+* The tip of master
+* The tip of iss53
+After merging, delete the feature branch:
+```bash
+$ git branch -d iss53
+```
+### Merge Conflicts
+Occur when the same part of a file is changed in both branches.
+Example:
+```bash
+$ git merge iss53
+CONFLICT (content): Merge conflict in index.html
+Automatic merge failed; fix conflicts and then commit the result.
+```
+Check status:
+```bash
+$ git status
+# Unmerged paths: both modified: index.html
+```
+Conflict markers in file:
+```bash
+<<<<<<< HEAD
+<div id="footer">contact : email.support@github.com</div>
+=======
+<div id="footer">please contact us at support@github.com</div>
+>>>>>>> iss53
+```
+To resolve:
+* Edit the file manually (or use a merge tool).
+* Remove conflict markers.
+* Save and stage:
+```bash
+$ git add index.html
+```
+Complete the merge:
+```bash
+$ git commit
+```
+💡 You can use `git mergetool` for a graphical interface (e.g., `meld`, `vimdiff`, etc.). 
+
+Finalize merge with a commit message (default: `Merge branch 'iss53'`). You can edit it to explain the resolution.
+### Key concept 
+| Concept           | Description |
+|-------------------|-------------|
+| **Fast-forward merge** | Git moves the branch pointer forward without creating a new commit. Happens when no divergence exists. |
+| **Three-way merge**   | Used when histories diverge. Combines changes from two branches and their common ancestor. |
+| **Merge commit**      | A commit with **two parents**, created during non-fast-forward merges. |
+| **Merge conflict**    | Occurs when the same file/line is changed differently in both branches. Must be resolved manually. |
+| **git status**        | Shows which files have conflicts during a merge. |
+| **git add**           | After resolving a conflict, staging the file marks it as resolved. |
+| **git mergetool**     | Launches a GUI tool to help resolve merge conflicts. |
