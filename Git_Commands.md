@@ -820,3 +820,293 @@ Finalize merge with a commit message (default: `Merge branch 'iss53'`). You can 
 | **git status**        | Shows which files have conflicts during a merge. |
 | **git add**           | After resolving a conflict, staging the file marks it as resolved. |
 | **git mergetool**     | Launches a GUI tool to help resolve merge conflicts. |
+
+
+## Git Branch Management
+The `git branch` command is more than just a tool for creating and deleting branches — it’s a powerful utility for managing and inspecting your branch structure.
+
+### Viewing Branches
+* Running `git branch` with no arguments lists all local branches.
+* The current branch is marked with an asterisk (`*`), indicating it’s the one checked out (i.e., where `HEAD` points).
+* Use `git branch -v` (verbose) to see the last commit message on each branch.
+* `git branch --merged`: shows branches that have already been merged into the current branch. These are generally safe to delete using `git branch -d`.
+* git branch --no-merged: shows branches containing work that hasn’t yet been merged. Attempting to delete such branches with `git branch -d` will fail unless you use `git branch -D` (force delete).
+Tip: By default, --merged and --no-merged compare against your current branch. You can specify another branch as a reference:
+```bash
+git branch --no-merged main
+```
+This shows branches not yet merged into main, even if you’re not currently on main. 
+
+### Renaming a Local and Remote Branch
+If you have a branch with a bad name (e.g., `bad-branch-name`) and want to rename it to something better (e.g., `corrected-branch-name`), follow these steps:
+#### Rename the branch locally:
+```bash
+git branch --move bad-branch-name corrected-branch-name
+```
+#### Push the new branch to the remote and set upstream tracking:
+```bash
+git push --set-upstream origin corrected-branch-name
+```
+#### Delete the old branch name from the remote:
+```bash
+git push origin --delete bad-branch-name
+```
+Now, the branch is renamed both locally and on the remote (e.g., GitHub, GitLab). Other team members will need to update their local repos accordingly if they had the old branch.
+Caution: Avoid renaming branches that are actively being used by others unless coordinated. This can cause confusion and workflow disruptions. 
+
+### Changing the Default Branch Name (e.g., master → main)
+Many projects now rename the default branch from `master` to `main` (or similar) for inclusivity and clarity. Here's how to do it safely:
+
+#### Rename the local branch:
+```bash
+git branch --move master main
+```
+#### Push the new branch to the remote:
+```bash
+git push --set-upstream origin main
+```
+At this point:
+* Your local `master` branch is gone (renamed to `main`).
+* The `main` branch exists on the remote.
+* But the old `master` branch still exists on the remote and may still be set as the default.
+### Post-Rename Tasks
+Before deleting the old master branch, complete these critical steps:
+
+#### Update repository settings on the hosting platform (GitHub/GitLab/etc.):
+
+* Change the default branch to `main`.
+* Update pull request targets, branch protection rules, and merge strategies.
+#### Update automation and integrations:
+* CI/CD pipelines (e.g., GitHub Actions, Jenkins, GitLab CI)
+* Build scripts, deployment tools, and release workflows
+* Any configuration files that reference `master`
+#### Update documentation and code:
+* READMEs, contribution guides, and internal docs
+* Scripts, configuration files, or comments that mention `master`
+#### Notify collaborators:
+
+* Ask team members to rename their local master branch:
+```bash
+git branch --move master main
+```
+And reconfigure remote tracking:
+```bash
+git fetch origin
+git branch --set-upstream-to=origin/main main
+``` 
+#### Close or redirect pull requests targeting `master` to point to `main`.
+
+### Final Step: Delete the Old Branch from Remote
+Once everything is updated and verified, remove the old `master` branch from the remote:
+```bash
+git push origin --delete master
+```
+Now, `main` is fully established as the new default branch.
+
+⚠️ Warning: Renaming `master` (or `main`) affects everything connected to the repo. Always communicate changes in advance and double-check all integrations. 
+
+### Conclusion
+Effective branch management in Git includes:
+
+* Listing, inspecting, and cleaning up merged/unmerged branches.
+* Safely renaming branches when needed.
+* Thoughtfully transitioning default branch names across teams and systems.
+By using commands like `git branch -v`, `--merged`, `--no-merged`, `--move`, and proper remote syncing, you can keep your repository organized, clean, and collaborative.
+
+## Git Branching Workflows
+Git’s lightweight branching enables flexible and powerful development workflows.
+
+### Long-Running Branches
+Some teams use long-lived branches to manage different stability levels:
+
+* `master`/`main`: only stable, production-ready code.
+* `develop`/`next`: integration branch for features; less stable.
+* `pu` (proposed updates): for experimental changes in large projects.
+Changes flow upward: topic branches → `pu` → `develop` → `master`. This creates a progressive-stability model, where code "graduates" to more stable branches after testing.
+
+### Topic Branches
+Short-lived branches for specific features, fixes, or experiments (e.g., `iss91`, `dumbidea`).
+#### Benefits:
+
+* Isolate work and avoid cluttering main branches.
+* Switch contexts quickly.
+* Merge when ready, discard if not.
+* Easy code review and clean history.
+You can create, merge, and delete many topic branches daily — Git makes this fast and simple.
+
+### Local Workflow
+All branching and merging happens locally. No server interaction is needed until you’re ready to share.
+
+### Final Note
+There’s no one-size-fits-all workflow. Common models like Git Flow or GitHub Flow build on these ideas. Choose the strategy that fits your team and project — and explore more in the Distributed Git chapter.
+
+## Git Branching - Remote Branches
+Remote branches are a core part of collaborative Git workflows. They allow you to track the state of branches in remote repositories, synchronize your work with teammates, and manage distributed development efficiently.
+
+What Are Remote References?
+Remote references are pointers to branches, tags, and other references in your remote repositories. You can view them directly using:
+```bash
+git ls-remote <remote>
+```
+or get a more readable summary with:
+```bash
+git remote show <remote>
+```
+However, the most practical way to interact with remote branches is through 
+-------------
+### remote-tracking branches.
+Remote-tracking branches are `local references` that reflect the state of branches on a remote repository the last time you communicated with it.
+
+* They are named in the format: <remote>/<branch>
+(e.g., `origin/master`, `origin/develop`, `teamone/feature`).
+* These branches cannot be moved manually — Git updates them automatically during network operations like `fetch` or `pull`.
+* Think of them as bookmarks: they remind you where the remote branches were the last time you fetched.
+#### Example: When you run
+```bash
+git clone https://github.com/user/project
+```
+### How Fetching Works
+When others push changes to the remote, your local remote-tracking branches don’t update automatically — you need to fetch.
+
+Use:
+```bash
+git fetch origin
+```
+This:
+
+* Connects to the `origin` remote.
+* Downloads any new commits or branches you don’t have.
+* Updates your remote-tracking branches (like `origin/master`, `origin/iss53`).
+* Does not change your working directory or current branch.
+⚠️ Your local branches (e.g., `master`) stay where they are until you merge or rebase. 
+
+You can also fetch from multiple remotes:
+```bash
+git remote add teamone https://git.team1.company.com/project
+git fetch teamone
+```
+This adds a new remote and creates remote-tracking branches like `teamone/master`.
+
+### Pushing Your Branches
+By default, Git does not automatically push your local branches. You must explicitly push the branches you want to share.
+
+To push a local branch (e.g., `serverfix`) to the remote:
+```bash
+git push origin serverfix
+```
+This:
+
+* Creates a `serverfix` branch on the remote (if it doesn’t exist).
+* Sets your local `origin/serverfix` remote-tracking branch.
+Allows others to fetch and collaborate on it.
+
+You can also push to a differently named remote branch:
+```bash
+git push origin serverfix:awesomebranch
+```
+This pushes your serverfix to a remote branch called awesomebranch.
+
+💡 This is useful for proposing changes or following team naming conventions. 
+
+### Working with Remote Branches: Checkout and Tracking
+When you fetch a remote branch (e.g., `origin/serverfix`), you don’t get a local editable branch — only the remote-tracking reference.
+
+To create a local branch based on it:
+```bash
+git checkout -b serverfix origin/serverfix
+```
+This:
+
+* Creates a new local serverfix branch.
+* Sets it to start at the same commit as origin/serverfix.
+* Sets up tracking: now serverfix is linked to origin/serverfix.
+Git makes this easier with shorthand options.
+
+#### Shorthand 1: `--track`
+```bash
+git checkout --track origin/serverfix
+```
+Same as above — creates and tracks the branch.
+
+#### Shorthand 2: Automatic Tracking
+If a local branch doesn’t exist and there’s only one matching remote branch:
+```bash
+git checkout serverfix
+```
+Git automatically creates the branch and sets up tracking from origin/serverfix.
+
+✅ This is safe and commonly used. 
+
+#### Custom Local Name
+To use a different local name:
+```bash
+git checkout -b sf origin/serverfix
+```
+Now `sf` tracks `origin/serverfix`.
+
+### Set Upstream Later
+If you already have a local branch and want to link it to a remote:
+```bash
+git branch -u origin/serverfix
+```
+This sets the upstream (tracking) relationship.
+
+📌 Use @{upstream} or @{u} as a shortcut for the tracked branch: 
+```bash
+git merge @{u}   # same as git merge origin/serverfix
+```
+### Viewing Tracking Information
+To see which branches are tracking which remotes:
+```bash
+git branch -vv
+```
+Output example:
+```bash 
+  iss53     7e424c3 [origin/iss53: ahead 2] Add forgotten brackets
+  master    1ae2a45 [origin/master] Deploy index fix
+* serverfix f8674d9 [teamone/server-fix-good: ahead 3, behind 1] This should do it
+  testing   5ea463a Try something new
+```
+This shows:
+
+* `iss53`: tracking `origin/iss53`, has 2 unpushed commits.
+* `master`: tracking `origin/master`, fully up to date.
+* `serverfix`: tracking `teamone/server-fix-good`, 3 commits ahead, 1 behind (someone else pushed).
+* testing: not tracking any remote.
+⚠️ These stats are based on cached data. To get accurate results: 
+```bash
+git fetch --all
+git branch -vv
+```
+### Pulling Changes
+`git pull` is a convenience command that combines:
+* 1. `git fetch` (download changes)
+* 2. `git merge` (merge the remote branch into your current branch)
+If you’re on a tracking branch (e.g., `serverfix` tracking `origin/serverfix`), then:
+```bash
+git pull
+```
+automatically:
+* Fetches from `origin`.
+* Merges `origin/serverfix` into your `serverfix` branch.
+####  Equivalent to:
+`git fetch origin` + `git merge origin/serverfix` 
+⚠️ `git pull` can sometimes lead to unexpected merges. For more control, many prefer to `fetch` first, then `merge` manually. 
+
+### Deleting Remote Branches
+When a feature is done and merged, you can delete the remote branch to clean up.
+
+Use:
+```bash
+git push origin --delete serverfix
+```
+Output:
+```bash
+ - [deleted]         serverfix
+```
+This:
+
+* Removes the branch pointer from the remote.
+* Does not delete the commits immediately — Git keeps them for a while (until garbage collection).
+
+Others will see the deletion the next time they run `git fetch` or `git remote prune origin`.
