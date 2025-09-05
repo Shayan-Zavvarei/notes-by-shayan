@@ -2221,7 +2221,7 @@ As you continue your journey in data science and machine learning:
 
 Remember, mastering these distributions and understanding when to apply them is a key skill that will serve you well throughout your career in data science and machine learning. They provide a powerful toolkit for understanding uncertainty, making predictions, and drawing insights from data across a wide range of domains and applications.
 
-<img src="./images/banner.png" width="800">
+
 # Statistical Inference: Frequentist vs Bayesian Approaches
 Imagine you're a detective trying to solve a mystery. You have some clues, but you're not sure what really happened. That's essentially what **statistical inference** is all about - making educated guesses about the bigger picture based on the limited information we have.
 
@@ -2346,7 +2346,7 @@ In A/B testing, a Frequentist approach might involve:
 3. Calculating a p-value
 4. If p < 0.05, reject the null hypothesis and conclude there's a significant difference
 
-<img src="./images/tmp/frequentist.webp" width="800">
+
 Remember, the Frequentist is like a detective who *only* considers the evidence directly in front of them, without bringing in any outside information or hunches. It's a rigorous approach, but it might miss out on some valuable insights!
 ## <a id='toc2_'></a>[Bayesian Approach](#toc0_)
 The Bayesian approach is like being an *intuitive detective who learns from experience*. It's based on the idea of updating our beliefs as we gather more evidence.
