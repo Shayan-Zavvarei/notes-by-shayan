@@ -978,7 +978,6 @@ Remember, while these mathematical concepts might seem abstract, they have real-
 
 In our next lecture, we'll build on these foundations to explore more advanced topics in probability theory. Keep practicing these concepts, and don't hesitate to revisit this material as needed. The more comfortable you become with these ideas, the more powerful your data analysis skills will become.
 
-<img src="./images/banner.png" width="800">
 # Common Discrete Probability Distributions
 Welcome to our lecture on Common Discrete Probability Distributions. In this session, we'll explore some of the most frequently encountered probability distributions for discrete random variables. These distributions serve as fundamental building blocks in probability theory, statistics, and machine learning.
 
@@ -1501,7 +1500,7 @@ Understanding these relationships and selection criteria allows data scientists 
 
 Remember, while these theoretical distributions are powerful tools, real-world data often doesn't perfectly fit any single distribution. It's crucial to validate your assumptions and consider more complex models when necessary.
 
-<img src="./images/banner.png" width="800">
+
 # Common Continuous Probability Distributions
 Continuous probability distributions are fundamental tools in statistics, data science, and machine learning. They describe the probabilities of possible values for continuous random variables - variables that can take on any value within a given range. Unlike their discrete counterparts, continuous distributions deal with an infinite number of possible outcomes.
 
@@ -1875,6 +1874,7 @@ This property makes the Exponential distribution useful for modeling phenomena w
 ### <a id='toc3_7_'></a>[Practical Example: Customer Service Call Center](#toc0_)
 
 Suppose calls to a customer service center arrive according to a Poisson process with an average rate of 5 calls per hour.
+```bash
 import numpy as np
 from scipy import stats
 
@@ -1889,6 +1889,7 @@ print(f"Probability of waiting more than 15 minutes: {prob_wait_more_than_15min:
 inter_arrival_times = stats.expon.rvs(scale=1/lambda_rate, size=1000)
 average_time = np.mean(inter_arrival_times)
 print(f"Average time between calls (simulated): {average_time:.4f} hours")
+```
 ### <a id='toc3_8_'></a>[Key Takeaways](#toc0_)
 
 1. The Exponential distribution is fundamental for modeling time-to-event data.
