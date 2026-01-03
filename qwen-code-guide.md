@@ -72,7 +72,7 @@ brew install qwen-code
    cd your-project/
    qwen
    ```
-   ⚠️ **Note:** Always run Qwen Code in your project directory, not your home directory, for best results.
+  **Note:** Always run Qwen Code in your project directory, not your home directory, for best results.
 
 ### Alternative Authentication (OpenAI-Compatible API)
 
