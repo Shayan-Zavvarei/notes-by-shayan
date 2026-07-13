@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SMC Handbook · 9.3 — The 90-Day Edge Review</title>
+<style>
+  :root{--ink:#0a0e14;--panel:#111722;--panel-2:#161e2b;--line:#243044;--bull:#22c55e;--bear:#ef4444;--zone:#3b82f6;--entry:#f97316;--liq:#a855f7;--struct:#8a98ad;--text:#e6edf6;--dim:#8493a8;--gold:#e8b923}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{animation:none !important;transition-duration:.001ms !important}}
+  body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#16202e 0%,transparent 60%),var(--ink);color:var(--text);font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:48px 24px 96px}
+  .eyebrow{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);margin:0 0 14px}
+  h1{font-size:clamp(32px,5.5vw,56px);line-height:1.04;margin:0 0 10px;font-weight:600;letter-spacing:-.01em}
+  .sub{color:var(--dim);font-size:18px;max-width:64ch;margin:0 0 8px}
+  .note{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--text);border-left:2px solid var(--gold);padding:8px 0 8px 14px;margin:18px 0 0;max-width:78ch}
+  .rule{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:28px 0 0}
+  section{margin-top:48px;background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:16px;padding:28px 26px 30px;box-shadow:0 1px 0 rgba(255,255,255,.02) inset,0 24px 48px -32px rgba(0,0,0,.8)}
+  .tag{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);background:var(--gold);display:inline-block;padding:4px 9px;border-radius:5px;font-weight:700}
+  h2{font-size:clamp(22px,3.2vw,28px);margin:14px 0 6px;font-weight:600;letter-spacing:-.01em}
+  .lede{color:var(--dim);margin:0 0 16px;font-size:15.5px;max-width:78ch}
+  figcaption{color:var(--dim);font-size:13px;margin-top:12px;font-family:ui-monospace,Menlo,monospace;max-width:78ch}
+  svg{width:100%;height:auto;display:block;background:#0c121c;border:1px solid var(--line);border-radius:12px}
+  .stepbox{margin-top:14px;padding:14px 16px;background:#0c121c;border:1px solid var(--line);border-radius:10px;font-family:ui-monospace,Menlo,monospace;font-size:13px;min-height:56px}
+  .footnote{color:var(--dim);font-size:12.5px;margin-top:40px;font-family:ui-monospace,Menlo,monospace;text-align:center}
+  .node{cursor:pointer}
+  .ring{transform-box:fill-box;transform-origin:center;animation:spin 40s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+  .seg{opacity:0}.playing .seg{animation:pop .45s cubic-bezier(.2,.9,.3,1.2) forwards}@keyframes pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+  .node circle{transform-box:fill-box;transform-origin:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">SMC Master Handbook · Module 9.3</p>
+  <h1>The 90-Day Edge Review</h1>
+  <p class="sub">An edge is not a static possession; it is maintained. The discipline that maintains it is a structured quarterly review — long enough to gather a meaningful sample, infrequent enough to avoid overfitting to noise.</p>
+  <p class="note">The cardinal rule between reviews is <em>do not change the system</em>. Tinkering mid-quarter is curve-fitting to variance and destroys the very measurement you need. Collect data for 90 days, then — and only then — evaluate and adjust.</p>
+  <div class="rule"></div>
+
+  <section>
+    <span class="tag">9.3</span>
+    <h2>Freeze · Measure · Adjust · Refreeze</h2>
+    <p class="lede">The loop has five steps: measure (metrics by setup and by session vs baseline), diagnose (top repeated mistake; each loser as execution or selection), decide (keep / drill / cut / re-test), update (rewrite the affected if-then rules), and focus (one objective for the next 90 days). Hover each step.</p>
+
+    <svg id="chart" viewBox="0 0 360 250" role="img" aria-label="90-day edge review loop"></svg>
+    <div class="stepbox" id="stepbox">Hover each step. Never change the system mid-quarter — that is curve-fitting to noise.</div>
+    <figcaption>Over enough cycles, this loop is what <em>engineers</em> an edge rather than merely hoping for one. Then you freeze the system again and repeat.</figcaption>
+  </section>
+
+  <p class="footnote">SMC Master Handbook · Module 9 · measure → diagnose → decide → update → focus → refreeze</p>
+</div>
+<script>
+"use strict";
+const chart=document.getElementById("chart"),stepbox=document.getElementById("stepbox");
+const cx=180,cy=120;
+const STEPS=[
+  {id:1,name:"Measure",x:180,y:40,color:"#3b82f6",desc:"Compute win rate, expectancy, profit factor — broken down by setup and by session — against your backtest baseline."},
+  {id:2,name:"Diagnose",x:290,y:110,color:"#a855f7",desc:"Find the single most-repeated mistake. For every losing setup, classify the cause: execution (broke the rule) or selection (rule failing)."},
+  {id:3,name:"Decide",x:245,y:200,color:"#f97316",desc:"Keep winners · drill execution problems · cut selection problems · re-test anything you intend to change before trading it."},
+  {id:4,name:"Update",x:115,y:200,color:"#22c55e",desc:"Rewrite the affected if-then rules to encode what the quarter taught you."},
+  {id:5,name:"Focus",x:70,y:110,color:"#e8b923",desc:"Set one concrete objective for the next 90 days, then freeze the system again and repeat."}
+];
+let html='<circle class="ring" cx="'+cx+'" cy="'+cy+'" r="78" fill="none" stroke="#334155" stroke-width="1.5" stroke-dasharray="4 4"/>';
+html+='<text x="'+cx+'" y="'+(cy-4)+'" fill="#64748b" font-size="10" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">FREEZE → 90 days</text>';
+html+='<text x="'+cx+'" y="'+(cy+12)+'" fill="#64748b" font-size="10" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">→ refreeze → repeat</text>';
+STEPS.forEach((s,i)=>{
+  html+='<g class="node seg" data-id="'+s.id+'" style="animation-delay:'+(i*.1)+'s">'+
+    '<circle cx="'+s.x+'" cy="'+s.y+'" r="22" fill="#0e1622" stroke="'+s.color+'" stroke-width="1.5"/>'+
+    '<text x="'+s.x+'" y="'+(s.y-1)+'" fill="'+s.color+'" font-size="11" font-weight="bold" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">'+s.id+'</text>'+
+    '<text x="'+s.x+'" y="'+(s.y+11)+'" fill="#cbd5e1" font-size="7.5" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">'+s.name+'</text>'+
+  '</g>';
+});
+chart.innerHTML=html;
+const nodes=chart.querySelectorAll(".node");
+nodes.forEach(g=>{
+  const s=STEPS[+g.dataset.id-1];
+  g.addEventListener("mouseenter",()=>{
+    stepbox.innerHTML="<strong style='color:"+s.color+"'>"+s.name+":</strong> "+s.desc;
+    g.querySelector("circle").setAttribute("stroke-width","2.5");g.querySelector("circle").setAttribute("fill","#101826");
+  });
+  g.addEventListener("mouseleave",()=>{
+    stepbox.innerHTML="Hover each step. Never change the system mid-quarter — that is curve-fitting to noise.";
+    g.querySelector("circle").setAttribute("stroke-width","1.5");g.querySelector("circle").setAttribute("fill","#0e1622");
+  });
+});
+if(!matchMedia("(prefers-reduced-motion: reduce)").matches){setTimeout(()=>chart.classList.add("playing"),300);}else{chart.classList.add("playing");}
+</script>
+</body>
+</html>

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SMC Handbook · Module 5 (4–7) — Trading Setups</title>
+<style>
+  :root{
+    --ink:#0a0e14; --panel:#111722; --panel-2:#161e2b; --line:#243044;
+    --bull:#22c55e; --bear:#ef4444; --zone:#3b82f6; --entry:#f97316;
+    --liq:#a855f7; --struct:#8a98ad; --text:#e6edf6; --dim:#8493a8; --gold:#e8b923;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    *{animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important}
+  }
+  body{margin:0; background:radial-gradient(1200px 600px at 80% -10%, #16202e 0%, transparent 60%), var(--ink); color:var(--text); font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; line-height:1.5; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px; margin:0 auto; padding:48px 24px 96px}
+  .eyebrow{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; letter-spacing:.32em; text-transform:uppercase; color:var(--gold); margin:0 0 14px}
+  h1{font-size:clamp(32px,5.5vw,56px); line-height:1.04; margin:0 0 10px; font-weight:600; letter-spacing:-.01em}
+  .sub{color:var(--dim); font-size:18px; max-width:62ch; margin:0 0 8px}
+  .note{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--dim); border-left:2px solid var(--gold); padding:8px 0 8px 14px; margin:18px 0 0; max-width:74ch}
+  .rule{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:28px 0 0}
+  section{margin-top:56px; background:linear-gradient(180deg,var(--panel),var(--panel-2)); border:1px solid var(--line); border-radius:16px; padding:28px 26px 30px; box-shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 24px 48px -32px rgba(0,0,0,.8)}
+  .tag{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink); background:var(--gold); display:inline-block; padding:4px 9px; border-radius:5px; font-weight:700}
+  .skill{font-family:ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:.1em; color:var(--dim); margin-left:10px}
+  h2{font-size:clamp(22px,3.2vw,28px); margin:14px 0 6px; font-weight:600; letter-spacing:-.01em}
+  .lede{color:var(--dim); margin:0 0 14px; font-size:15.5px; max-width:74ch}
+  .stats{display:flex; flex-wrap:wrap; gap:8px; margin:0 0 16px}
+  .stat{font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--text); background:#0e1622; border:1px solid var(--line); padding:6px 10px; border-radius:8px}
+  .stat b{color:var(--gold)}
+  figure{margin:0}
+  svg{width:100%; height:auto; display:block; background:#0c121c; border:1px solid var(--line); border-radius:12px}
+  figcaption{color:var(--dim); font-size:13px; margin-top:12px; font-family:ui-monospace,Menlo,monospace}
+  .controls{display:flex; gap:10px; flex-wrap:wrap; margin:16px 0 4px}
+  button.ctl{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; letter-spacing:.04em; color:var(--text); background:#0e1622; border:1px solid var(--line); padding:9px 14px; border-radius:9px; cursor:pointer; transition:border-color .15s, transform .08s, background .15s}
+  button.ctl:hover{border-color:var(--gold)}
+  button.ctl:active{transform:translateY(1px)}
+  button.ctl:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+  button.ctl[aria-pressed="true"]{border-color:var(--gold); background:#1a2333; color:var(--gold)}
+  .legend{display:flex; gap:14px; flex-wrap:wrap; margin:6px 0 16px; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--dim)}
+  .legend span{display:inline-flex; align-items:center; gap:7px}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .toc{display:flex; flex-wrap:wrap; gap:10px; margin-top:22px}
+  .toc a{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--dim); text-decoration:none; border:1px solid var(--line); padding:7px 11px; border-radius:8px}
+  .toc a:hover{color:var(--gold); border-color:var(--gold)}
+  .candle{opacity:0; animation:rise .5s ease forwards}
+  @keyframes rise{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)}}
+  .footnote{color:var(--dim); font-size:12.5px; margin-top:40px; font-family:ui-monospace,Menlo,monospace; text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">SMC Master Handbook · Module 5 · Batch 2 of 3</p>
+  <h1>Trading Setups 4–7</h1>
+  <p class="sub">The early-reversal CHoCH+FVG, the time-boxed Silver Bullet, the full-day Power of 3, and the Asian-range London continuation. Each chart animates entry, stop, and both targets.</p>
+  <p class="note">All win rates and R:R figures are community estimates and illustrative teaching values — not figures from a verified dataset. Validate with your own backtest before risking capital.</p>
+  <div class="rule"></div>
+
+  <nav class="toc" aria-label="Setups in this batch">
+    <a href="#s4">Setup 4 · CHoCH + First FVG</a>
+    <a href="#s5">Setup 5 · Silver Bullet</a>
+    <a href="#s6">Setup 6 · Power of 3</a>
+    <a href="#s7">Setup 7 · Asian Range Break</a>
+  </nav>
+
+  <!-- SETUP 4 -->
+  <section id="s4">
+    <span class="tag">Setup 4</span><span class="skill">Intermediate · Early Reversal</span>
+    <h2>CHoCH + First FVG</h2>
+    <div class="stats">
+      <span class="stat">Win <b>~45–52%</b> (est.)</span>
+      <span class="stat">R:R <b>1:4</b></span>
+      <span class="stat">TF <b>5m / 15m–1H</b></span>
+      <span class="stat">London / NY Open</span>
+      <span class="stat">XAUUSD · EURUSD · GBPUSD · NAS100</span>
+    </div>
+    <p class="lede">The earliest, tightest reversal entry: a sweep into an HTF POI, the first CHoCH, then the first FVG that the reversal leg leaves. The preceding sweep is the gate. Play it, and toggle the failure case.</p>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--zone)"></i>POI / FVG</span>
+      <span><i class="dot" style="background:var(--entry)"></i>entry</span>
+      <span><i class="dot" style="background:var(--bear)"></i>stop</span>
+      <span><i class="dot" style="background:var(--gold)"></i>target</span>
+      <span><i class="dot" style="background:var(--liq)"></i>sweep / liquidity</span>
+    </div>
+    <div class="controls" role="group" aria-label="Setup 4 scenario">
+      <button class="ctl" data-s4="valid" aria-pressed="true">Valid (sweep → CHoCH)</button>
+      <button class="ctl" data-s4="fail" aria-pressed="false">Failure (naked CHoCH)</button>
+    </div>
+    <figure>
+      <svg id="svg4" viewBox="0 0 760 380" role="img" aria-label="CHoCH plus first FVG reversal short with sweep gate"></svg>
+      <figcaption id="cap4">Edge: first shift + first imbalance = earliest, tightest entry; the preceding sweep filters out the naked-CHoCH trap.</figcaption>
+    </figure>
+  </section>
+
+  <!-- SETUP 5 -->
+  <section id="s5">
+    <span class="tag">Setup 5</span><span class="skill">Advanced · Precision Session</span>
+    <h2>ICT Silver Bullet</h2>
+    <div class="stats">
+      <span class="stat">Win <b>~50–58%</b> (est.)</span>
+      <span class="stat">R:R <b>1:2</b></span>
+      <span class="stat">TF <b>1m–5m / 15m</b></span>
+      <span class="stat">NY AM 10:00–11:00 NY</span>
+      <span class="stat">NAS100 · ES · XAUUSD · EURUSD</span>
+    </div>
+    <p class="lede">A time-boxed model: inside the one-hour window, a liquidity grab then an in-window FVG gives a defined sweep→FVG→target sequence. The clock is the edge. Play the window.</p>
+    <div class="controls">
+      <button class="ctl" id="play5" aria-pressed="false">▶ Play the window</button>
+    </div>
+    <figure>
+      <svg id="svg5" viewBox="0 0 760 380" role="img" aria-label="ICT Silver Bullet long inside the New York AM window"></svg>
+      <figcaption id="cap5">Edge: a recurring time window concentrates delivery — discipline of time is the edge as much as the pattern.</figcaption>
+    </figure>
+  </section>
+
+  <!-- SETUP 6 -->
+  <section id="s6">
+    <span class="tag">Setup 6</span><span class="skill">Intermediate–Advanced · Full Day Bias</span>
+    <h2>Power of 3 Full Day Model</h2>
+    <div class="stats">
+      <span class="stat">Win <b>~50–57%</b> (est.)</span>
+      <span class="stat">R:R <b>1:3+</b></span>
+      <span class="stat">Bias D/1H · Entry 5m–15m</span>
+      <span class="stat">Asia → London → NY</span>
+      <span class="stat">XAUUSD · EURUSD · GBPUSD · indices</span>
+    </div>
+    <p class="lede">Trade the daily candle's blueprint: Asia accumulates, London manipulates (the judas, opposite the daily bias), NY distributes to the draw. Play the full day across the three sessions.</p>
+    <div class="controls">
+      <button class="ctl" id="play6" aria-pressed="false">▶ Play the day</button>
+    </div>
+    <figure>
+      <svg id="svg6" viewBox="0 0 760 380" role="img" aria-label="Power of three full day model across Asia London New York"></svg>
+      <figcaption id="cap6">Edge: aligning intraday entry with the daily AMD blueprint times entry to the judas and target to the day's draw.</figcaption>
+    </figure>
+  </section>
+
+  <!-- SETUP 7 -->
+  <section id="s7">
+    <span class="tag">Setup 7</span><span class="skill">Intermediate · Session</span>
+    <h2>Asian Range Break + London Continuation</h2>
+    <div class="stats">
+      <span class="stat">Win <b>~52–58%</b> (est.)</span>
+      <span class="stat">R:R <b>1:3+</b></span>
+      <span class="stat">TF <b>5m–15m / 1H</b></span>
+      <span class="stat">London KZ 07:00–10:00 UTC</span>
+      <span class="stat">EURUSD · GBPUSD · XAUUSD</span>
+    </div>
+    <p class="lede">A tight Asian range creates clean pools; London sweeps one side (judas), reverses off a POI, then breaks the opposite side as continuation. Play the sequence.</p>
+    <div class="controls">
+      <button class="ctl" id="play7" aria-pressed="false">▶ Play the session</button>
+    </div>
+    <figure>
+      <svg id="svg7" viewBox="0 0 760 380" role="img" aria-label="Asian range break with London continuation long"></svg>
+      <figcaption id="cap7">Edge: tight overnight range + London sweep + range break = three timed confluences in one repeatable trade.</figcaption>
+    </figure>
+  </section>
+
+  <p class="footnote">SMC Master Handbook · Module 5 (Setups 4–7) · schematic teaching models, not trade signals · numbers are unverified estimates</p>
+</div>
+
+<script>
+"use strict";
+const NS="http://www.w3.org/2000/svg";
+const C={bull:"#22c55e",bear:"#ef4444",zone:"#3b82f6",entry:"#f97316",liq:"#a855f7",struct:"#8a98ad",gold:"#e8b923",dim:"#8493a8",text:"#e6edf6"};
+const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function candle(p,x,oY,cY,hY,lY,{w=13,delay=0,anim=true}={}){
+  const col=cY<oY?C.bull:C.bear;
+  const g=document.createElementNS(NS,"g");
+  if(anim&&!reduce){g.setAttribute("class","candle");g.style.animationDelay=delay+"ms";}
+  const wk=document.createElementNS(NS,"line");
+  wk.setAttribute("x1",x);wk.setAttribute("x2",x);wk.setAttribute("y1",hY);wk.setAttribute("y2",lY);
+  wk.setAttribute("stroke",col);wk.setAttribute("stroke-width","2");
+  const b=document.createElementNS(NS,"rect");
+  const top=Math.min(oY,cY),h=Math.max(Math.abs(oY-cY),2);
+  b.setAttribute("x",x-w/2);b.setAttribute("y",top);b.setAttribute("width",w);b.setAttribute("height",h);
+  b.setAttribute("rx","1.5");b.setAttribute("fill",col);
+  g.appendChild(wk);g.appendChild(b);p.appendChild(g);return g;
+}
+function line(p,x1,y1,x2,y2,col,{dash=null,w=1.5,op=1}={}){
+  const l=document.createElementNS(NS,"line");
+  l.setAttribute("x1",x1);l.setAttribute("y1",y1);l.setAttribute("x2",x2);l.setAttribute("y2",y2);
+  l.setAttribute("stroke",col);l.setAttribute("stroke-width",w);l.setAttribute("opacity",op);
+  if(dash)l.setAttribute("stroke-dasharray",dash);p.appendChild(l);return l;
+}
+function rect(p,x,y,w,h,col,{op=1,rx=3,stroke=null}={}){
+  const r=document.createElementNS(NS,"rect");
+  r.setAttribute("x",x);r.setAttribute("y",y);r.setAttribute("width",w);r.setAttribute("height",h);
+  r.setAttribute("fill",col);r.setAttribute("opacity",op);r.setAttribute("rx",rx);
+  if(stroke){r.setAttribute("stroke",stroke);r.setAttribute("stroke-width","1.5");}
+  p.appendChild(r);return r;
+}
+function txt(p,x,y,s,col,{size=12,weight=400,anchor="start"}={}){
+  const t=document.createElementNS(NS,"text");
+  t.setAttribute("x",x);t.setAttribute("y",y);t.setAttribute("fill",col);
+  t.setAttribute("font-size",size);t.setAttribute("font-weight",weight);
+  t.setAttribute("font-family","monospace");t.setAttribute("text-anchor",anchor);
+  t.textContent=s;p.appendChild(t);return t;
+}
+function marker(p,x,y,s,col,r=6){
+  const c=document.createElementNS(NS,"circle");
+  c.setAttribute("cx",x);c.setAttribute("cy",y);c.setAttribute("r",r);
+  c.setAttribute("fill",col);c.setAttribute("stroke","#fff");c.setAttribute("stroke-width","1.5");
+  p.appendChild(c); if(s)txt(p,x+10,y-8,s,col,{size:11}); return c;
+}
+function xmark(p,x,y,col){line(p,x-6,y-6,x+6,y+6,col,{w:2.5});line(p,x-6,y+6,x+6,y-6,col,{w:2.5});}
+function star(p,x,y,col,s=9){
+  const pts=[];for(let i=0;i<10;i++){const a=Math.PI/5*i-Math.PI/2;const rr=i%2?s*0.45:s;pts.push((x+rr*Math.cos(a))+","+(y+rr*Math.sin(a)));}
+  const poly=document.createElementNS(NS,"polygon");poly.setAttribute("points",pts.join(" "));poly.setAttribute("fill",col);p.appendChild(poly);
+}
+function clear(s){while(s.firstChild)s.removeChild(s.firstChild);}
+
+/* ---------- SETUP 4 ---------- */
+const svg4=document.getElementById("svg4"),cap4=document.getElementById("cap4");
+function drawS4(kind){
+  clear(svg4);
+  // HTF bearish POI up top
+  rect(svg4,40,70,680,30,C.zone,{op:0.16});txt(svg4,52,90,"4H bearish OB — HTF POI (premium)",C.zone,{size:11});
+  line(svg4,40,330,720,330,C.gold,{dash:"5 4"});txt(svg4,560,323,"★ TP2: HTF sell-side draw",C.gold,{size:10});
+  line(svg4,40,230,720,230,C.gold,{dash:"3 4",op:.7});txt(svg4,560,223,"★ TP1: internal liquidity",C.gold,{size:10});
+  // rally up into POI
+  const up=[[90,250,210,258,205],[120,210,165,218,160],[150,165,125,172,120],[180,125,102,132,100]];
+  up.forEach((p,i)=>candle(svg4,p[0],p[1],p[2],p[3],p[4],{delay:i*55}));
+  if(kind==="valid"){
+    // sweep into POI (wick into 70-100 band), close back
+    candle(svg4,210,102,120,74,126,{delay:4*55});
+    line(svg4,90,74,400,74,C.liq,{dash:"3 3"});txt(svg4,300,72,"sweep into POI",C.liq,{size:10});
+    xmark(svg4,210,70,C.bear);txt(svg4,196,66,"stop above sweep",C.bear,{size:10,anchor:"end"});
+    // CHoCH down + first FVG
+    const ch=[[240,120,165,114,172],[270,165,205,158,212]];
+    ch.forEach((p,i)=>candle(svg4,p[0],p[1],p[2],p[3],p[4],{delay:(5+i)*55}));
+    marker(svg4,295,210,"CHoCH down",C.gold,5);
+    rect(svg4,300,130,40,38,C.zone,{op:0.3,stroke:C.zone});txt(svg4,344,150,"first FVG",C.zone,{size:11});
+    // retrace into first FVG then drop
+    const rt=[[300,205,155,212,150],[330,155,150,160,168]];
+    rt.forEach((p,i)=>candle(svg4,p[0],p[1],p[2],p[3],p[4],{delay:(7+i)*55}));
+    marker(svg4,355,150,"entry @ CE",C.entry,6);
+    const dr=[[355,150,205,144,212],[385,205,235,198,242],[415,235,205,242,244]];
+    dr.forEach((p,i)=>candle(svg4,p[0],p[1],p[2],p[3],p[4],{delay:(9+i)*55}));
+    marker(svg4,415,230,"TP1 (BE)",C.gold,5);
+    const dr2=[[445,205,265,198,272],[475,265,310,258,318],[505,310,330,304,336]];
+    dr2.forEach((p,i)=>candle(svg4,p[0],p[1],p[2],p[3],p[4],{delay:(12+i)*55}));
+    star(svg4,530,330,C.gold,8);txt(svg4,546,330,"~1:3.5 blended",C.gold,{size:11});
+    cap4.textContent="Valid: sweep into the POI, first CHoCH down, entry at the first FVG's CE, runner to the HTF draw for ~1:3.5.";
+  }else{
+    // naked CHoCH: no sweep, breaks down a touch then rips back up = trap
+    txt(svg4,90,300,"no preceding sweep — price just rolls over…",C.dim,{size:11});
+    const ch=[[210,102,150,96,158],[240,150,180,144,188]];
+    ch.forEach((p,i)=>candle(svg4,p[0],p[1],p[2],p[3],p[4],{delay:i*55}));
+    marker(svg4,265,180,"'CHoCH' (naked)",C.dim,5);
+    // shorts enter, price reverses up through POI = trap
+    const rv=[[270,180,135,188,186],[300,135,100,142,140],[330,100,72,108,104],[360,72,55,80,76]];
+    rv.forEach((p,i)=>candle(svg4,p[0],p[1],p[2],p[3],p[4],{delay:(2+i)*55}));
+    xmark(svg4,360,160,C.bear);txt(svg4,376,164,"shorts stopped — trap",C.bear,{size:11});
+    star(svg4,385,55,C.gold,7);txt(svg4,401,57,"price rips through POI",C.bear,{size:11});
+    cap4.textContent="Failure: a CHoCH with no preceding sweep, taken against momentum, fails and traps the reversal shorts.";
+  }
+}
+document.querySelectorAll("button[data-s4]").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll("button[data-s4]").forEach(x=>x.setAttribute("aria-pressed","false"));
+    b.setAttribute("aria-pressed","true");drawS4(b.getAttribute("data-s4"));
+  });
+});
+
+/* ---------- SETUP 5 ---------- */
+const svg5=document.getElementById("svg5"),cap5=document.getElementById("cap5");
+function drawS5(animate){
+  clear(svg5);
+  // window band
+  rect(svg5,150,40,420,300,"#ffffff",{op:0.03,rx:6});
+  line(svg5,150,40,150,340,C.gold,{dash:"4 4",op:.6});line(svg5,570,40,570,340,C.gold,{dash:"4 4",op:.6});
+  txt(svg5,360,58,"◀ Silver Bullet window 10:00–11:00 NY ▶",C.gold,{size:11,anchor:"middle"});
+  line(svg5,40,330,720,330,C.gold,{dash:"5 4"});txt(svg5,580,323,"★ TP2: day's draw",C.gold,{size:10});
+  line(svg5,40,90,720,90,C.gold,{dash:"3 4",op:.7});txt(svg5,580,83,"★ TP1: opposing liq",C.gold,{size:10});
+  // pre-window drift down to a short-term low
+  const pre=[[90,200,225,194,232],[120,225,250,218,258]];
+  pre.forEach((p,i)=>candle(svg5,p[0],p[1],p[2],p[3],p[4],{delay:animate?i*55:0,anim:animate}));
+  line(svg5,40,260,400,260,C.struct,{dash:"3 3"});txt(svg5,200,258,"short-term low",C.struct,{size:10});
+  if(animate){
+    // grab below low inside window, shift up, in-window FVG
+    candle(svg5,170,250,225,200,290,{delay:2*55,anim:true}); // sweep low (wick to 290) close back
+    xmark(svg5,170,300,C.bear);txt(svg5,186,304,"stop below sweep",C.bear,{size:10});
+    const sh=[[200,225,180,232,230],[230,180,150,188,186]];
+    sh.forEach((p,i)=>candle(svg5,p[0],p[1],p[2],p[3],p[4],{delay:(3+i)*55,anim:true}));
+    marker(svg5,255,148,"1m shift up",C.gold,5);
+    rect(svg5,260,175,40,34,C.zone,{op:0.3,stroke:C.zone});txt(svg5,304,193,"in-window FVG",C.zone,{size:11});
+    const rt=[[260,150,195,144,202],[290,195,192,200,205]];
+    rt.forEach((p,i)=>candle(svg5,p[0],p[1],p[2],p[3],p[4],{delay:(5+i)*55,anim:true}));
+    marker(svg5,315,192,"entry @ CE",C.entry,6);
+    const up=[[315,190,140,196,194],[345,140,108,148,144],[375,108,90,116,112]];
+    up.forEach((p,i)=>candle(svg5,p[0],p[1],p[2],p[3],p[4],{delay:(7+i)*55,anim:true}));
+    marker(svg5,375,108,"TP1 (BE)",C.gold,5);
+    const up2=[[405,108,76,116,112],[435,76,58,84,80]];
+    up2.forEach((p,i)=>candle(svg5,p[0],p[1],p[2],p[3],p[4],{delay:(10+i)*55,anim:true}));
+    star(svg5,460,90,C.gold,8);txt(svg5,476,92,"flat by close ~1:2.4",C.gold,{size:11});
+    cap5.textContent="Inside the hour: grab the low, 1m shift up, enter the in-window FVG, take ~1:2 and flat the rest by the close.";
+  }else{
+    txt(svg5,160,300,"no in-window FVG = no Silver Bullet that day",C.dim,{size:11});
+    cap5.textContent="Edge: a recurring time window concentrates delivery — discipline of time is the edge as much as the pattern.";
+  }
+}
+document.getElementById("play5").addEventListener("click",function(){drawS5(true);this.textContent="↻ Replay";});
+
+/* ---------- SETUP 6 ---------- */
+const svg6=document.getElementById("svg6"),cap6=document.getElementById("cap6");
+function drawS6(animate){
+  clear(svg6);
+  // session dividers
+  line(svg6,270,40,270,340,"#1a2433",{w:1});line(svg6,440,40,440,340,"#1a2433",{w:1});
+  txt(svg6,150,332,"ASIA (accumulation)",C.dim,{size:10,anchor:"middle"});
+  txt(svg6,355,332,"LONDON (manipulation)",C.dim,{size:10,anchor:"middle"});
+  txt(svg6,580,332,"NEW YORK (distribution)",C.dim,{size:10,anchor:"middle"});
+  const accHi=170,accLo=215;
+  line(svg6,40,accHi,720,accHi,C.struct,{dash:"4 4"});txt(svg6,44,accHi-5,"accumulation high",C.struct,{size:10});
+  line(svg6,40,accLo,720,accLo,C.struct,{dash:"4 4"});txt(svg6,44,accLo+14,"accumulation low (swept)",C.struct,{size:10});
+  line(svg6,40,60,720,60,C.gold,{dash:"5 4"});txt(svg6,580,53,"★ daily draw (TP2)",C.gold,{size:10});
+  line(svg6,40,130,720,130,C.gold,{dash:"3 4",op:.7});txt(svg6,300,123,"★ TP1: opposite accum side",C.gold,{size:10});
+  // Asia chop
+  const acc=[[80,195,200,188,206],[110,200,188,194,208],[140,188,200,182,206],[170,200,190,194,205],[200,190,198,184,205],[230,198,192,192,204]];
+  acc.forEach((p,i)=>candle(svg6,p[0],p[1],p[2],p[3],p[4],{delay:animate?i*45:0,anim:animate}));
+  // London manipulation down (judas) sweeps low
+  if(animate){
+    const man=[[280,195,215,189,222],[310,215,225,208,250]];
+    man.forEach((p,i)=>candle(svg6,p[0],p[1],p[2],p[3],p[4],{delay:(6+i)*45,anim:true}));
+    xmark(svg6,310,256,C.bear);txt(svg6,300,264,"judas wick — stop below",C.bear,{size:10,anchor:"end"});
+    rect(svg6,318,196,36,30,C.zone,{op:0.3,stroke:C.zone});txt(svg6,358,214,"OB (bias dir)",C.zone,{size:11});
+    // reversal + CHoCH up
+    const rv=[[340,225,185,232,230],[370,185,155,192,190]];
+    rv.forEach((p,i)=>candle(svg6,p[0],p[1],p[2],p[3],p[4],{delay:(8+i)*45,anim:true}));
+    marker(svg6,365,196,"entry @ OB",C.entry,6);
+    marker(svg6,395,153,"CHoCH up",C.gold,5);
+    // NY distribution to draw
+    const dist=[[440,155,118,162,160],[480,118,95,126,122],[520,95,75,102,98],[560,75,62,82,78]];
+    dist.forEach((p,i)=>candle(svg6,p[0],p[1],p[2],p[3],p[4],{delay:(10+i)*45,anim:true}));
+    marker(svg6,460,118,"TP1 (BE)",C.gold,5);
+    star(svg6,585,60,C.gold,8);txt(svg6,601,62,"draw ~1:3.3",C.gold,{size:11});
+    cap6.textContent="Asia accumulates, London sweeps the low (judas), entry at the OB on reversal, NY distributes to the draw for ~1:3.3.";
+  }else{
+    txt(svg6,300,300,"do NOT chase the London judas — it is the entry signal",C.dim,{size:11});
+    cap6.textContent="Edge: aligning intraday entry with the daily AMD blueprint times entry to the judas and target to the day's draw.";
+  }
+}
+document.getElementById("play6").addEventListener("click",function(){drawS6(true);this.textContent="↻ Replay";});
+
+/* ---------- SETUP 7 ---------- */
+const svg7=document.getElementById("svg7"),cap7=document.getElementById("cap7");
+function drawS7(animate){
+  clear(svg7);
+  line(svg7,300,40,300,340,"#1a2433",{w:1});
+  txt(svg7,170,332,"ASIA (tight range)",C.dim,{size:10,anchor:"middle"});
+  txt(svg7,520,332,"LONDON (sweep → continuation)",C.dim,{size:10,anchor:"middle"});
+  const rHi=175,rLo=220;
+  line(svg7,40,rHi,720,rHi,C.struct,{dash:"4 4"});txt(svg7,44,rHi-5,"Asian range HIGH (★ TP1)",C.struct,{size:10});
+  line(svg7,40,rLo,720,rLo,C.struct,{dash:"4 4"});txt(svg7,44,rLo+14,"Asian range LOW",C.struct,{size:10});
+  line(svg7,40,60,720,60,C.gold,{dash:"5 4"});txt(svg7,580,53,"★ TP2: HTF draw (NY extends)",C.gold,{size:10});
+  // tight Asia range
+  const acc=[[80,200,205,194,210],[110,205,196,199,212],[140,196,205,190,210],[170,205,198,199,211],[200,198,204,192,210],[230,204,200,198,209],[260,200,205,194,210]];
+  acc.forEach((p,i)=>candle(svg7,p[0],p[1],p[2],p[3],p[4],{delay:animate?i*40:0,anim:animate}));
+  if(animate){
+    // London sweeps low (judas)
+    const man=[[310,202,220,196,228],[340,220,228,214,252]];
+    man.forEach((p,i)=>candle(svg7,p[0],p[1],p[2],p[3],p[4],{delay:(7+i)*40,anim:true}));
+    xmark(svg7,340,258,C.bear);txt(svg7,330,266,"judas wick — stop below",C.bear,{size:10,anchor:"end"});
+    rect(svg7,348,200,36,28,C.zone,{op:0.3,stroke:C.zone});txt(svg7,388,217,"post-sweep OB",C.zone,{size:11});
+    // reverse + CHoCH up, break range high (continuation)
+    const rv=[[370,228,190,234,232],[400,190,168,196,194]];
+    rv.forEach((p,i)=>candle(svg7,p[0],p[1],p[2],p[3],p[4],{delay:(9+i)*40,anim:true}));
+    marker(svg7,395,200,"entry @ OB",C.entry,6);
+    marker(svg7,425,166,"CHoCH up",C.gold,5);
+    // break range high = continuation
+    const br=[[450,168,140,174,172],[490,140,112,148,144],[530,112,90,120,116]];
+    br.forEach((p,i)=>candle(svg7,p[0],p[1],p[2],p[3],p[4],{delay:(11+i)*40,anim:true}));
+    marker(svg7,455,140,"TP1: range high (BE)",C.gold,5);
+    // NY extends
+    const ny=[[570,90,72,98,94],[610,72,58,80,76]];
+    ny.forEach((p,i)=>candle(svg7,p[0],p[1],p[2],p[3],p[4],{delay:(14+i)*40,anim:true}));
+    star(svg7,635,60,C.gold,8);txt(svg7,651,62,"~1:4 blended",C.gold,{size:11});
+    cap7.textContent="London sweeps the range low, reverses off the OB, breaks the range high; NY extends to the draw for ~1:4.";
+  }else{
+    txt(svg7,300,300,"the FIRST London break is often the judas — wait for the reverse",C.dim,{size:11});
+    cap7.textContent="Edge: tight overnight range + London sweep + range break = three timed confluences in one repeatable trade.";
+  }
+}
+document.getElementById("play7").addEventListener("click",function(){drawS7(true);this.textContent="↻ Replay";});
+
+/* init */
+drawS4("valid");
+drawS5(false);
+drawS6(false);
+drawS7(false);
+</script>
+</body>
+</html>

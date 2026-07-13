@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SMC Handbook · Module 8 — Mastery Path</title>
+<style>
+  :root{
+    --ink:#0a0e14; --panel:#111722; --panel-2:#161e2b; --line:#243044;
+    --bull:#22c55e; --bear:#ef4444; --zone:#3b82f6; --entry:#f97316;
+    --liq:#a855f7; --struct:#8a98ad; --text:#e6edf6; --dim:#8493a8; --gold:#e8b923;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{transition-duration:.001ms !important}}
+  body{margin:0; background:radial-gradient(1200px 600px at 80% -10%, #16202e 0%, transparent 60%), var(--ink); color:var(--text); font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; line-height:1.5; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px; margin:0 auto; padding:48px 24px 96px}
+  .eyebrow{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; letter-spacing:.32em; text-transform:uppercase; color:var(--gold); margin:0 0 14px}
+  h1{font-size:clamp(32px,5.5vw,56px); line-height:1.04; margin:0 0 10px; font-weight:600; letter-spacing:-.01em}
+  .sub{color:var(--dim); font-size:18px; max-width:64ch; margin:0 0 8px}
+  .note{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--text); border-left:2px solid var(--gold); padding:8px 0 8px 14px; margin:18px 0 0; max-width:78ch}
+  .rule{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:28px 0 0}
+  section{margin-top:48px; background:linear-gradient(180deg,var(--panel),var(--panel-2)); border:1px solid var(--line); border-radius:16px; padding:28px 26px 30px; box-shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 24px 48px -32px rgba(0,0,0,.8)}
+  .tag{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink); background:var(--gold); display:inline-block; padding:4px 9px; border-radius:5px; font-weight:700}
+  h2{font-size:clamp(22px,3.2vw,28px); margin:14px 0 6px; font-weight:600; letter-spacing:-.01em}
+  .lede{color:var(--dim); margin:0 0 16px; font-size:15.5px; max-width:78ch}
+  figcaption{color:var(--dim); font-size:13px; margin-top:12px; font-family:ui-monospace,Menlo,monospace}
+  .toc{display:flex; flex-wrap:wrap; gap:10px; margin-top:22px}
+  .toc a{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--dim); text-decoration:none; border:1px solid var(--line); padding:7px 11px; border-radius:8px}
+  .toc a:hover{color:var(--gold); border-color:var(--gold)}
+  /* roadmap */
+  .phase{border:1px solid var(--line); border-radius:12px; margin-bottom:12px; overflow:hidden; background:#0c121c}
+  .phase-head{display:flex; align-items:center; gap:14px; padding:16px 18px; cursor:pointer; user-select:none}
+  .phase-head:hover{background:#101826}
+  .phase-wk{font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--gold); min-width:84px; font-weight:700}
+  .phase-title{font-size:16px; font-weight:600; flex:1}
+  .phase-prog{font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--dim)}
+  .phase-body{padding:0 18px 18px 18px; display:none}
+  .phase.open .phase-body{display:block}
+  .phase .chev{color:var(--dim); transition:transform .2s}
+  .phase.open .chev{transform:rotate(90deg)}
+  .ms{display:flex; align-items:flex-start; gap:10px; padding:8px 0; font-family:ui-monospace,Menlo,monospace; font-size:13px; color:var(--text)}
+  .ms input{margin-top:3px; accent-color:var(--bull); width:16px; height:16px; cursor:pointer}
+  .ms .lab{flex:1}
+  .ms .lab b{color:var(--gold)}
+  .progbar{height:6px; background:#1a2433; border-radius:4px; overflow:hidden; margin:10px 0 4px}
+  .progbar > div{height:100%; background:linear-gradient(90deg,var(--bull),var(--gold)); width:0%; transition:width .3s}
+  .gate{font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--liq); margin-top:8px}
+  /* journal */
+  .jgrid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  @media (max-width:680px){.jgrid{grid-template-columns:1fr}}
+  .field label{display:block; font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--dim); margin-bottom:5px}
+  .field input,.field select,.field textarea{width:100%; background:#0c121c; border:1px solid var(--line); color:var(--text); border-radius:8px; padding:9px 11px; font-family:ui-monospace,Menlo,monospace; font-size:13px}
+  .field textarea{resize:vertical; min-height:54px}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--gold); border-color:var(--gold)}
+  .gradebox{margin-top:14px; padding:14px; background:#0c121c; border:1px solid var(--line); border-radius:10px; font-family:ui-monospace,Menlo,monospace; font-size:13px}
+  .gradebox b{color:var(--gold)}
+  .btnrow{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap}
+  button.ctl{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--text); background:#0e1622; border:1px solid var(--line); padding:9px 14px; border-radius:9px; cursor:pointer}
+  button.ctl:hover{border-color:var(--gold); color:var(--gold)}
+  pre.export{background:#0c121c; border:1px solid var(--line); border-radius:10px; padding:14px; font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--dim); white-space:pre-wrap; margin-top:12px; max-height:200px; overflow:auto}
+  /* metrics */
+  svg{width:100%; height:auto; display:block; background:#0c121c; border:1px solid var(--line); border-radius:12px}
+  input[type=range]{width:100%; accent-color:var(--gold); height:4px}
+  .panelbox{background:#0c121c; border:1px solid var(--line); border-radius:12px; padding:18px}
+  .outline-item{display:flex; justify-content:space-between; font-family:ui-monospace,Menlo,monospace; font-size:13px; padding:7px 0; border-bottom:1px solid var(--line)}
+  .outline-item span:last-child{color:var(--text)}
+  .outline-item span:first-child{color:var(--dim)}
+  .verdict{font-family:ui-monospace,Menlo,monospace; font-size:13px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); font-weight:700}
+  /* checklist */
+  .chk{display:flex; align-items:flex-start; gap:11px; padding:9px 0; border-bottom:1px solid var(--line); font-family:ui-monospace,Menlo,monospace; font-size:13px}
+  .chk input{margin-top:2px; width:17px; height:17px; accent-color:var(--bull); cursor:pointer}
+  .chk .lab{flex:1}
+  .gateOut{margin-top:16px; padding:16px; border-radius:10px; font-family:ui-monospace,Menlo,monospace; font-size:15px; font-weight:700; text-align:center}
+  .gateOut.go{background:rgba(34,197,94,.12); border:1px solid rgba(34,197,94,.4); color:var(--bull)}
+  .gateOut.nogo{background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.35); color:#fecaca}
+  .footnote{color:var(--dim); font-size:12.5px; margin-top:40px; font-family:ui-monospace,Menlo,monospace; text-align:center}
+  .disc{font-size:11.5px; color:var(--dim); margin-top:10px; font-family:ui-monospace,Menlo,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">SMC Master Handbook · Module 8</p>
+  <h1>Mastery Path</h1>
+  <p class="sub">The process that installs the system into you: a gated 24-week roadmap, a backtest protocol, a journaling loop, and the psychology that separates knowing from doing.</p>
+  <p class="note">Knowledge doesn't make you profitable — repetition under a structured plan, measured honestly, with disciplined psychology does. Each roadmap phase has a gate: advance on the milestone, not the calendar. Going live is earned by data.</p>
+  <div class="rule"></div>
+
+  <nav class="toc" aria-label="Module contents">
+    <a href="#roadmap">24-Week Roadmap</a>
+    <a href="#metrics">Backtest Metrics</a>
+    <a href="#journal">Trade Journal</a>
+    <a href="#checklist">Pre-Trade Checklist</a>
+  </nav>
+
+  <!-- ROADMAP -->
+  <section id="roadmap">
+    <span class="tag">8.1</span>
+    <h2>The 6-Month Roadmap Tracker</h2>
+    <p class="lede">Click a phase to expand it and tick milestones as you complete them. The bar tracks overall progress. Don't advance a phase until its milestone gate is met — skipping ahead is the most common self-sabotage.</p>
+    <div class="progbar"><div id="roadFill"></div></div>
+    <div class="phase-prog" id="roadPct" style="margin-bottom:14px">0% complete · 0 / 12 milestones</div>
+    <div id="phases"></div>
+    <p class="disc">Progress is tracked in this page only and isn't saved between sessions — screenshot it or note your phase before closing.</p>
+  </section>
+
+  <!-- METRICS -->
+  <section id="metrics">
+    <span class="tag">8.2</span>
+    <h2>Backtest Metrics Calculator</h2>
+    <p class="lede">Enter your sample's wins, losses, and average win/loss in R. The calculator returns win rate, expectancy, profit factor, and a validity verdict. A valid sample is 100+ trades, one setup, fixed rules, no cherry-picking.</p>
+    <div class="jgrid" style="align-items:start">
+      <div>
+        <div class="field"><label>Number of WINS</label><input id="wins" type="number" value="42" /></div>
+        <div class="field"><label>Number of LOSSES</label><input id="losses" type="number" value="58" /></div>
+        <div class="field"><label>Average WIN size (R)</label><input id="avgWin" type="number" value="3.1" step="0.1" /></div>
+        <div class="field"><label>Average LOSS size (R, positive number)</label><input id="avgLoss" type="number" value="1.0" step="0.1" /></div>
+      </div>
+      <div class="panelbox">
+        <div class="outline-item"><span>Total trades</span><span id="mTotal">100</span></div>
+        <div class="outline-item"><span>Win rate</span><span id="mWin">42.0%</span></div>
+        <div class="outline-item"><span>Expectancy (EV/trade)</span><span id="mEV">+0.72R</span></div>
+        <div class="outline-item"><span>Profit factor</span><span id="mPF">2.25</span></div>
+        <div class="outline-item"><span>Sample validity</span><span id="mValid">✓ 100+ trades</span></div>
+        <div class="verdict" id="mVerdict"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- JOURNAL -->
+  <section id="journal">
+    <span class="tag">8.3</span>
+    <h2>Trade Journal Template</h2>
+    <p class="lede">Fill this for every trade. The field that matters most is the execution grade — grade the process, not the outcome. A winning trade taken against your rules is an F; a losing trade executed perfectly is an A. Generate a text record to paste into your log.</p>
+    <div class="jgrid">
+      <div class="field"><label>Date / time / session</label><input id="j_when" placeholder="2026-06-12 · NY KZ" /></div>
+      <div class="field"><label>Instrument</label><input id="j_instr" placeholder="XAUUSD" /></div>
+      <div class="field"><label>Setup name (or 'none' if you broke rules)</label><input id="j_setup" placeholder="Sweep + OB Reversal" /></div>
+      <div class="field"><label>HTF bias &amp; draw (one line)</label><input id="j_bias" placeholder="4H bullish, draw = old high 2440" /></div>
+      <div class="field"><label>Entry</label><input id="j_entry" placeholder="2414.7" /></div>
+      <div class="field"><label>Stop loss</label><input id="j_sl" placeholder="2411.5" /></div>
+      <div class="field"><label>TP1 / TP2</label><input id="j_tp" placeholder="2426 / 2438" /></div>
+      <div class="field"><label>Risk % &amp; size</label><input id="j_risk" placeholder="1% · 0.5 lots" /></div>
+      <div class="field"><label>Planned R:R vs realized R</label><input id="j_rr" placeholder="1:4 planned · +3.5R" /></div>
+      <div class="field"><label>Outcome</label>
+        <select id="j_out"><option>Win</option><option>Loss</option><option>Break-even</option></select>
+      </div>
+      <div class="field"><label>Execution grade (process, not outcome)</label>
+        <select id="j_grade"><option>A — followed plan exactly</option><option>B — minor deviation</option><option>C — notable deviation</option><option>D — poor execution</option><option>F — broke rules entirely</option></select>
+      </div>
+      <div class="field"><label>Emotional state</label>
+        <select id="j_emo"><option>Calm</option><option>Confident</option><option>FOMO</option><option>Revenge</option><option>Hesitant</option></select>
+      </div>
+    </div>
+    <div class="field" style="margin-top:14px"><label>Conditions checklist — did ALL setup conditions genuinely meet?</label><input id="j_cond" placeholder="Y bias / Y draw / Y discount / Y OB+FVG / Y IDM swept / Y CHoCH close" /></div>
+    <div class="field"><label>Notes / one-sentence lesson</label><textarea id="j_notes" placeholder="Repeat: waited for the IDM sweep. Fix: nothing — clean execution."></textarea></div>
+    <div class="gradebox" id="j_reminder"></div>
+    <div class="btnrow">
+      <button class="ctl" id="j_make">Generate journal entry ▸</button>
+      <button class="ctl" id="j_clear">Clear fields</button>
+    </div>
+    <pre class="export" id="j_export" style="display:none"></pre>
+  </section>
+
+  <!-- CHECKLIST -->
+  <section id="checklist">
+    <span class="tag">8.4</span>
+    <h2>The 12-Point Pre-Trade Checklist</h2>
+    <p class="lede">Before every entry, all twelve must be YES. One NO means no trade. The gate at the bottom only turns green when every box is checked — make the decision before the heat of the moment, not during it.</p>
+    <div id="chkList"></div>
+    <div class="gateOut nogo" id="gate">✗ 0 / 12 — NO TRADE</div>
+    <div class="btnrow"><button class="ctl" id="chkReset">Reset checklist</button></div>
+  </section>
+
+  <p class="footnote">SMC Master Handbook · Module 8 of 9 · process beats outcome · advance on milestones, go live on data</p>
+</div>
+
+<script>
+"use strict";
+const C={bull:"#22c55e",bear:"#ef4444",gold:"#e8b923",dim:"#8493a8",liq:"#a855f7"};
+
+/* ---------- ROADMAP ---------- */
+const PHASES=[
+  {wk:"Wk 1–4",title:"Foundations",gate:"Gate: mark structure cold in <5 min before advancing.",ms:[
+    "Study Modules 0 & 1; one concept per session",
+    "Mark swings (3-candle rule) until automatic on EURUSD & XAUUSD",
+    "Label one BOS and one CHoCH per chart as continuation/reversal"
+  ]},
+  {wk:"Wk 5–8",title:"Structure & Liquidity Mastery",gate:"Gate: name the draw on liquidity on any chart; spot sweeps 90%+.",ms:[
+    "Study Module 2 + MTF alignment (1.5)",
+    "Mark BSL/SSL, EQH/EQL, trendline liquidity on every chart",
+    "Verify 10 historical sweeps; write a top-down thesis each session"
+  ]},
+  {wk:"Wk 9–12",title:"PD Arrays & Setup Recognition",gate:"Gate: see the STACK forming and articulate every condition met.",ms:[
+    "Study Modules 3 & 4; grade OBs on the 6-point checklist",
+    "Draw OTE correctly (swing-to-swing after BOS)",
+    "Annotate 20 historical examples of each chosen setup"
+  ]},
+  {wk:"Wk 13–16",title:"Demo Trading with Journaling",gate:"Gate: 40+ journaled demo trades with consistent rule-following.",ms:[
+    "Read Modules 7 & 8.3 BEFORE first demo trade",
+    "Trade only 2–3 setups, only in killzones, fixed 1%",
+    "Journal every trade with full template; enforce loss limits"
+  ]},
+  {wk:"Wk 17–20",title:"Advanced Concepts & Sessions",gate:"Gate: stable positive demo expectancy across 40+ more trades.",ms:[
+    "Add DXY confluence + IPDA draw to every thesis",
+    "Layer session models (Power of 3, Silver Bullet if hours fit)",
+    "Begin first formal 100-trade backtest of one setup"
+  ]},
+  {wk:"Wk 21–24",title:"Integration & Performance Review",gate:"Gate: go live ONLY if the data is there — else repeat a phase.",ms:[
+    "Complete 100+ trade backtests; compute YOUR real metrics",
+    "Define personal rules as if-then statements (Module 9.3)",
+    "If stable & positive: go live at 0.5%; full performance review"
+  ]}
+];
+const phasesEl=document.getElementById("phases");
+let totalMs=0;
+PHASES.forEach((ph,pi)=>{
+  totalMs+=ph.ms.length;
+  const div=document.createElement("div");div.className="phase";
+  let msHtml="";
+  ph.ms.forEach((m,mi)=>{
+    msHtml+=`<label class="ms"><input type="checkbox" data-p="${pi}" data-m="${mi}"><span class="lab">${m}</span></label>`;
+  });
+  div.innerHTML=`
+    <div class="phase-head">
+      <span class="chev">▸</span>
+      <span class="phase-wk">${ph.wk}</span>
+      <span class="phase-title">${ph.title}</span>
+      <span class="phase-prog" data-prog="${pi}">0/${ph.ms.length}</span>
+    </div>
+    <div class="phase-body">
+      ${msHtml}
+      <div class="gate">${ph.gate}</div>
+    </div>`;
+  phasesEl.appendChild(div);
+  div.querySelector(".phase-head").addEventListener("click",()=>div.classList.toggle("open"));
+});
+function updateRoad(){
+  const boxes=phasesEl.querySelectorAll('input[type=checkbox]');
+  let done=0;
+  boxes.forEach(b=>{if(b.checked)done++;});
+  document.getElementById("roadFill").style.width=(done/totalMs*100)+"%";
+  document.getElementById("roadPct").textContent=Math.round(done/totalMs*100)+"% complete · "+done+" / "+totalMs+" milestones";
+  PHASES.forEach((ph,pi)=>{
+    let d=0;phasesEl.querySelectorAll(`input[data-p="${pi}"]`).forEach(b=>{if(b.checked)d++;});
+    phasesEl.querySelector(`[data-prog="${pi}"]`).textContent=d+"/"+ph.ms.length;
+  });
+}
+phasesEl.querySelectorAll('input[type=checkbox]').forEach(b=>b.addEventListener("change",updateRoad));
+
+/* ---------- METRICS ---------- */
+function updateMetrics(){
+  const w=+document.getElementById("wins").value||0;
+  const l=+document.getElementById("losses").value||0;
+  const aw=+document.getElementById("avgWin").value||0;
+  const al=Math.abs(+document.getElementById("avgLoss").value||0);
+  const total=w+l;
+  const winRate=total>0?w/total:0;
+  const ev=winRate*aw-(1-winRate)*al;
+  const grossProfit=w*aw, grossLoss=l*al;
+  const pf=grossLoss>0?grossProfit/grossLoss:Infinity;
+  document.getElementById("mTotal").textContent=total;
+  document.getElementById("mWin").textContent=(winRate*100).toFixed(1)+"%";
+  document.getElementById("mEV").textContent=(ev>=0?"+":"")+ev.toFixed(2)+"R";
+  document.getElementById("mPF").textContent=isFinite(pf)?pf.toFixed(2):"∞";
+  const valid=document.getElementById("mValid");
+  if(total>=100){valid.textContent="✓ 100+ trades";valid.style.color=C.bull;}
+  else{valid.textContent="✗ "+total+" — need 100+";valid.style.color=C.bear;}
+  const v=document.getElementById("mVerdict");
+  if(total<100){v.textContent="◐ Sample too small — results are noise below 100 trades.";v.style.color=C.gold;}
+  else if(ev>0.05&&pf>=1.3){v.textContent="✓ Real edge: positive expectancy & PF ≥ 1.3. Proceed to forward test.";v.style.color=C.bull;}
+  else if(ev>0){v.textContent="◐ Marginal: positive but thin — friction may erase it. Tighten the setup.";v.style.color=C.gold;}
+  else{v.textContent="✗ No edge: non-positive expectancy. Do not trade this live — rebuild.";v.style.color=C.bear;}
+}
+["wins","losses","avgWin","avgLoss"].forEach(id=>document.getElementById(id).addEventListener("input",updateMetrics));
+
+/* ---------- JOURNAL ---------- */
+function updateReminder(){
+  const out=document.getElementById("j_out").value;
+  const grade=document.getElementById("j_grade").value[0];
+  const r=document.getElementById("j_reminder");
+  if((out==="Win")&&(grade==="C"||grade==="D"||grade==="F")){
+    r.innerHTML="⚠ <b>Winning trade, poor execution.</b> This is a trap — the win will reinforce a bad habit. Grade the PROCESS: this is still a "+grade+".";
+    r.style.color="#fecaca";
+  }else if((out==="Loss")&&(grade==="A"||grade==="B")){
+    r.innerHTML="✓ <b>Losing trade, good execution.</b> This is a GOOD trade. Losses on perfectly executed setups are the cost of doing business — keep going.";
+    r.style.color="#86efac";
+  }else{
+    r.innerHTML="Grade the <b>process</b>, not the outcome. Outcome is noise; execution is signal. Over 100 trades, only execution compounds.";
+    r.style.color="";
+  }
+}
+["j_out","j_grade"].forEach(id=>document.getElementById(id).addEventListener("change",updateReminder));
+document.getElementById("j_make").addEventListener("click",()=>{
+  const g=id=>document.getElementById(id).value||"—";
+  const txt=
+`──────── TRADE JOURNAL ENTRY ────────
+When/Session : ${g("j_when")}
+Instrument   : ${g("j_instr")}
+Setup        : ${g("j_setup")}
+HTF bias/draw: ${g("j_bias")}
+Entry        : ${g("j_entry")}
+Stop loss    : ${g("j_sl")}
+TP1 / TP2    : ${g("j_tp")}
+Risk % / size: ${g("j_risk")}
+Planned/real : ${g("j_rr")}
+Outcome      : ${g("j_out")}
+Exec grade   : ${g("j_grade")}
+Emotion      : ${g("j_emo")}
+Conditions   : ${g("j_cond")}
+Lesson       : ${g("j_notes")}
+─────────────────────────────────────`;
+  const pre=document.getElementById("j_export");pre.style.display="block";pre.textContent=txt;
+});
+document.getElementById("j_clear").addEventListener("click",()=>{
+  ["j_when","j_instr","j_setup","j_bias","j_entry","j_sl","j_tp","j_risk","j_rr","j_cond","j_notes"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("j_export").style.display="none";
+});
+
+/* ---------- CHECKLIST ---------- */
+const CHECKS=[
+  "HTF bias clearly defined (HH/HL or LH/LL)?",
+  "Current draw on liquidity identified?",
+  "Price in the correct premium/discount zone for this direction?",
+  "Valid, graded PD array (OB/FVG) at my entry?",
+  "Inducement (IDM) swept (or entry gated on it)?",
+  "LTF confirmation (CHoCH/rejection) — candle CLOSED?",
+  "Trading within a killzone / the setup's valid session?",
+  "One of my 2–3 defined setups (not improvised)?",
+  "Stop at a structural level (beyond OB/sweep), not arbitrary?",
+  "Blended R:R (after partials) meets my 1:3 minimum?",
+  "Position size set to exactly my risk % via the calculator?",
+  "Calm, non-FOMO, non-revenge state right now?"
+];
+const chkList=document.getElementById("chkList");
+CHECKS.forEach((c,i)=>{
+  const l=document.createElement("label");l.className="chk";
+  l.innerHTML=`<input type="checkbox" data-c="${i}"><span class="lab">${i+1}. ${c}</span>`;
+  chkList.appendChild(l);
+});
+function updateGate(){
+  const boxes=chkList.querySelectorAll('input');
+  let n=0;boxes.forEach(b=>{if(b.checked)n++;});
+  const g=document.getElementById("gate");
+  if(n===CHECKS.length){g.className="gateOut go";g.textContent="✓ 12 / 12 — CLEARED TO TRADE";}
+  else{g.className="gateOut nogo";g.textContent="✗ "+n+" / 12 — NO TRADE (one NO means no trade)";}
+}
+chkList.querySelectorAll('input').forEach(b=>b.addEventListener("change",updateGate));
+document.getElementById("chkReset").addEventListener("click",()=>{
+  chkList.querySelectorAll('input').forEach(b=>b.checked=false);updateGate();
+});
+
+/* init */
+updateRoad(); updateMetrics(); updateReminder(); updateGate();
+</script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SMC Handbook · 9.1 — Volume Confirmation</title>
+<style>
+  :root{--ink:#0a0e14;--panel:#111722;--panel-2:#161e2b;--line:#243044;--bull:#22c55e;--bear:#ef4444;--zone:#3b82f6;--entry:#f97316;--liq:#a855f7;--struct:#8a98ad;--text:#e6edf6;--dim:#8493a8;--gold:#e8b923}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{animation:none !important;transition-duration:.001ms !important}}
+  body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#16202e 0%,transparent 60%),var(--ink);color:var(--text);font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:48px 24px 96px}
+  .eyebrow{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);margin:0 0 14px}
+  h1{font-size:clamp(32px,5.5vw,56px);line-height:1.04;margin:0 0 10px;font-weight:600;letter-spacing:-.01em}
+  .sub{color:var(--dim);font-size:18px;max-width:64ch;margin:0 0 8px}
+  .note{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--text);border-left:2px solid var(--gold);padding:8px 0 8px 14px;margin:18px 0 0;max-width:78ch}
+  .rule{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:28px 0 0}
+  section{margin-top:48px;background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:16px;padding:28px 26px 30px;box-shadow:0 1px 0 rgba(255,255,255,.02) inset,0 24px 48px -32px rgba(0,0,0,.8)}
+  .tag{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);background:var(--gold);display:inline-block;padding:4px 9px;border-radius:5px;font-weight:700}
+  h2{font-size:clamp(22px,3.2vw,28px);margin:14px 0 6px;font-weight:600;letter-spacing:-.01em}
+  .lede{color:var(--dim);margin:0 0 16px;font-size:15.5px;max-width:78ch}
+  figcaption{color:var(--dim);font-size:13px;margin-top:12px;font-family:ui-monospace,Menlo,monospace;max-width:78ch}
+  svg{width:100%;height:auto;display:block;background:#0c121c;border:1px solid var(--line);border-radius:12px}
+  .btnrow{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;align-items:center}
+  button.ctl{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--text);background:#0e1622;border:1px solid var(--line);padding:9px 14px;border-radius:9px;cursor:pointer}
+  button.ctl:hover,button.ctl.active{border-color:var(--gold);color:var(--gold)}
+  .readout{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--dim);margin-left:4px}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--dim)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}.legend i{width:13px;height:13px;border-radius:3px;display:inline-block}
+  .stepbox{margin-top:14px;padding:14px 16px;background:#0c121c;border:1px solid var(--line);border-radius:10px;font-family:ui-monospace,Menlo,monospace;font-size:13px;min-height:52px;transition:border-color .25s}
+  .stepbox b,.stepbox strong{color:var(--gold)}
+  .footnote{color:var(--dim);font-size:12.5px;margin-top:40px;font-family:ui-monospace,Menlo,monospace;text-align:center}
+  .seg{opacity:0}
+  .playing .seg{animation:drawIn .45s ease forwards}
+  @keyframes drawIn{to{opacity:1}}
+  .vbar{transform:scaleY(0);transform-origin:center bottom;transform-box:fill-box}
+  .playing .vbar{animation:grow .5s cubic-bezier(.2,.8,.2,1) forwards}
+  @keyframes grow{to{transform:scaleY(1)}}
+  .wickflash{animation:wickflash 1.8s ease-in-out infinite}
+  @keyframes wickflash{0%,100%{stroke-opacity:1}50%{stroke-opacity:.4}}
+  .hl{cursor:pointer;transition:filter .2s}.hl:hover{filter:brightness(1.35)}
+  .dim-when-toggle{transition:opacity .25s}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">SMC Master Handbook · Module 9.1</p>
+  <h1>Volume as Confirmation</h1>
+  <p class="sub">Volume answers one question at a PD array: did size transact here, or did price just drift? Spikes on the sweep and the displacement confirm participation; a quiet pullback confirms there is no fresh supply.</p>
+  <p class="note">On spot forex there is no central tape — your platform shows tick volume (price changes), a proxy, not truth. For a real read, pull volume from the correlated CME future (6E, GC). Volume confirms; it never leads.</p>
+  <div class="rule"></div>
+
+  <section>
+    <span class="tag">9.1</span>
+    <h2>Reading the Two Spikes &amp; the Quiet Pullback</h2>
+    <p class="lede">The two candles that should carry volume are the sweep (liquidity taken) and the displacement (the impulsive leg that breaks structure and leaves an FVG). The candle that should be <em>thin</em> is the retracement into the order block — a genuine pullback is a lack of supply, not a fresh wave of selling. Press play, toggle the institutional candles, or hover any candle.</p>
+
+    <svg id="chart" viewBox="0 0 320 332" role="img" aria-label="Volume confirmation chart">
+      <line x1="20" y1="200" x2="300" y2="200" stroke="#a855f7" stroke-width="2" stroke-dasharray="6 4"/>
+      <text x="206" y="194" fill="#a855f7" font-size="10" font-family="ui-monospace,Menlo,monospace">Sell-side liquidity</text>
+      <line x1="20" y1="138" x2="300" y2="138" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <text x="232" y="133" fill="#60a5fa" font-size="10" font-family="ui-monospace,Menlo,monospace">Order Block</text>
+
+      <!-- candle groups: [class hl + data] -->
+      <g class="seg hl dim-when-toggle" data-key="0" data-info="approach" style="animation-delay:.05s">
+        <line x1="60" y1="150" x2="60" y2="188" stroke="#ef4444" stroke-width="1.5"/>
+        <rect x="53" y="152" width="14" height="30" fill="#ef4444" rx="1"/>
+        <rect class="vbar" x="53" y="274" width="14" height="26" fill="#ef4444" opacity=".6"/>
+      </g>
+      <g class="seg hl" data-key="1" data-info="sweep" style="animation-delay:.25s">
+        <line x1="95" y1="160" x2="95" y2="230" stroke="#f97316" stroke-width="2" class="wickflash"/>
+        <rect x="88" y="168" width="14" height="10" fill="#f97316" rx="1"/>
+        <text x="95" y="244" fill="#f97316" font-size="8" font-weight="bold" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">SWEEP</text>
+        <rect class="vbar" x="88" y="236" width="14" height="64" fill="#f97316"/>
+      </g>
+      <g class="seg hl" data-key="2" data-info="disp" style="animation-delay:.45s">
+        <line x1="130" y1="120" x2="130" y2="176" stroke="#22c55e" stroke-width="1.5"/>
+        <rect x="123" y="126" width="14" height="48" fill="#22c55e" rx="1"/>
+        <text x="130" y="114" fill="#22c55e" font-size="8" font-weight="bold" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">DISPL.</text>
+        <rect class="vbar" x="123" y="230" width="14" height="70" fill="#22c55e"/>
+      </g>
+      <g class="seg hl dim-when-toggle" data-key="3" data-info="cont" style="animation-delay:.6s">
+        <line x1="165" y1="110" x2="165" y2="150" stroke="#22c55e" stroke-width="1.5"/>
+        <rect x="158" y="120" width="14" height="14" fill="#22c55e" rx="1"/>
+        <rect class="vbar" x="158" y="270" width="14" height="30" fill="#22c55e" opacity=".6"/>
+      </g>
+      <g class="seg hl" data-key="4" data-info="retrace" style="animation-delay:.78s">
+        <line x1="200" y1="122" x2="200" y2="158" stroke="#ef4444" stroke-width="1.5"/>
+        <rect x="193" y="124" width="14" height="26" fill="#ef4444" rx="1"/>
+        <text x="200" y="170" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">retrace</text>
+        <rect class="vbar" x="193" y="282" width="14" height="18" fill="#64748b"/>
+      </g>
+      <g class="seg hl dim-when-toggle" data-key="5" data-info="cont" style="animation-delay:.92s">
+        <line x1="235" y1="86" x2="235" y2="150" stroke="#22c55e" stroke-width="1.5"/>
+        <rect x="228" y="92" width="14" height="56" fill="#22c55e" rx="1"/>
+        <rect class="vbar" x="228" y="260" width="14" height="40" fill="#22c55e" opacity=".6"/>
+      </g>
+      <g class="seg hl dim-when-toggle" data-key="6" data-info="cont" style="animation-delay:1.05s">
+        <line x1="270" y1="62" x2="270" y2="100" stroke="#22c55e" stroke-width="1.5"/>
+        <rect x="263" y="68" width="14" height="28" fill="#22c55e" rx="1"/>
+        <rect class="vbar" x="263" y="266" width="14" height="34" fill="#22c55e" opacity=".6"/>
+      </g>
+
+      <line x1="20" y1="300" x2="300" y2="300" stroke="#334155" stroke-width="1"/>
+      <text x="22" y="318" fill="#64748b" font-size="9" font-family="ui-monospace,Menlo,monospace">VOLUME →</text>
+    </svg>
+
+    <div class="legend">
+      <span><i style="background:#f97316"></i>Sweep (participation)</span>
+      <span><i style="background:#22c55e"></i>Displacement / trend</span>
+      <span><i style="background:#64748b"></i>Quiet retrace</span>
+      <span><i style="background:#3b82f6"></i>Order Block</span>
+    </div>
+
+    <div class="stepbox" id="stepbox">Hover any candle, or press <b>Play</b> to watch the spikes build and the pullback stay thin.</div>
+
+    <div class="btnrow">
+      <button class="ctl" id="play">▶ Play</button>
+      <button class="ctl" id="toggle">Highlight institutional candles</button>
+      <span class="readout" id="status">idle</span>
+    </div>
+    <figcaption>Break of structure on a volume spike is a footprint of aggressive market-order flow; the same break on thin volume is a low-conviction drift that often gets reclaimed.</figcaption>
+  </section>
+
+  <p class="footnote">SMC Master Handbook · Module 9 · volume confirms, it never leads</p>
+</div>
+<script>
+"use strict";
+const chart=document.getElementById("chart"),stepbox=document.getElementById("stepbox"),status=document.getElementById("status");
+const INFO={
+  approach:"<b>The approach.</b> Ordinary participation as price drifts toward the obvious level.",
+  sweep:"<b>Sweep — volume spike.</b> Liquidity below SSL is taken on heavy participation. Big volume, tiny body, long wick.",
+  disp:"<b>Displacement — volume spike.</b> The impulsive leg that breaks structure and leaves an FVG, on aggressive market-order flow.",
+  retrace:"<b>Retrace — thin volume.</b> The pullback into the OB is quiet: no fresh supply, just a lack of sellers. This is what you want to see.",
+  cont:"<b>Continuation.</b> Trend delivery after the OB held."
+};
+chart.querySelectorAll("[data-info]").forEach(g=>{
+  g.addEventListener("mouseenter",()=>{stepbox.innerHTML=INFO[g.dataset.info];stepbox.style.borderColor="var(--gold)";});
+  g.addEventListener("mouseleave",()=>{stepbox.style.borderColor="";});
+});
+const play=document.getElementById("play"),status0='Hover any candle, or press <b>Play</b> to watch the spikes build and the pullback stay thin.';
+function run(){chart.classList.remove("playing");void chart.offsetWidth;chart.classList.add("playing");play.classList.add("active");status.textContent="playing…";setTimeout(()=>{status.textContent="complete";play.classList.remove("active");},1300);}
+play.addEventListener("click",run);
+let toggled=false;const tbtn=document.getElementById("toggle");
+tbtn.addEventListener("click",()=>{
+  toggled=!toggled;tbtn.classList.toggle("active",toggled);
+  chart.querySelectorAll(".dim-when-toggle").forEach(el=>el.style.opacity=toggled?"0.4":"1");
+  tbtn.textContent=toggled?"Show all candles":"Highlight institutional candles";
+});
+if(!matchMedia("(prefers-reduced-motion: reduce)").matches){setTimeout(run,400);}else{chart.classList.add("playing");}
+</script>
+</body>
+</html>

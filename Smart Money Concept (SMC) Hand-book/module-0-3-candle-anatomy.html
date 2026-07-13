@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SMC Handbook · 0.3 — Candlestick Anatomy</title>
+<style>
+  :root{
+    --ink:#0a0e14; --panel:#111722; --panel-2:#161e2b; --line:#243044;
+    --bull:#22c55e; --bear:#ef4444; --zone:#3b82f6; --entry:#f97316;
+    --liq:#a855f7; --struct:#8a98ad; --text:#e6edf6; --dim:#8493a8; --gold:#e8b923;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{animation:none !important; transition-duration:.001ms !important}}
+  body{margin:0; background:radial-gradient(1200px 600px at 80% -10%, #16202e 0%, transparent 60%), var(--ink); color:var(--text); font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; line-height:1.5; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px; margin:0 auto; padding:48px 24px 96px}
+  .eyebrow{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; letter-spacing:.32em; text-transform:uppercase; color:var(--gold); margin:0 0 14px}
+  h1{font-size:clamp(32px,5.5vw,56px); line-height:1.04; margin:0 0 10px; font-weight:600; letter-spacing:-.01em}
+  .sub{color:var(--dim); font-size:18px; max-width:64ch; margin:0 0 8px}
+  .note{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--text); border-left:2px solid var(--gold); padding:8px 0 8px 14px; margin:18px 0 0; max-width:78ch}
+  .rule{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:28px 0 0}
+  section{margin-top:48px; background:linear-gradient(180deg,var(--panel),var(--panel-2)); border:1px solid var(--line); border-radius:16px; padding:28px 26px 30px; box-shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 24px 48px -32px rgba(0,0,0,.8)}
+  .tag{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink); background:var(--gold); display:inline-block; padding:4px 9px; border-radius:5px; font-weight:700}
+  h2{font-size:clamp(22px,3.2vw,28px); margin:14px 0 6px; font-weight:600; letter-spacing:-.01em}
+  .lede{color:var(--dim); margin:0 0 16px; font-size:15.5px; max-width:78ch}
+  figcaption{color:var(--dim); font-size:13px; margin-top:12px; font-family:ui-monospace,Menlo,monospace; max-width:78ch}
+  svg{width:100%; height:auto; display:block; background:#0c121c; border:1px solid var(--line); border-radius:12px}
+  .descbox{margin-top:14px; padding:14px 16px; background:#0c121c; border:1px solid var(--line); border-radius:10px; font-family:ui-monospace,Menlo,monospace; font-size:13px; min-height:54px; transition:border-color .25s}
+  .parts-row{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap}
+  button.pt{flex:1; min-width:120px; font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--text); background:#0e1622; border:1px solid var(--line); padding:11px 14px; border-radius:9px; cursor:pointer; transition:border-color .2s, background .2s}
+  button.pt:hover{border-color:var(--gold); color:var(--gold)}
+  button.pt.on{border-color:var(--gold); color:var(--gold); background:#101826}
+  .footnote{color:var(--dim); font-size:12.5px; margin-top:40px; font-family:ui-monospace,Menlo,monospace; text-align:center}
+
+  .part{cursor:pointer; transition:fill .2s, stroke .2s, filter .2s}
+  .part:hover{filter:brightness(1.2)}
+  /* gentle breathing highlight when active */
+  @keyframes glow{0%,100%{filter:drop-shadow(0 0 0 rgba(232,185,35,0))}50%{filter:drop-shadow(0 0 6px rgba(232,185,35,.6))}}
+  .active-glow{animation:glow 1.8s ease-in-out infinite}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">SMC Master Handbook · Module 0.3</p>
+  <h1>Candlestick Anatomy</h1>
+  <p class="sub">Reading a clean chart means reading price, structure, and time — nothing else. Each part of a candle means something specific in the SMC context.</p>
+  <p class="note">The close is the most important single price. A "break" of a level in SMC is usually defined by a body close beyond it, not a wick poke. Strip every indicator — you want the cause (order flow expressed as price), not the lagging echo.</p>
+  <div class="rule"></div>
+
+  <section id="anatomy">
+    <span class="tag">0.3</span>
+    <h2>Body, Wick &amp; Close</h2>
+    <p class="lede">Hover the wick or body of the bullish candle — or use the buttons — to inspect each part. The <em>body</em> is the conviction range; the <em>wick</em> is rejection; the <em>close</em> tells you who won the period. The bearish candle shows the mirror: open on top, close on the bottom.</p>
+
+    <svg id="chart" viewBox="0 0 420 320" role="img" aria-label="Candlestick anatomy diagram">
+      <!-- BULLISH candle -->
+      <g class="part" data-part="upperWick">
+        <line id="bUpper" x1="120" y1="40" x2="120" y2="92" stroke="#22c55e" stroke-width="4"/>
+      </g>
+      <g class="part" data-part="body">
+        <rect id="bBody" x="98" y="92" width="44" height="100" fill="#22c55e" rx="2"/>
+      </g>
+      <g class="part" data-part="lowerWick">
+        <line id="bLower" x1="120" y1="192" x2="120" y2="248" stroke="#22c55e" stroke-width="4"/>
+      </g>
+      <text x="86" y="270" fill="#86efac" font-size="12" font-weight="bold" font-family="ui-monospace,Menlo,monospace">BULLISH ▲</text>
+      <text x="150" y="100" fill="#94a3b8" font-size="10" font-family="ui-monospace,Menlo,monospace">← close</text>
+      <text x="150" y="190" fill="#94a3b8" font-size="10" font-family="ui-monospace,Menlo,monospace">← open</text>
+
+      <!-- BEARISH candle -->
+      <g class="part" data-part="upperWickBear">
+        <line x1="300" y1="40" x2="300" y2="82" stroke="#ef4444" stroke-width="4"/>
+      </g>
+      <g class="part" data-part="bodyBear">
+        <rect x="278" y="82" width="44" height="110" fill="#ef4444" rx="2"/>
+      </g>
+      <g class="part" data-part="lowerWickBear">
+        <line x1="300" y1="192" x2="300" y2="250" stroke="#ef4444" stroke-width="4"/>
+      </g>
+      <text x="262" y="272" fill="#fca5a5" font-size="12" font-weight="bold" font-family="ui-monospace,Menlo,monospace">BEARISH ▼</text>
+      <text x="330" y="90" fill="#94a3b8" font-size="10" font-family="ui-monospace,Menlo,monospace">← open</text>
+      <text x="330" y="200" fill="#94a3b8" font-size="10" font-family="ui-monospace,Menlo,monospace">← close</text>
+    </svg>
+
+    <div class="parts-row">
+      <button class="pt" data-part="upperWick">Upper wick</button>
+      <button class="pt" data-part="body">Body</button>
+      <button class="pt" data-part="lowerWick">Lower wick</button>
+    </div>
+
+    <div class="descbox" id="descbox">Hover over the wick or body of the bullish candle.</div>
+
+    <figcaption>Green body = bulls won the period (close above open); red body = bears won (close below open). A long wick is a footprint of liquidity being taken or a level being defended.</figcaption>
+  </section>
+
+  <p class="footnote">SMC Master Handbook · Module 0 · HTF for bias · MTF for location · LTF for timing</p>
+</div>
+
+<script>
+"use strict";
+const PARTS={
+  upperWick:{el:"bUpper",label:"Upper wick",desc:"Price was rejected from above — a footprint of supply or liquidity being taken. The market tried higher and was forced back."},
+  body:{el:"bBody",label:"Body",desc:"The open-to-close range: where the period's business was done with conviction. Close location tells you who won the session."},
+  lowerWick:{el:"bLower",label:"Lower wick",desc:"Price was rejected from below — demand stepped in, often right after stops were swept beneath an obvious low."}
+};
+const ORIG={upperWick:"#22c55e",body:"#22c55e",lowerWick:"#22c55e"};
+const descbox=document.getElementById("descbox");
+const chart=document.getElementById("chart");
+const btns=document.querySelectorAll("button.pt");
+
+function paint(k,on){
+  const node=document.getElementById(PARTS[k].el);
+  if(node.tagName==="rect") node.setAttribute("fill", on?"#e8b923":ORIG[k]);
+  else node.setAttribute("stroke", on?"#e8b923":ORIG[k]);
+  node.classList.toggle("active-glow", on);
+}
+function show(k){
+  Object.keys(PARTS).forEach(p=>paint(p,p===k));
+  descbox.innerHTML="<strong>"+PARTS[k].label+":</strong> "+PARTS[k].desc;
+  descbox.style.borderColor="var(--gold)";
+  btns.forEach(b=>b.classList.toggle("on", b.getAttribute("data-part")===k));
+}
+function clear(){
+  Object.keys(PARTS).forEach(p=>paint(p,false));
+  descbox.innerHTML="Hover over the wick or body of the bullish candle.";
+  descbox.style.borderColor="";
+  btns.forEach(b=>b.classList.remove("on"));
+}
+
+// hover on the three interactive bullish parts
+chart.querySelectorAll('.part[data-part]').forEach(g=>{
+  const k=g.getAttribute("data-part");
+  if(!PARTS[k]) return; // bearish parts are illustrative only
+  g.addEventListener("mouseenter",()=>show(k));
+  g.addEventListener("mouseleave",clear);
+  g.addEventListener("click",()=>show(k));
+});
+
+// buttons: hover preview + click lock
+let locked=null;
+btns.forEach(b=>{
+  const k=b.getAttribute("data-part");
+  b.addEventListener("mouseenter",()=>{ if(!locked) show(k); });
+  b.addEventListener("mouseleave",()=>{ if(!locked) clear(); });
+  b.addEventListener("click",()=>{
+    if(locked===k){locked=null;clear();}
+    else{locked=k;show(k);}
+  });
+});
+</script>
+</body>
+</html>

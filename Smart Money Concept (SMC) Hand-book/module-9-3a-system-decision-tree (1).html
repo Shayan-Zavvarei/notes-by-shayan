@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SMC Handbook · 9.3 — One Frame, Two to Three Triggers</title>
+<style>
+  :root{--ink:#0a0e14;--panel:#111722;--panel-2:#161e2b;--line:#243044;--bull:#22c55e;--bear:#ef4444;--zone:#3b82f6;--entry:#f97316;--liq:#a855f7;--struct:#8a98ad;--text:#e6edf6;--dim:#8493a8;--gold:#e8b923}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{animation:none !important;transition-duration:.001ms !important}}
+  body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#16202e 0%,transparent 60%),var(--ink);color:var(--text);font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:48px 24px 96px}
+  .eyebrow{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);margin:0 0 14px}
+  h1{font-size:clamp(32px,5.5vw,56px);line-height:1.04;margin:0 0 10px;font-weight:600;letter-spacing:-.01em}
+  .sub{color:var(--dim);font-size:18px;max-width:64ch;margin:0 0 8px}
+  .note{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--text);border-left:2px solid var(--gold);padding:8px 0 8px 14px;margin:18px 0 0;max-width:78ch}
+  .rule{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:28px 0 0}
+  section{margin-top:48px;background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:16px;padding:28px 26px 30px;box-shadow:0 1px 0 rgba(255,255,255,.02) inset,0 24px 48px -32px rgba(0,0,0,.8)}
+  .tag{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);background:var(--gold);display:inline-block;padding:4px 9px;border-radius:5px;font-weight:700}
+  h2{font-size:clamp(22px,3.2vw,28px);margin:14px 0 6px;font-weight:600;letter-spacing:-.01em}
+  .lede{color:var(--dim);margin:0 0 16px;font-size:15.5px;max-width:78ch}
+  figcaption{color:var(--dim);font-size:13px;margin-top:12px;font-family:ui-monospace,Menlo,monospace;max-width:78ch}
+  svg{width:100%;height:auto;display:block;background:#0c121c;border:1px solid var(--line);border-radius:12px}
+  .stepbox{margin-top:14px;padding:14px 16px;background:#0c121c;border:1px solid var(--line);border-radius:10px;font-family:ui-monospace,Menlo,monospace;font-size:13px;min-height:56px}
+  .stepbox em{color:var(--dim);font-style:italic}
+  .footnote{color:var(--dim);font-size:12.5px;margin-top:40px;font-family:ui-monospace,Menlo,monospace;text-align:center}
+  .seg{opacity:0}.playing .seg{animation:drawIn .5s ease forwards}@keyframes drawIn{to{opacity:1}}
+  .node{cursor:pointer}
+  .frame{animation:glow 2.4s ease-in-out infinite}@keyframes glow{0%,100%{filter:drop-shadow(0 0 0 rgba(232,185,35,0))}50%{filter:drop-shadow(0 0 5px rgba(232,185,35,.5))}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">SMC Master Handbook · Module 9.3</p>
+  <h1>One Frame, Two to Three Triggers</h1>
+  <p class="sub">Do not trade every setup in the handbook. Choose two or three that are complementary — each covering a market condition the others do not.</p>
+  <p class="note">Coherence comes from a shared top-down frame, not from the triggers being similar. Every setup is filtered through the same HTF bias, draw, and premium/discount logic — only the trigger differs. If none is present, there is no trade — and that is the system working, not failing.</p>
+  <div class="rule"></div>
+
+  <section>
+    <span class="tag">9.3</span>
+    <h2>Combining Setups into One Coherent System</h2>
+    <p class="lede">A workable spine: one trend-<em>continuation</em> setup, one <em>reversal</em> setup, optionally one <em>session/time</em> model. Continuation pays you when the market trends; reversal pays you when it turns at the draw; the session model pays you in a recurring window. Together they keep you patient. Click a trigger.</p>
+
+    <svg id="chart" viewBox="0 0 360 220" role="img" aria-label="System decision tree">
+      <g class="frame">
+        <rect x="100" y="16" width="160" height="34" rx="8" fill="#0e1622" stroke="#e8b923" stroke-width="1.5"/>
+        <text x="180" y="38" fill="#fde68a" font-size="12" font-weight="bold" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">HTF BIAS + DRAW + P/D</text>
+      </g>
+      <line class="seg" style="animation-delay:.2s" x1="180" y1="50" x2="180" y2="68" stroke="#475569"/>
+      <line class="seg" style="animation-delay:.25s" x1="80" y1="68" x2="300" y2="68" stroke="#475569"/>
+      <line class="seg" style="animation-delay:.3s" x1="80" y1="68" x2="80" y2="92" stroke="#475569"/>
+      <line class="seg" style="animation-delay:.3s" x1="190" y1="68" x2="190" y2="92" stroke="#475569"/>
+      <line class="seg" style="animation-delay:.3s" x1="300" y1="68" x2="300" y2="92" stroke="#475569"/>
+
+      <g class="node seg" data-k="cont" style="animation-delay:.4s">
+        <rect x="30" y="92" width="100" height="44" rx="8" fill="#0e1622" stroke="#334155" stroke-width="1"/>
+        <text x="80" y="119" fill="#22c55e" font-size="12" font-weight="bold" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">Continuation</text>
+      </g>
+      <g class="node seg" data-k="rev" style="animation-delay:.5s">
+        <rect x="140" y="92" width="100" height="44" rx="8" fill="#0e1622" stroke="#334155" stroke-width="1"/>
+        <text x="190" y="119" fill="#f97316" font-size="12" font-weight="bold" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">Reversal</text>
+      </g>
+      <g class="node seg" data-k="sess" style="animation-delay:.6s">
+        <rect x="250" y="92" width="100" height="44" rx="8" fill="#0e1622" stroke="#334155" stroke-width="1"/>
+        <text x="300" y="115" fill="#3b82f6" font-size="11.5" font-weight="bold" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">Session/</text>
+        <text x="300" y="129" fill="#3b82f6" font-size="11.5" font-weight="bold" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">Time</text>
+      </g>
+
+      <text class="seg" style="animation-delay:.75s" x="180" y="168" fill="#64748b" font-size="11" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">none present →</text>
+      <text class="seg" style="animation-delay:.8s" x="180" y="186" fill="#fca5a5" font-size="13" font-weight="bold" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">NO TRADE (system working)</text>
+    </svg>
+
+    <div class="stepbox" id="stepbox">Click a trigger. All three share the same HTF frame; only the entry condition differs.</div>
+    <figcaption>It collapses to a routine: read HTF bias and draw, ask whether price is at a qualifying premium/discount POI, then check which trigger is present. That single frame is what makes three setups feel like one system.</figcaption>
+  </section>
+
+  <p class="footnote">SMC Master Handbook · Module 9 · three setups, one top-down logic</p>
+</div>
+<script>
+"use strict";
+const chart=document.getElementById("chart"),stepbox=document.getElementById("stepbox");
+const S={
+  cont:{n:"Continuation",c:"#22c55e",w:"Established HTF trend; price pulls back to a fresh OB in a discount (long) / premium (short).",p:"Pays while the market trends."},
+  rev:{n:"Reversal",c:"#f97316",w:"Price reaches the HTF draw, sweeps liquidity, and prints a CHoCH against the prior leg.",p:"Pays when the market turns at the draw."},
+  sess:{n:"Session/Time",c:"#3b82f6",w:"A specific recurring window (e.g. Silver Bullet hour) with the frame aligned.",p:"Pays in a defined daily window."}
+};
+const nodes=chart.querySelectorAll(".node");
+let sel=null;
+function show(k){sel=k;stepbox.innerHTML="<strong style='color:"+S[k].c+"'>"+S[k].n+":</strong> "+S[k].w+" <em>"+S[k].p+"</em>";
+  nodes.forEach(g=>{const on=g.dataset.k===k;g.querySelector("rect").setAttribute("stroke",on?S[k].c:"#334155");g.querySelector("rect").setAttribute("stroke-width",on?"2":"1");g.querySelector("rect").setAttribute("fill",on?"#101826":"#0e1622");});}
+nodes.forEach(g=>g.addEventListener("click",()=>{if(sel===g.dataset.k){sel=null;stepbox.innerHTML="Click a trigger. All three share the same HTF frame; only the entry condition differs.";nodes.forEach(n=>{n.querySelector("rect").setAttribute("stroke","#334155");n.querySelector("rect").setAttribute("stroke-width","1");n.querySelector("rect").setAttribute("fill","#0e1622");});}else show(g.dataset.k);}));
+if(!matchMedia("(prefers-reduced-motion: reduce)").matches){setTimeout(()=>chart.classList.add("playing"),300);}else{chart.classList.add("playing");}
+</script>
+</body>
+</html>

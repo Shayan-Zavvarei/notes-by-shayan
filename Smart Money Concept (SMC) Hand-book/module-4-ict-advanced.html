@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SMC Handbook · Module 4 — ICT Advanced Concepts</title>
+<style>
+  :root{
+    --ink:#0a0e14; --panel:#111722; --panel-2:#161e2b; --line:#243044;
+    --bull:#22c55e; --bear:#ef4444; --zone:#3b82f6; --entry:#f97316;
+    --liq:#a855f7; --struct:#8a98ad; --text:#e6edf6; --dim:#8493a8; --gold:#e8b923;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    *{animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important}
+  }
+  body{margin:0; background:radial-gradient(1200px 600px at 80% -10%, #16202e 0%, transparent 60%), var(--ink); color:var(--text); font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; line-height:1.5; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px; margin:0 auto; padding:48px 24px 96px}
+  .eyebrow{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; letter-spacing:.32em; text-transform:uppercase; color:var(--gold); margin:0 0 14px}
+  h1{font-size:clamp(34px,6vw,62px); line-height:1.02; margin:0 0 10px; font-weight:600; letter-spacing:-.01em}
+  .sub{color:var(--dim); font-size:18px; max-width:62ch; margin:0 0 8px}
+  .note{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--dim); border-left:2px solid var(--gold); padding:8px 0 8px 14px; margin:18px 0 0; max-width:72ch}
+  .rule{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:28px 0 0}
+  section{margin-top:56px; background:linear-gradient(180deg,var(--panel),var(--panel-2)); border:1px solid var(--line); border-radius:16px; padding:28px 26px 30px; box-shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 24px 48px -32px rgba(0,0,0,.8)}
+  .tag{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink); background:var(--gold); display:inline-block; padding:4px 9px; border-radius:5px; font-weight:700}
+  h2{font-size:clamp(22px,3.4vw,30px); margin:14px 0 6px; font-weight:600; letter-spacing:-.01em}
+  .lede{color:var(--dim); margin:0 0 18px; font-size:15.5px; max-width:72ch}
+  figure{margin:0}
+  svg{width:100%; height:auto; display:block; background:#0c121c; border:1px solid var(--line); border-radius:12px}
+  figcaption{color:var(--dim); font-size:13px; margin-top:12px; font-family:ui-monospace,Menlo,monospace}
+  .controls{display:flex; gap:10px; flex-wrap:wrap; margin:16px 0 4px}
+  button.ctl{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; letter-spacing:.04em; color:var(--text); background:#0e1622; border:1px solid var(--line); padding:9px 14px; border-radius:9px; cursor:pointer; transition:border-color .15s, transform .08s, background .15s}
+  button.ctl:hover{border-color:var(--gold)}
+  button.ctl:active{transform:translateY(1px)}
+  button.ctl:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+  button.ctl[aria-pressed="true"]{border-color:var(--gold); background:#1a2333; color:var(--gold)}
+  .legend{display:flex; gap:16px; flex-wrap:wrap; margin:6px 0 18px; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--dim)}
+  .legend span{display:inline-flex; align-items:center; gap:7px}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .readout{min-height:22px; margin-top:14px; padding:12px 14px; background:#0c121c; border:1px solid var(--line); border-radius:10px; font-size:14px; color:var(--text)}
+  .readout strong{color:var(--gold)}
+  .toc{display:flex; flex-wrap:wrap; gap:10px; margin-top:22px}
+  .toc a{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--dim); text-decoration:none; border:1px solid var(--line); padding:7px 11px; border-radius:8px}
+  .toc a:hover{color:var(--gold); border-color:var(--gold)}
+  .candle{opacity:0; animation:rise .5s ease forwards}
+  @keyframes rise{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)}}
+  .pulse{animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.4} 50%{opacity:1}}
+  .footnote{color:var(--dim); font-size:12.5px; margin-top:40px; font-family:ui-monospace,Menlo,monospace; text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">SMC Master Handbook · Module 4</p>
+  <h1>ICT Advanced Concepts</h1>
+  <p class="sub">Time and inter-market context. When institutions deliver price, how the daily candle is built, where to enter with Fibonacci precision, and how the dollar and the clock confirm your bias.</p>
+  <p class="note">Session times are real and stable (they shift ±1h with daylight saving). The deeper ICT constructs — killzone minutes, IPDA lookbacks, "the algorithm" — are interpretive models to test, not documented facts about any institution.</p>
+  <div class="rule"></div>
+
+  <nav class="toc" aria-label="Module contents">
+    <a href="#s41">4.1 Sessions &amp; Killzones</a>
+    <a href="#s42">4.2 Power of 3</a>
+    <a href="#s43">4.3 OTE</a>
+    <a href="#s44">4.4 NWOG &amp; NDOG</a>
+    <a href="#s45">4.5 Intermarket</a>
+    <a href="#s46">4.6 IPDA</a>
+  </nav>
+
+  <!-- 4.1 -->
+  <section id="s41">
+    <span class="tag">4.1</span>
+    <h2>Sessions &amp; Killzones — the liquidity relay</h2>
+    <p class="lede">Asia builds the range, London sweeps it, New York delivers. Each killzone is a concentrated delivery window. Hover any session band to read its role and killzone window (UTC).</p>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--struct)"></i>session</span>
+      <span><i class="dot" style="background:var(--gold)"></i>killzone</span>
+      <span><i class="dot" style="background:var(--liq)"></i>liquidity</span>
+    </div>
+    <figure>
+      <svg id="svg41" viewBox="0 0 760 360" role="img" aria-label="24-hour session map with killzones highlighted"></svg>
+      <figcaption id="cap41">Concentrating activity inside killzones improves every setup — time is a filter as powerful as price.</figcaption>
+    </figure>
+    <div class="readout" id="ro41">Hover Asia, London, New York, or London Close to read each session's job.</div>
+  </section>
+
+  <!-- 4.2 -->
+  <section id="s42">
+    <span class="tag">4.2</span>
+    <h2>Power of 3 — accumulate, manipulate, distribute</h2>
+    <p class="lede">The daily candle is built in three acts: the open accumulates, one wick manipulates (the judas swing, opposite the true direction), the body distributes. Play the day, then see the resulting candle.</p>
+    <div class="controls" role="group" aria-label="Power of 3 controls">
+      <button class="ctl" id="playAMD" aria-pressed="false">▶ Play the day</button>
+      <button class="ctl" id="showCandle" aria-pressed="false">Show resulting daily candle</button>
+    </div>
+    <figure>
+      <svg id="svg42" viewBox="0 0 760 360" role="img" aria-label="Power of three accumulation manipulation distribution on an intraday chart"></svg>
+      <figcaption id="cap42">Enter at the end of manipulation to ride the entire distribution leg — the day's highest-R:R location.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4.3 -->
+  <section id="s43">
+    <span class="tag">4.3</span>
+    <h2>Optimal Trade Entry — 0.618 / 0.705 / 0.79</h2>
+    <p class="lede">After a BOS, anchor a Fibonacci swing-to-swing in the move's direction. The 0.618–0.79 band is the OTE; 0.705 is the sweet spot. It's strongest when it overlaps an OB or FVG. Toggle the confluence.</p>
+    <div class="controls" role="group" aria-label="OTE options">
+      <button class="ctl" id="toggleConfluence" aria-pressed="false">Toggle OB/FVG confluence</button>
+    </div>
+    <figure>
+      <svg id="svg43" viewBox="0 0 760 360" role="img" aria-label="Optimal trade entry Fibonacci zone overlapping an order block"></svg>
+      <figcaption id="cap43">OTE refines the exact entry within a zone you've already qualified structurally. BOS first, always.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4.4 -->
+  <section id="s44">
+    <span class="tag">4.4</span>
+    <h2>NWOG &amp; NDOG — opening gaps as magnets</h2>
+    <p class="lede">A weekend or daily opening gap is an un-traded range — pure inefficiency, like a large FVG. Its midpoint is the key reaction line; the full fill is a target. Play the return-to-fill.</p>
+    <div class="controls" role="group" aria-label="Gap options">
+      <button class="ctl" data-gap="nwog" aria-pressed="true">NWOG (weekend)</button>
+      <button class="ctl" data-gap="ndog" aria-pressed="false">NDOG (daily)</button>
+      <button class="ctl" id="playGap" aria-pressed="false">▶ Play fill</button>
+    </div>
+    <figure>
+      <svg id="svg44" viewBox="0 0 760 340" role="img" aria-label="Opening gap with midpoint reaction and full fill target"></svg>
+      <figcaption id="cap44">Trade the midpoint reaction; target the full fill. Strongest when the gap coincides with an OB and a sweep.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4.5 -->
+  <section id="s45">
+    <span class="tag">4.5</span>
+    <h2>Intermarket — DXY as the master key</h2>
+    <p class="lede">EURUSD, GBPUSD and Gold are broadly inverse to the dollar index. Run your analysis on DXY and cross-check the pair. Aligned mirrors = high confidence; divergence = early reversal. Toggle the scenario.</p>
+    <div class="controls" role="group" aria-label="Intermarket scenario">
+      <button class="ctl" data-im="mirror" aria-pressed="true">Aligned mirror</button>
+      <button class="ctl" data-im="diverge" aria-pressed="false">Divergence</button>
+    </div>
+    <figure>
+      <svg id="svg45" viewBox="0 0 760 380" role="img" aria-label="Two panel DXY versus EURUSD correlation"></svg>
+      <figcaption id="cap45">Inverse to DXY: EURUSD, GBPUSD, Gold. Direct: USDJPY, USDCHF, USDCAD. Correlations are tendencies, not guarantees.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4.6 -->
+  <section id="s46">
+    <span class="tag">4.6</span>
+    <h2>IPDA — the draw on liquidity</h2>
+    <p class="lede">A model of price being delivered toward liquidity and to rebalance inefficiency, referenced over 20/40/60-day lookbacks. The output that matters: where is price going next? Switch the lookback to see the draw shift.</p>
+    <div class="controls" role="group" aria-label="IPDA lookback">
+      <button class="ctl" data-look="20" aria-pressed="true">20-day</button>
+      <button class="ctl" data-look="40" aria-pressed="false">40-day</button>
+      <button class="ctl" data-look="60" aria-pressed="false">60-day</button>
+    </div>
+    <figure>
+      <svg id="svg46" viewBox="0 0 760 360" role="img" aria-label="IPDA lookback window with the draw on liquidity"></svg>
+      <figcaption id="cap46">Thesis = entry (OB) + destination (draw). Every trade gets a pre-defined target. Test the model; don't just believe it.</figcaption>
+    </figure>
+  </section>
+
+  <p class="footnote">SMC Master Handbook · Module 4 of 9 · charts are schematic teaching models, not trade signals</p>
+</div>
+
+<script>
+"use strict";
+const NS="http://www.w3.org/2000/svg";
+const C={bull:"#22c55e",bear:"#ef4444",zone:"#3b82f6",entry:"#f97316",liq:"#a855f7",struct:"#8a98ad",gold:"#e8b923",dim:"#8493a8",text:"#e6edf6"};
+const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function candle(p,x,oY,cY,hY,lY,{w=14,delay=0,anim=true}={}){
+  const col=cY<oY?C.bull:C.bear;
+  const g=document.createElementNS(NS,"g");
+  if(anim&&!reduce){g.setAttribute("class","candle");g.style.animationDelay=delay+"ms";}
+  const wk=document.createElementNS(NS,"line");
+  wk.setAttribute("x1",x);wk.setAttribute("x2",x);wk.setAttribute("y1",hY);wk.setAttribute("y2",lY);
+  wk.setAttribute("stroke",col);wk.setAttribute("stroke-width","2");
+  const b=document.createElementNS(NS,"rect");
+  const top=Math.min(oY,cY),h=Math.max(Math.abs(oY-cY),2);
+  b.setAttribute("x",x-w/2);b.setAttribute("y",top);b.setAttribute("width",w);b.setAttribute("height",h);
+  b.setAttribute("rx","1.5");b.setAttribute("fill",col);
+  g.appendChild(wk);g.appendChild(b);p.appendChild(g);return g;
+}
+function line(p,x1,y1,x2,y2,col,{dash=null,w=1.5,op=1}={}){
+  const l=document.createElementNS(NS,"line");
+  l.setAttribute("x1",x1);l.setAttribute("y1",y1);l.setAttribute("x2",x2);l.setAttribute("y2",y2);
+  l.setAttribute("stroke",col);l.setAttribute("stroke-width",w);l.setAttribute("opacity",op);
+  if(dash)l.setAttribute("stroke-dasharray",dash);p.appendChild(l);return l;
+}
+function rect(p,x,y,w,h,col,{op=1,rx=3,stroke=null}={}){
+  const r=document.createElementNS(NS,"rect");
+  r.setAttribute("x",x);r.setAttribute("y",y);r.setAttribute("width",w);r.setAttribute("height",h);
+  r.setAttribute("fill",col);r.setAttribute("opacity",op);r.setAttribute("rx",rx);
+  if(stroke){r.setAttribute("stroke",stroke);r.setAttribute("stroke-width","1.5");}
+  p.appendChild(r);return r;
+}
+function txt(p,x,y,s,col,{size=12,weight=400,anchor="start"}={}){
+  const t=document.createElementNS(NS,"text");
+  t.setAttribute("x",x);t.setAttribute("y",y);t.setAttribute("fill",col);
+  t.setAttribute("font-size",size);t.setAttribute("font-weight",weight);
+  t.setAttribute("font-family","monospace");t.setAttribute("text-anchor",anchor);
+  t.textContent=s;p.appendChild(t);return t;
+}
+function marker(p,x,y,s,col,r=6){
+  const c=document.createElementNS(NS,"circle");
+  c.setAttribute("cx",x);c.setAttribute("cy",y);c.setAttribute("r",r);
+  c.setAttribute("fill",col);c.setAttribute("stroke","#fff");c.setAttribute("stroke-width","1.5");
+  p.appendChild(c); if(s)txt(p,x+10,y-8,s,col,{size:11}); return c;
+}
+function xmark(p,x,y,col){line(p,x-6,y-6,x+6,y+6,col,{w:2.5});line(p,x-6,y+6,x+6,y-6,col,{w:2.5});}
+function star(p,x,y,col,s=9){
+  const pts=[];for(let i=0;i<10;i++){const a=Math.PI/5*i-Math.PI/2;const rr=i%2?s*0.45:s;pts.push((x+rr*Math.cos(a))+","+(y+rr*Math.sin(a)));}
+  const poly=document.createElementNS(NS,"polygon");poly.setAttribute("points",pts.join(" "));poly.setAttribute("fill",col);p.appendChild(poly);
+}
+function clear(s){while(s.firstChild)s.removeChild(s.firstChild);}
+
+/* ---------- 4.1 sessions ---------- */
+(function(){
+  const s=document.getElementById("svg41");
+  // time axis
+  const x0=60,x1=720,W=x1-x0;
+  for(let h=0;h<=24;h+=2){const x=x0+W*(h/24);line(s,x,40,x,300,"#1a2433",{w:1});txt(s,x,322,String(h).padStart(2,"0"),C.dim,{size:9,anchor:"middle"});}
+  txt(s,x0,338,"UTC hours →",C.dim,{size:10});
+  function band(rowY,label,startH,endH,col,kzStart,kzEnd,key){
+    const xa=x0+W*(startH/24), xb=x0+W*(endH/24);
+    const r=rect(s,xa,rowY,xb-xa,28,col,{op:0.22,rx:5,stroke:col}); r.style.cursor="pointer";
+    txt(s,xa+8,rowY+19,label,C.text,{size:12});
+    // killzone overlay
+    if(kzStart!=null){const ka=x0+W*(kzStart/24),kb=x0+W*(kzEnd/24);rect(s,ka,rowY,kb-ka,28,C.gold,{op:0.3,rx:5});}
+    const msgs={
+      asia:"<strong>Asia (Tokyo) — accumulation.</strong> Tight range, low volatility. Mark the range high/low: they become the liquidity pools London targets. Killzone ~00:00–04:00 UTC.",
+      london:"<strong>London — manipulation.</strong> Volatility expands; the day's first sweep (the judas swing) grabs the Asian range, often opposite the true direction. Killzone ~07:00–10:00 UTC.",
+      ny:"<strong>New York — distribution.</strong> Second liquidity injection; delivers the bulk of the range or sweeps the London extreme and reverses. US news lands here. Killzone ~12:00–15:00 UTC.",
+      lclose:"<strong>London Close ~15:00–16:00 UTC.</strong> Late-day reversals and profit-taking as London books out. The London–NY overlap just before is peak daily liquidity."
+    };
+    const ro=document.getElementById("ro41");
+    r.addEventListener("mouseenter",()=>{r.setAttribute("opacity","0.4");ro.innerHTML=msgs[key];});
+    r.addEventListener("mouseleave",()=>{r.setAttribute("opacity","0.22");ro.innerHTML="Hover Asia, London, New York, or London Close to read each session's job.";});
+  }
+  band(60,"ASIA — accumulation",0,6,C.struct,0,4,"asia");
+  band(98,"LONDON — manipulation",7,11,C.struct,7,10,"london");
+  band(136,"NEW YORK — distribution",12,17,C.struct,12,15,"ny");
+  band(174,"LONDON CLOSE",15,16,C.struct,null,null,"lclose");
+  // relay annotation
+  line(s,x0+W*(3/24),215,x0+W*(8.5/24),215,C.liq,{dash:"3 3"});
+  line(s,x0+W*(8.5/24),215,x0+W*(13.5/24),215,C.liq,{dash:"3 3"});
+  txt(s,x0+W*(2/24),212,"Asia builds",C.liq,{size:10});
+  txt(s,x0+W*(7/24),232,"London takes",C.liq,{size:10});
+  txt(s,x0+W*(12/24),212,"NY delivers",C.liq,{size:10});
+  txt(s,x0+W*(11.5/24),258,"↑ London–NY overlap = peak liquidity",C.gold,{size:10});
+})();
+
+/* ---------- 4.2 power of 3 ---------- */
+const svg42=document.getElementById("svg42"),cap42=document.getElementById("cap42");
+function drawAMD(animate){
+  clear(svg42);
+  const openY=180;
+  line(svg42,40,openY,720,openY,C.struct,{dash:"4 4"});txt(svg42,640,openY-6,"open / Asian range",C.struct,{size:10});
+  line(svg42,40,250,720,250,C.liq,{dash:"5 4"});txt(svg42,44,268,"sell-side liquidity",C.liq,{size:10});
+  line(svg42,40,70,720,70,C.liq,{dash:"5 4"});txt(svg42,560,63,"buy-side liquidity (draw)",C.liq,{size:10});
+  // accumulation chop
+  rect(svg42,70,165,150,30,C.struct,{op:0.12});txt(svg42,80,158,"ACCUMULATION",C.dim,{size:11});
+  const acc=[[90,180,170,186,176],[120,170,185,164,190],[150,185,172,190,178],[180,172,182,166,188],[210,182,175,188,180]];
+  acc.forEach((p,i)=>candle(svg42,p[0],p[1],p[2],p[3],p[4],{delay:animate?i*60:0,anim:animate}));
+  // manipulation down (judas) - sweeps sell-side
+  const man=[[245,180,210,174,216],[275,210,240,204,258],[305,240,225,234,252]];
+  man.forEach((p,i)=>candle(svg42,p[0],p[1],p[2],p[3],p[4],{delay:animate?(5+i)*60:0,anim:animate}));
+  txt(svg42,250,300,"MANIPULATION (judas) — sweeps low, opposite true dir",C.dim,{size:11});
+  xmark(svg42,305,256,C.gold);
+  marker(svg42,330,222,"enter on reversal",C.entry,6);
+  // distribution up - the real move to the draw
+  const dist=[[335,225,175,232,230],[365,175,135,182,180],[395,135,100,142,140],[425,100,78,108,106],[455,78,60,86,84]];
+  dist.forEach((p,i)=>candle(svg42,p[0],p[1],p[2],p[3],p[4],{delay:animate?(8+i)*60:0,anim:animate}));
+  rect(svg42,420,60,120,28,C.bull,{op:0.12});txt(svg42,428,78,"DISTRIBUTION",C.bull,{size:11});
+  star(svg42,475,68,C.gold,8);txt(svg42,490,70,"draw reached",C.gold,{size:11});
+  cap42.textContent="Enter at the end of manipulation to ride the entire distribution leg — the day's highest-R:R location.";
+}
+function drawDailyCandle(){
+  clear(svg42);
+  txt(svg42,300,40,"The same day as ONE daily candle:",C.text,{size:13,anchor:"middle"});
+  // big bullish candle: open low area, long lower wick (manip), close near high (dist)
+  const x=380;
+  line(svg42,x,90,x,300,C.bull,{w:3}); // wick range
+  rect(svg42,x-26,110,52,150,C.bull,{op:1,rx:3}); // body open 260 -> close 110
+  txt(svg42,x+40,120,"close (distribution) ←",C.bull,{size:11});
+  txt(svg42,x+40,265,"open (accumulation) ←",C.dim,{size:11});
+  txt(svg42,x-40,295,"long lower wick = manipulation",C.gold,{size:11,anchor:"end"});
+  line(svg42,x-60,300,x-30,300,C.gold,{w:2});
+  txt(svg42,300,330,"open = A · wick = M · body+close = D",C.dim,{size:12,anchor:"middle"});
+  cap42.textContent="Reading the shape of a forming daily candle tells you which AMD phase price is in right now.";
+}
+let amdTimer=null;
+document.getElementById("playAMD").addEventListener("click",function(){
+  drawAMD(true);this.textContent="↻ Replay";document.getElementById("showCandle").setAttribute("aria-pressed","false");
+});
+document.getElementById("showCandle").addEventListener("click",function(){
+  const on=this.getAttribute("aria-pressed")==="true";
+  if(on){this.setAttribute("aria-pressed","false");drawAMD(false);}
+  else{this.setAttribute("aria-pressed","true");drawDailyCandle();}
+});
+
+/* ---------- 4.3 OTE ---------- */
+const svg43=document.getElementById("svg43"),cap43=document.getElementById("cap43");
+let confl=false;
+function drawOTE(){
+  clear(svg43);
+  const lowY=300,highY=80;
+  line(svg43,40,highY,720,highY,C.struct,{dash:"4 4"});txt(svg43,560,highY-6,"swing high (1.0)",C.struct,{size:10});
+  line(svg43,40,lowY,720,lowY,C.struct,{dash:"4 4"});txt(svg43,44,lowY+16,"swing low (0.0)",C.struct,{size:10});
+  // impulse up + BOS
+  const imp=[[90,300,255,308,250],[120,255,210,262,205],[150,210,160,218,156],[180,160,120,168,116],[210,120,85,128,82]];
+  imp.forEach((p,i)=>candle(svg43,p[0],p[1],p[2],p[3],p[4],{delay:i*55}));
+  marker(svg43,235,78,"BOS",C.gold,5);
+  // fib levels
+  const range=lowY-highY;
+  const f618=highY+range*0.618, f705=highY+range*0.705, f79=highY+range*0.79;
+  rect(svg43,250,f618,400,f79-f618,C.gold,{op:0.12});
+  line(svg43,250,f618,650,f618,C.gold,{dash:"3 3",op:.8});txt(svg43,655,f618+4,"0.618",C.gold,{size:10});
+  line(svg43,250,f705,650,f705,C.gold,{w:2});txt(svg43,655,f705+4,"0.705 ★",C.gold,{size:10,weight:700});
+  line(svg43,250,f79,650,f79,C.gold,{dash:"3 3",op:.8});txt(svg43,655,f79+4,"0.79",C.gold,{size:10});
+  txt(svg43,256,f618-6,"OTE band",C.gold,{size:11});
+  if(confl){
+    rect(svg43,300,f618-4,150,(f79-f618)+8,C.zone,{op:0.28,stroke:C.zone});
+    txt(svg43,308,f705-8,"OB / FVG overlaps OTE",C.zone,{size:11});
+  }
+  // retrace into OTE then continue
+  const ret=[[250,85,140,82,148],[280,140,190,134,198],[310,190,f705-2,184,f79+6]];
+  ret.forEach((p,i)=>candle(svg43,p[0],p[1],p[2],p[3],p[4],{delay:i*55}));
+  marker(svg43,340,f705,"enter 0.705",C.entry,6);
+  xmark(svg43,310,f79+18,C.bear);txt(svg43,300,f79+22,"stop below 0.79",C.bear,{size:10,anchor:"end"});
+  const cont=[[340,f705,150,f705+4,158],[370,150,110,158,156],[400,110,78,118,116],[430,78,55,86,84]];
+  cont.forEach((p,i)=>candle(svg43,p[0],p[1],p[2],p[3],p[4],{delay:i*55}));
+  star(svg43,455,72,C.gold,8);txt(svg43,470,74,"target",C.gold,{size:11});
+  cap43.textContent=confl
+    ? "A+ entry: the 0.618–0.79 band overlaps a valid OB/FVG. Price-level confluence and Fib confluence point at the same spot."
+    : "OTE alone is a Fib zone. Toggle the OB/FVG overlap to see the high-precision confluence entry.";
+}
+document.getElementById("toggleConfluence").addEventListener("click",function(){
+  confl=!confl;this.setAttribute("aria-pressed",confl?"true":"false");
+  this.textContent=confl?"Hide OB/FVG confluence":"Toggle OB/FVG confluence";drawOTE();
+});
+
+/* ---------- 4.4 gaps ---------- */
+const svg44=document.getElementById("svg44"),cap44=document.getElementById("cap44");
+let gapKind="nwog";
+function drawGap(kind,animate){
+  clear(svg44);
+  const closeY=210,openY=130,mid=(closeY+openY)/2;
+  const lblClose=kind==="nwog"?"Friday close":"prior day close";
+  const lblOpen=kind==="nwog"?"Sun/Mon open":"new day open";
+  // pre-gap candles
+  const pre=[[90,260,230,268,225],[120,230,212,238,208],[150,212,210,220,205]];
+  pre.forEach((p,i)=>candle(svg44,p[0],p[1],p[2],p[3],p[4],{delay:animate?i*55:0,anim:animate}));
+  line(svg44,40,closeY,720,closeY,C.struct,{dash:"4 4"});txt(svg44,44,closeY+16,lblClose,C.struct,{size:10});
+  // the gap
+  rect(svg44,180,openY,420,closeY-openY,C.zone,{op:0.16});
+  line(svg44,180,openY,600,openY,C.struct,{dash:"4 4"});txt(svg44,604,openY+4,lblOpen,C.struct,{size:10});
+  line(svg44,180,mid,600,mid,C.gold,{w:2});txt(svg44,604,mid+4,"midpoint (key line)",C.gold,{size:10});
+  txt(svg44,190,openY-8,(kind==="nwog"?"NWOG":"NDOG")+" — un-traded range (inefficiency)",C.zone,{size:11});
+  // post-open candles drift up then return to fill
+  const post=[[190,128,108,134,116],[220,108,90,116,100],[250,90,72,98,96]];
+  post.forEach((p,i)=>candle(svg44,p[0],p[1],p[2],p[3],p[4],{delay:animate?(3+i)*55:0,anim:animate}));
+  if(animate){
+    // return to midpoint, react, then full fill target
+    const ret=[[290,72,120,66,128],[320,120,mid-2,114,mid+6]];
+    ret.forEach((p,i)=>candle(svg44,p[0],p[1],p[2],p[3],p[4],{delay:(6+i)*55,anim:true}));
+    marker(svg44,350,mid,"midpoint reaction",C.entry,6);
+    const drop=[[350,mid,closeY-6,mid-4,closeY+4]];
+    candle(svg44,350,mid,closeY-6,mid-4,closeY+4,{delay:8*55,anim:true});
+    star(svg44,390,closeY,C.gold,8);txt(svg44,406,closeY,"full fill = target",C.gold,{size:11});
+    cap44.textContent="Price returns, reacts at the midpoint (like an FVG's CE), and the full fill completes the inefficiency.";
+  }else{
+    txt(svg44,190,300,"price above gap → gap below is a downside draw",C.dim,{size:11});
+    cap44.textContent="Trade the midpoint reaction; target the full fill. Strongest when the gap coincides with an OB and a sweep.";
+  }
+}
+document.querySelectorAll("button[data-gap]").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll("button[data-gap]").forEach(x=>x.setAttribute("aria-pressed","false"));
+    b.setAttribute("aria-pressed","true");gapKind=b.getAttribute("data-gap");drawGap(gapKind,false);
+    document.getElementById("playGap").textContent="▶ Play fill";
+  });
+});
+document.getElementById("playGap").addEventListener("click",function(){drawGap(gapKind,true);this.textContent="↻ Replay";});
+
+/* ---------- 4.5 intermarket ---------- */
+const svg45=document.getElementById("svg45"),cap45=document.getElementById("cap45");
+function drawIM(kind){
+  clear(svg45);
+  // top panel DXY, bottom panel EURUSD
+  rect(svg45,40,30,680,150,"#0c121c",{rx:8,stroke:C.line});txt(svg45,52,50,"DXY — dollar index",C.gold,{size:12,weight:700});
+  rect(svg45,40,200,680,150,"#0c121c",{rx:8,stroke:C.line});txt(svg45,52,220,"EURUSD",C.gold,{size:12,weight:700});
+  if(kind==="mirror"){
+    // DXY rises to a clear higher high
+    const d=[[110,150,130,158,126],[160,130,150,124,156],[210,150,110,158,106],[260,110,128,104,134],[310,128,86,136,82],[360,86,64,94,60]];
+    d.forEach((p,i)=>candle(svg45,p[0],p[1]-0,p[2]-0,p[3]-0,p[4]-0,{w:11,delay:i*55}));
+    // wait: DXY should DOWN for EUR up mirror; make DXY fall
+    cap45.textContent="";
+  }
+  // Easier: define explicitly per scenario below (redraw)
+  clear(svg45);
+  rect(svg45,40,30,680,150,"#0c121c",{rx:8,stroke:C.line});txt(svg45,52,50,"DXY — dollar index",C.gold,{size:12,weight:700});
+  rect(svg45,40,200,680,150,"#0c121c",{rx:8,stroke:C.line});txt(svg45,52,220,"EURUSD (inverse to DXY)",C.gold,{size:12,weight:700});
+  if(kind==="mirror"){
+    // DXY falling (bearish), EUR rising (bullish) = aligned mirror
+    const d=[[110,70,95,64,100],[160,95,120,90,126],[210,120,100,114,128],[260,100,135,94,142],[310,135,158,128,162]];
+    d.forEach((p,i)=>candle(svg45,p[0],p[1],p[2],p[3],p[4],{w:11,delay:i*55}));
+    marker(svg45,330,158,"DXY → sell-side",C.bear,5);
+    const e=[[110,310,288,316,294],[160,288,262,294,268],[210,262,280,256,286],[260,280,248,286,254],[310,248,224,254,220]];
+    e.forEach((p,i)=>candle(svg45,p[0],p[1],p[2],p[3],p[4],{w:11,delay:i*55}));
+    marker(svg45,330,222,"EUR pushes up",C.bull,5);
+    txt(svg45,400,120,"↕ INVERSE — both confirm: DXY down, EUR up",C.dim,{size:11});
+    star(svg45,360,216,C.gold,8);
+    cap45.textContent="Aligned mirror: DXY bearish drawing to sell-side while EURUSD pushes higher — high-confidence long.";
+  }else{
+    // divergence: EUR makes lower low but DXY fails to make higher high
+    const d=[[110,140,118,146,114],[160,118,96,124,92],[210,96,116,90,122],[260,116,100,122,128],[310,100,112,94,118]];
+    d.forEach((p,i)=>candle(svg45,p[0],p[1],p[2],p[3],p[4],{w:11,delay:i*55}));
+    line(svg45,90,92,360,92,C.struct,{dash:"3 3"});
+    marker(svg45,310,112,"DXY fails new high",C.gold,5);
+    const e=[[110,250,272,244,278],[160,272,294,266,300],[210,294,276,300,302],[260,276,300,270,306],[310,300,288,306,312]];
+    e.forEach((p,i)=>candle(svg45,p[0],p[1],p[2],p[3],p[4],{w:11,delay:i*55}));
+    line(svg45,90,300,360,300,C.struct,{dash:"3 3"});
+    marker(svg45,310,312,"EUR makes lower low",C.gold,5);
+    txt(svg45,400,250,"EUR ↓ but DXY won't confirm ↑ = divergence",C.dim,{size:11});
+    txt(svg45,400,268,"→ early bullish reversal signal on EUR",C.bull,{size:11});
+    cap45.textContent="Divergence: EURUSD prints a lower low but DXY fails its higher high — the dollar isn't confirming, a reversal tell.";
+  }
+}
+document.querySelectorAll("button[data-im]").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll("button[data-im]").forEach(x=>x.setAttribute("aria-pressed","false"));
+    b.setAttribute("aria-pressed","true");drawIM(b.getAttribute("data-im"));
+  });
+});
+
+/* ---------- 4.6 IPDA ---------- */
+const svg46=document.getElementById("svg46"),cap46=document.getElementById("cap46");
+function drawIPDA(look){
+  clear(svg46);
+  const x0=60,x1=720,W=x1-x0;
+  // lookback window shaded from right
+  const frac={ "20":0.45, "40":0.7, "60":0.95 }[look];
+  const winStart=x1-W*frac;
+  rect(svg46,winStart,40,x1-winStart,260,"#ffffff",{op:0.03,rx:6});
+  txt(svg46,winStart+8,58,look+"-day lookback window",C.gold,{size:12,weight:700});
+  // draws shift with lookback: deeper lookbacks expose a higher old high
+  const drawY={ "20":80, "40":62, "60":48 }[look];
+  line(svg46,40,drawY,720,drawY,C.liq,{dash:"6 4",w:2});
+  txt(svg46,560,drawY-6,look+"-day buy-side liq (old high) ★ DRAW",C.liq,{size:11});
+  line(svg46,40,270,720,270,C.liq,{dash:"6 4"});txt(svg46,44,288,"sell-side liq (swept — fuel spent)",C.liq,{size:10});
+  // unfilled FVG draw
+  rect(svg46,300,150,90,34,C.zone,{op:0.18});txt(svg46,304,170,"unfilled FVG (draw)",C.zone,{size:10});
+  // price path: in discount, bullish, OB entry, heading to draw
+  const seq=[[110,250,225,258,255],[150,225,200,232,228],[190,200,228,194,235],[230,228,205,235,240]];
+  seq.forEach((p,i)=>candle(svg46,p[0],p[1],p[2],p[3],p[4],{delay:i*55}));
+  rect(svg46,213,205,34,38,C.zone,{op:0.3,stroke:C.zone});txt(svg46,250,228,"OB (discount entry)",C.zone,{size:11});
+  marker(svg46,230,224,"",C.entry,5);
+  xmark(svg46,230,252,C.bear);txt(svg46,242,258,"stop below OB",C.bear,{size:10});
+  // projected delivery to draw
+  line(svg46,250,222,440,drawY+8,C.gold,{dash:"4 4",op:.7});
+  const arrow=document.createElementNS(NS,"polygon");
+  arrow.setAttribute("points",(440)+","+(drawY+8)+" "+(432)+","+(drawY+2)+" "+(434)+","+(drawY+16));
+  arrow.setAttribute("fill",C.gold);svg46.appendChild(arrow);
+  star(svg46,470,drawY,C.gold,8);txt(svg46,486,drawY,"price 'programmed' here next",C.gold,{size:11});
+  cap46.textContent="The "+look+"-day window frames the draw. Entry (OB) is where you get in; the draw is the destination. Thesis = both ends.";
+}
+document.querySelectorAll("button[data-look]").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll("button[data-look]").forEach(x=>x.setAttribute("aria-pressed","false"));
+    b.setAttribute("aria-pressed","true");drawIPDA(b.getAttribute("data-look"));
+  });
+});
+
+/* init */
+drawAMD(false);
+drawOTE();
+drawGap("nwog",false);
+drawIM("mirror");
+drawIPDA("20");
+</script>
+</body>
+</html>

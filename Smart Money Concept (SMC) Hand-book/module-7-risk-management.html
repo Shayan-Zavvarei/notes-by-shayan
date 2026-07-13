@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SMC Handbook · Module 7 — Risk Management</title>
+<style>
+  :root{
+    --ink:#0a0e14; --panel:#111722; --panel-2:#161e2b; --line:#243044;
+    --bull:#22c55e; --bear:#ef4444; --zone:#3b82f6; --entry:#f97316;
+    --liq:#a855f7; --struct:#8a98ad; --text:#e6edf6; --dim:#8493a8; --gold:#e8b923;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{transition-duration:.001ms !important}}
+  body{margin:0; background:radial-gradient(1200px 600px at 80% -10%, #16202e 0%, transparent 60%), var(--ink); color:var(--text); font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; line-height:1.5; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px; margin:0 auto; padding:48px 24px 96px}
+  .eyebrow{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; letter-spacing:.32em; text-transform:uppercase; color:var(--gold); margin:0 0 14px}
+  h1{font-size:clamp(32px,5.5vw,56px); line-height:1.04; margin:0 0 10px; font-weight:600; letter-spacing:-.01em}
+  .sub{color:var(--dim); font-size:18px; max-width:64ch; margin:0 0 8px}
+  .note{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--text); border-left:2px solid var(--bull); padding:8px 0 8px 14px; margin:18px 0 0; max-width:78ch}
+  .rule{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:28px 0 0}
+  section{margin-top:48px; background:linear-gradient(180deg,var(--panel),var(--panel-2)); border:1px solid var(--line); border-radius:16px; padding:28px 26px 30px; box-shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 24px 48px -32px rgba(0,0,0,.8)}
+  .tag{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink); background:var(--gold); display:inline-block; padding:4px 9px; border-radius:5px; font-weight:700}
+  h2{font-size:clamp(22px,3.2vw,28px); margin:14px 0 6px; font-weight:600; letter-spacing:-.01em}
+  .lede{color:var(--dim); margin:0 0 16px; font-size:15.5px; max-width:78ch}
+  svg{width:100%; height:auto; display:block; background:#0c121c; border:1px solid var(--line); border-radius:12px}
+  figcaption{color:var(--dim); font-size:13px; margin-top:12px; font-family:ui-monospace,Menlo,monospace}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:22px}
+  @media (max-width:680px){.grid2{grid-template-columns:1fr}}
+  .field{margin-bottom:15px}
+  .field label{display:block; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--dim); margin-bottom:6px}
+  .field input, .field select{width:100%; background:#0c121c; border:1px solid var(--line); color:var(--text); border-radius:9px; padding:11px 12px; font-family:ui-monospace,Menlo,monospace; font-size:14px}
+  .field input:focus, .field select:focus{outline:2px solid var(--gold); outline-offset:0; border-color:var(--gold)}
+  .row{display:flex; gap:10px}
+  .row .field{flex:1}
+  .panelbox{background:#0c121c; border:1px solid var(--line); border-radius:12px; padding:18px}
+  .out-label{font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--dim)}
+  .bignum{font-family:ui-monospace,Menlo,monospace; font-size:30px; font-weight:700; letter-spacing:-.02em; color:var(--gold)}
+  .outline-item{display:flex; justify-content:space-between; font-family:ui-monospace,Menlo,monospace; font-size:13px; padding:7px 0; border-bottom:1px solid var(--line)}
+  .outline-item span:last-child{color:var(--text)}
+  .outline-item span:first-child{color:var(--dim)}
+  .check{font-family:ui-monospace,Menlo,monospace; font-size:13px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line)}
+  .check.ok{color:var(--bull)} .check.bad{color:var(--bear)}
+  input[type=range]{width:100%; accent-color:var(--gold); height:4px}
+  .toc{display:flex; flex-wrap:wrap; gap:10px; margin-top:22px}
+  .toc a{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--dim); text-decoration:none; border:1px solid var(--line); padding:7px 11px; border-radius:8px}
+  .toc a:hover{color:var(--gold); border-color:var(--gold)}
+  .footnote{color:var(--dim); font-size:12.5px; margin-top:40px; font-family:ui-monospace,Menlo,monospace; text-align:center}
+  .disc{font-size:11.5px; color:var(--dim); margin-top:12px; font-family:ui-monospace,Menlo,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">SMC Master Handbook · Module 7</p>
+  <h1>Risk Management</h1>
+  <p class="sub">The only module whose math you can trust without a backtest. Position sizing, drawdown recovery, break-even win rates, partial-TP blending, and the circuit-breaker ladder that keeps you in the game.</p>
+  <p class="note">Position-sizing arithmetic, recovery math, and break-even formulas are objectively correct — not estimates. Risk is the constant; position size is the variable. The stop is set by structure; size is whatever makes that stop cost your chosen %.</p>
+  <div class="rule"></div>
+
+  <nav class="toc" aria-label="Module contents">
+    <a href="#sizer">Position-Size Calculator</a>
+    <a href="#dd">Drawdown &amp; Recovery</a>
+    <a href="#be">Break-even Win Rate</a>
+    <a href="#blend">Partial-TP Blend</a>
+    <a href="#ladder">Circuit-Breaker Ladder</a>
+  </nav>
+
+  <!-- POSITION SIZER -->
+  <section id="sizer">
+    <span class="tag">7.1</span>
+    <h2>Position-Size Calculator</h2>
+    <p class="lede">Usable on real trades. Enter account, risk %, entry, and stop — the calculator derives the stop distance and outputs the position size for the selected instrument. Change the instrument to see how contract specs change the size.</p>
+    <div class="grid2">
+      <div>
+        <div class="row">
+          <div class="field"><label>Account ($)</label><input id="acct" type="number" value="10000" /></div>
+          <div class="field"><label>Risk %</label><input id="riskp" type="number" value="1" step="0.25" /></div>
+        </div>
+        <div class="field"><label>Instrument</label>
+          <select id="instr">
+            <option value="eurusd">EURUSD (FX major)</option>
+            <option value="gbpusd">GBPUSD (FX major)</option>
+            <option value="xauusd">XAUUSD (Gold)</option>
+            <option value="btcusdt">BTCUSDT (Crypto)</option>
+          </select>
+        </div>
+        <div class="row">
+          <div class="field"><label>Entry price</label><input id="entry" type="number" value="1.08500" step="0.00001" /></div>
+          <div class="field"><label>Stop-loss price</label><input id="stop" type="number" value="1.08350" step="0.00001" /></div>
+        </div>
+        <div class="disc">Direction is inferred (stop below entry = long, above = short). Contract specs are typical defaults — always confirm with your broker.</div>
+      </div>
+      <div class="panelbox">
+        <div class="out-label">POSITION SIZE</div>
+        <div class="bignum" id="sizeOut">0.33 lots</div>
+        <div id="sizeAlt" class="disc" style="margin-top:4px"></div>
+        <div style="margin-top:14px">
+          <div class="outline-item"><span>Risk amount</span><span id="riskAmt">$100.00</span></div>
+          <div class="outline-item"><span>Stop distance</span><span id="stopDist">15.0 pips</span></div>
+          <div class="outline-item"><span>Value per unit move</span><span id="valUnit">$10 / pip / lot</span></div>
+          <div class="outline-item"><span>Notional exposure</span><span id="notional">—</span></div>
+        </div>
+        <div class="check ok" id="sizeCheck">✓ Loss at stop = $100.00 = 1.00% of account</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DRAWDOWN -->
+  <section id="dd">
+    <span class="tag">7.1</span>
+    <h2>Drawdown &amp; the Recovery Trap</h2>
+    <p class="lede">Two truths in one chart. Left: a losing streak's drawdown at different risk %. Right: the gain needed to recover a given drawdown — which goes exponential past ~25%. Drag the streak length and risk.</p>
+    <div class="grid2" style="align-items:start">
+      <div>
+        <div class="field"><label>Consecutive losses: <b id="streakV" style="color:var(--gold)">10</b></label><input id="streak" type="range" min="1" max="20" value="10" /></div>
+        <div class="field"><label>Risk per trade: <b id="ddRiskV" style="color:var(--gold)">1%</b></label><input id="ddRisk" type="range" min="0.5" max="10" value="1" step="0.5" /></div>
+        <div class="panelbox" style="margin-top:6px">
+          <div class="outline-item"><span>Equity after streak</span><span id="eqAfter">90.4%</span></div>
+          <div class="outline-item"><span>Drawdown</span><span id="ddPct">−9.6%</span></div>
+          <div class="outline-item"><span>Gain needed to recover</span><span id="recPct">+10.6%</span></div>
+          <div class="check" id="ddVerdict"></div>
+        </div>
+      </div>
+      <figure style="margin:0">
+        <svg id="svgDD" viewBox="0 0 420 300" role="img" aria-label="Drawdown versus recovery gain curve"></svg>
+        <figcaption>The recovery curve bends sharply upward — large drawdowns demand near-impossible comebacks.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- BREAK-EVEN -->
+  <section id="be">
+    <span class="tag">7.2</span>
+    <h2>Break-even Win Rate by R:R</h2>
+    <p class="lede">Break-even Win% = 1 / (1 + R:R). At 1:3 you need only 25% wins; at 1:1 you need over 50%. This is why high-R:R SMC setups stay profitable below a coin-flip win rate. Bars show the threshold; the line is your selected win rate.</p>
+    <div class="field" style="max-width:340px"><label>Your win rate: <b id="userWinV" style="color:var(--gold)">40%</b></label><input id="userWin" type="range" min="15" max="70" value="40" /></div>
+    <figure>
+      <svg id="svgBE" viewBox="0 0 760 300" role="img" aria-label="Break-even win rate bars with user win rate line"></svg>
+      <figcaption id="beCap">Green bars sit below your win-rate line = profitable R:R; red bars sit above it = losing R:R at your accuracy.</figcaption>
+    </figure>
+  </section>
+
+  <!-- BLEND -->
+  <section id="blend">
+    <span class="tag">7.2</span>
+    <h2>Partial-TP Blend</h2>
+    <p class="lede">Taking too much off early quietly destroys your R:R. Set the split and the two targets — the calculator shows your blended (effective) R:R and whether it clears the 1:3 minimum. Watch over-weighting the early TP wreck the edge.</p>
+    <div class="grid2">
+      <div>
+        <div class="field"><label>% closed at TP1: <b id="splitV" style="color:var(--gold)">50%</b></label><input id="split" type="range" min="10" max="90" value="50" step="5" /></div>
+        <div class="row">
+          <div class="field"><label>TP1 (R)</label><input id="tp1" type="number" value="2" step="0.5" /></div>
+          <div class="field"><label>TP2 (R)</label><input id="tp2" type="number" value="4" step="0.5" /></div>
+        </div>
+      </div>
+      <div class="panelbox">
+        <div class="out-label">BLENDED (EFFECTIVE) R:R</div>
+        <div class="bignum" id="blendOut">1:3.0</div>
+        <div class="disc" id="blendEqn" style="margin-top:6px"></div>
+        <div class="check" id="blendCheck" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LADDER -->
+  <section id="ladder">
+    <span class="tag">7.3</span>
+    <h2>The Circuit-Breaker Ladder</h2>
+    <p class="lede">Risk management is enforced at four nested levels. Each is a hard stop, not a guideline. The ladder is what guarantees a bad trade can't become a bad day, and a bad day can't become a blown account.</p>
+    <figure>
+      <svg id="svgLadder" viewBox="0 0 760 340" role="img" aria-label="Nested risk circuit breaker ladder from per-trade to recovery"></svg>
+      <figcaption>Per-trade → per-day → per-week → recovery. Small risk keeps you in linear recovery; large risk drops you into the exponential trap.</figcaption>
+    </figure>
+  </section>
+
+  <p class="footnote">SMC Master Handbook · Module 7 of 9 · this module's math is objectively correct · risk is the constant, size is the variable</p>
+</div>
+
+<script>
+"use strict";
+const NS="http://www.w3.org/2000/svg";
+const C={bull:"#22c55e",bear:"#ef4444",zone:"#3b82f6",entry:"#f97316",liq:"#a855f7",struct:"#8a98ad",gold:"#e8b923",dim:"#8493a8",text:"#e6edf6"};
+
+function txt(p,x,y,s,col,{size=12,weight=400,anchor="start"}={}){
+  const t=document.createElementNS(NS,"text");
+  t.setAttribute("x",x);t.setAttribute("y",y);t.setAttribute("fill",col);
+  t.setAttribute("font-size",size);t.setAttribute("font-weight",weight);
+  t.setAttribute("font-family","monospace");t.setAttribute("text-anchor",anchor);
+  t.textContent=s;p.appendChild(t);return t;
+}
+function rect(p,x,y,w,h,col,{op=1,rx=3,stroke=null}={}){
+  const r=document.createElementNS(NS,"rect");
+  r.setAttribute("x",x);r.setAttribute("y",y);r.setAttribute("width",w);r.setAttribute("height",h);
+  r.setAttribute("fill",col);r.setAttribute("opacity",op);r.setAttribute("rx",rx);
+  if(stroke){r.setAttribute("stroke",stroke);r.setAttribute("stroke-width","1.5");}
+  p.appendChild(r);return r;
+}
+function line(p,x1,y1,x2,y2,col,{dash=null,w=1.5,op=1}={}){
+  const l=document.createElementNS(NS,"line");
+  l.setAttribute("x1",x1);l.setAttribute("y1",y1);l.setAttribute("x2",x2);l.setAttribute("y2",y2);
+  l.setAttribute("stroke",col);l.setAttribute("stroke-width",w);l.setAttribute("opacity",op);
+  if(dash)l.setAttribute("stroke-dasharray",dash);p.appendChild(l);return l;
+}
+function path(p,d,col,{w=2,fill="none"}={}){
+  const el=document.createElementNS(NS,"path");el.setAttribute("d",d);el.setAttribute("stroke",col);
+  el.setAttribute("stroke-width",w);el.setAttribute("fill",fill);p.appendChild(el);return el;
+}
+function clear(s){while(s.firstChild)s.removeChild(s.firstChild);}
+
+/* ---------- POSITION SIZER ---------- */
+// instrument specs: pip size (price units per 'pip'), value per pip per 1.0 lot, contract size for notional
+const SPEC={
+  eurusd:{pip:0.0001, valPerLot:10, dp:5, unit:"pip", lotName:"lots", contract:100000},
+  gbpusd:{pip:0.0001, valPerLot:10, dp:5, unit:"pip", lotName:"lots", contract:100000},
+  xauusd:{pip:0.10,   valPerLot:10, dp:2, unit:"pip", lotName:"lots (100oz)", contract:100},
+  btcusdt:{pip:1,     valPerLot:1,  dp:2, unit:"point", lotName:"BTC", contract:1}
+};
+const els=["acct","riskp","instr","entry","stop"].map(id=>document.getElementById(id));
+function fmtMoney(x){return "$"+x.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
+function sizer(){
+  const acct=+document.getElementById("acct").value||0;
+  const riskp=+document.getElementById("riskp").value||0;
+  const instr=document.getElementById("instr").value;
+  const entry=+document.getElementById("entry").value||0;
+  const stop=+document.getElementById("stop").value||0;
+  const sp=SPEC[instr];
+  const riskAmt=acct*riskp/100;
+  const dist=Math.abs(entry-stop);
+  const pips=dist/sp.pip;
+  // value per pip per lot
+  const valPerPipPerLot=sp.valPerLot;
+  const lots= pips>0 ? riskAmt/(pips*valPerPipPerLot) : 0;
+  document.getElementById("riskAmt").textContent=fmtMoney(riskAmt);
+  document.getElementById("stopDist").textContent=pips.toFixed(1)+" "+sp.unit+"s";
+  document.getElementById("valUnit").textContent="$"+valPerPipPerLot+" / "+sp.unit+" / lot";
+  const sizeOut=document.getElementById("sizeOut");
+  if(instr==="btcusdt"){
+    sizeOut.textContent=lots.toFixed(3)+" BTC";
+    document.getElementById("sizeAlt").textContent="(notional shown below; risk is capped by the tight stop)";
+  }else{
+    sizeOut.textContent=lots.toFixed(3)+" "+sp.lotName;
+    const mini=lots*10, micro=lots*100;
+    document.getElementById("sizeAlt").textContent="= "+mini.toFixed(2)+" mini = "+micro.toFixed(0)+" micro lots";
+  }
+  // notional
+  const notional = lots*sp.contract*entry;
+  document.getElementById("notional").textContent = instr==="btcusdt"
+    ? fmtMoney(lots*entry) : fmtMoney(notional);
+  // check
+  const lossAtStop=lots*pips*valPerPipPerLot;
+  const pct=acct>0?lossAtStop/acct*100:0;
+  const chk=document.getElementById("sizeCheck");
+  if(dist<=0){chk.textContent="✗ Stop must differ from entry"; chk.className="check bad";}
+  else{chk.textContent="✓ Loss at stop = "+fmtMoney(lossAtStop)+" = "+pct.toFixed(2)+"% of account ("+(stop<entry?"long":"short")+")"; chk.className="check ok";}
+}
+els.forEach(el=>el.addEventListener("input",sizer));
+// preset entry/stop when instrument changes
+document.getElementById("instr").addEventListener("change",function(){
+  const presets={eurusd:[1.08500,1.08350],gbpusd:[1.27000,1.26800],xauusd:[2400.00,2397.00],btcusdt:[67000,66800]};
+  const p=presets[this.value];
+  document.getElementById("entry").value=p[0];
+  document.getElementById("stop").value=p[1];
+  document.getElementById("entry").step = this.value==="btcusdt"?1:(this.value==="xauusd"?0.01:0.00001);
+  document.getElementById("stop").step = document.getElementById("entry").step;
+  sizer();
+});
+
+/* ---------- DRAWDOWN ---------- */
+function recCurve(){
+  const s=document.getElementById("svgDD");
+  clear(s);
+  const x0=50,y0=260,W=340,H=220;
+  // axes
+  line(s,x0,y0,x0+W,y0,C.struct,{w:1.5});line(s,x0,y0,x0,y0-H,C.struct,{w:1.5});
+  txt(s,x0+W/2,290,"drawdown % →",C.dim,{size:11,anchor:"middle"});
+  const yl=txt(s,18,150,"gain to recover % →",C.dim,{size:11,anchor:"middle"});yl.setAttribute("transform","rotate(-90 18 150)");
+  // curve gain = d/(1-d), d from 0..0.8, gain capped display 0..200
+  const dx=d=>x0+(d/0.8)*W, gy=g=>y0-(Math.min(g,200)/200)*H;
+  for(let g=0;g<=200;g+=50){const y=gy(g);line(s,x0,y,x0+W,y,"#1a2433",{w:1});txt(s,x0-8,y+4,g+"%",C.dim,{size:9,anchor:"end"});}
+  let d="M";
+  for(let i=0;i<=80;i++){const dd=i/100;const g=dd/(1-dd)*100;d+= (dx(dd))+","+(gy(g))+" ";}
+  path(s,d,C.gold,{w:2.5});
+  // markers at key drawdowns
+  [[0.1,11.1],[0.25,33.3],[0.5,100],[0.65,185.7]].forEach(([dd,g])=>{
+    const x=dx(dd),y=gy(g);
+    const c=document.createElementNS(NS,"circle");c.setAttribute("cx",x);c.setAttribute("cy",y);c.setAttribute("r",4);c.setAttribute("fill",dd>=0.5?C.bear:C.gold);s.appendChild(c);
+    txt(s,x+6,y-6,"−"+(dd*100)+"%→+"+Math.round(g)+"%",dd>=0.5?C.bear:C.dim,{size:9});
+  });
+  // current point
+  const streak=+document.getElementById("streak").value, r=+document.getElementById("ddRisk").value/100;
+  const eq=Math.pow(1-r,streak); const dd=1-eq; const g=dd/(1-dd)*100;
+  const cx=dx(dd),cy=gy(g);
+  const cur=document.createElementNS(NS,"circle");cur.setAttribute("cx",cx);cur.setAttribute("cy",cy);cur.setAttribute("r",6);cur.setAttribute("fill",C.entry);cur.setAttribute("stroke","#fff");cur.setAttribute("stroke-width","1.5");s.appendChild(cur);
+}
+function updateDD(){
+  const streak=+document.getElementById("streak").value, r=+document.getElementById("ddRisk").value/100;
+  document.getElementById("streakV").textContent=streak;
+  document.getElementById("ddRiskV").textContent=(r*100)+"%";
+  const eq=Math.pow(1-r,streak); const dd=1-eq; const rec=dd/(1-dd);
+  document.getElementById("eqAfter").textContent=(eq*100).toFixed(1)+"%";
+  document.getElementById("ddPct").textContent="−"+(dd*100).toFixed(1)+"%";
+  document.getElementById("recPct").textContent="+"+(rec*100).toFixed(1)+"%";
+  const v=document.getElementById("ddVerdict");
+  if(dd<0.15){v.textContent="✓ Linear-recovery zone — survivable, barely felt.";v.className="check ok";}
+  else if(dd<0.30){v.textContent="◐ Painful but recoverable with discipline.";v.className="check";v.style.color=C.gold;}
+  else{v.textContent="✗ Exponential-recovery trap — this is how accounts die.";v.className="check bad";}
+  recCurve();
+}
+document.getElementById("streak").addEventListener("input",updateDD);
+document.getElementById("ddRisk").addEventListener("input",updateDD);
+
+/* ---------- BREAK-EVEN ---------- */
+function drawBE(){
+  const s=document.getElementById("svgBE");clear(s);
+  const ratios=[1,1.5,2,3,4,5];
+  const x0=70,baseY=250,W=620,bw=70,gap=(W-bw*ratios.length)/(ratios.length-1);
+  const userWin=+document.getElementById("userWin").value;
+  document.getElementById("userWinV").textContent=userWin+"%";
+  for(let p=0;p<=60;p+=10){const y=baseY-(p/60)*210;line(s,x0,y,x0+W,y,"#1a2433",{w:1});txt(s,x0-10,y+4,p+"%",C.dim,{size:10,anchor:"end"});}
+  // user win line
+  const uy=baseY-(userWin/60)*210;
+  line(s,x0,uy,x0+W,uy,C.gold,{w:2,dash:"6 4"});txt(s,x0+W+2,uy+4,"you "+userWin+"%",C.gold,{size:10});
+  ratios.forEach((r,i)=>{
+    const be=(1/(1+r))*100;
+    const x=x0+i*(bw+gap);
+    const h=(be/60)*210;
+    const profitable=userWin>be;
+    const col=profitable?C.bull:C.bear;
+    rect(s,x,baseY-h,bw,h,col,{op:0.8,rx:5});
+    txt(s,x+bw/2,baseY-h-8,be.toFixed(0)+"%",col,{size:12,weight:700,anchor:"middle"});
+    txt(s,x+bw/2,baseY+18,"1:"+r,C.text,{size:11,anchor:"middle"});
+  });
+  txt(s,x0,290,"R:R →   bar = break-even win% · below your line (green) = profitable",C.dim,{size:11});
+  const profCount=ratios.filter(r=>userWin>(1/(1+r))*100).length;
+  document.getElementById("beCap").textContent="At "+userWin+"% win rate, "+profCount+" of these "+ratios.length+" R:R levels are profitable (green). Higher R:R forgives lower accuracy.";
+}
+document.getElementById("userWin").addEventListener("input",drawBE);
+
+/* ---------- BLEND ---------- */
+function updateBlend(){
+  const split=+document.getElementById("split").value/100;
+  const tp1=+document.getElementById("tp1").value||0;
+  const tp2=+document.getElementById("tp2").value||0;
+  document.getElementById("splitV").textContent=(split*100)+"%";
+  const blend=split*tp1+(1-split)*tp2;
+  document.getElementById("blendOut").textContent="1:"+blend.toFixed(2);
+  document.getElementById("blendEqn").innerHTML="= ("+split.toFixed(2)+" × "+tp1+") + ("+(1-split).toFixed(2)+" × "+tp2+") = "+(split*tp1).toFixed(2)+" + "+((1-split)*tp2).toFixed(2);
+  const chk=document.getElementById("blendCheck");
+  if(blend>=3){chk.textContent="✓ Clears the 1:3 minimum — edge intact.";chk.className="check ok";}
+  else if(blend>=2){chk.textContent="◐ Below 1:3 — acceptable only if win rate is high.";chk.className="check";chk.style.color=C.gold;}
+  else{chk.textContent="✗ Edge eroded — over-weighting the early TP destroyed the R:R.";chk.className="check bad";}
+}
+["split","tp1","tp2"].forEach(id=>document.getElementById(id).addEventListener("input",updateBlend));
+
+/* ---------- LADDER ---------- */
+(function(){
+  const s=document.getElementById("svgLadder");
+  const rungs=[
+    {y:30,w:640,label:"PER TRADE",detail:"risk 1% (max 2%) — the atom",col:C.bull},
+    {y:95,w:520,label:"PER DAY",detail:"stop at −2 to −3R — close the platform",col:C.gold},
+    {y:160,w:400,label:"PER WEEK",detail:"stop at −5 to −6R — audit + demo + half-size return",col:C.entry},
+    {y:225,w:280,label:"RECOVERY MATH",detail:"−10%→+11% · −25%→+33% · −50%→+100%",col:C.bear}
+  ];
+  rungs.forEach((r,i)=>{
+    const x=60+(640-r.w)/2*0; // left aligned
+    rect(s,60,r.y,r.w,48,r.col,{op:0.18,rx:8,stroke:r.col});
+    txt(s,76,r.y+22,r.label,r.col,{size:13,weight:700});
+    txt(s,76,r.y+40,r.detail,C.dim,{size:11});
+    if(i<rungs.length-1){
+      const ax=60+30;
+      line(s,ax,r.y+48,ax,rungs[i+1].y,C.struct,{w:1.5});
+      const arrow=document.createElementNS(NS,"polygon");
+      const ty=rungs[i+1].y;
+      arrow.setAttribute("points",ax+","+ty+" "+(ax-5)+","+(ty-7)+" "+(ax+5)+","+(ty-7));
+      arrow.setAttribute("fill",C.struct);s.appendChild(arrow);
+    }
+  });
+  txt(s,60,310,"Each rung is a hard stop, not a guideline. Small risk = linear recovery; large risk = exponential trap.",C.dim,{size:11});
+})();
+
+/* init */
+sizer(); updateDD(); drawBE(); updateBlend();
+</script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SMC Handbook · 9.2 — The First Move Is the Fake Move</title>
+<style>
+  :root{--ink:#0a0e14;--panel:#111722;--panel-2:#161e2b;--line:#243044;--bull:#22c55e;--bear:#ef4444;--zone:#3b82f6;--entry:#f97316;--liq:#a855f7;--struct:#8a98ad;--text:#e6edf6;--dim:#8493a8;--gold:#e8b923}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{animation:none !important;transition-duration:.001ms !important}}
+  body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#16202e 0%,transparent 60%),var(--ink);color:var(--text);font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:48px 24px 96px}
+  .eyebrow{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);margin:0 0 14px}
+  h1{font-size:clamp(32px,5.5vw,56px);line-height:1.04;margin:0 0 10px;font-weight:600;letter-spacing:-.01em}
+  .sub{color:var(--dim);font-size:18px;max-width:64ch;margin:0 0 8px}
+  .note{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--text);border-left:2px solid var(--gold);padding:8px 0 8px 14px;margin:18px 0 0;max-width:78ch}
+  .rule{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:28px 0 0}
+  section{margin-top:48px;background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:16px;padding:28px 26px 30px;box-shadow:0 1px 0 rgba(255,255,255,.02) inset,0 24px 48px -32px rgba(0,0,0,.8)}
+  .tag{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);background:var(--gold);display:inline-block;padding:4px 9px;border-radius:5px;font-weight:700}
+  h2{font-size:clamp(22px,3.2vw,28px);margin:14px 0 6px;font-weight:600;letter-spacing:-.01em}
+  .lede{color:var(--dim);margin:0 0 16px;font-size:15.5px;max-width:78ch}
+  figcaption{color:var(--dim);font-size:13px;margin-top:12px;font-family:ui-monospace,Menlo,monospace;max-width:78ch}
+  svg{width:100%;height:auto;display:block;background:#0c121c;border:1px solid var(--line);border-radius:12px}
+  .toggle-row{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+  button.seg-btn{flex:1;min-width:96px;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--text);background:#0e1622;border:1px solid var(--line);padding:9px;border-radius:8px;cursor:pointer;transition:border-color .2s,background .2s}
+  button.seg-btn:hover{border-color:var(--gold)}button.seg-btn.on{border-color:var(--gold);color:var(--gold);background:#101826}
+  .btnrow{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;align-items:center}
+  button.ctl{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--text);background:#0e1622;border:1px solid var(--line);padding:9px 14px;border-radius:9px;cursor:pointer}
+  button.ctl:hover,button.ctl.active{border-color:var(--gold);color:var(--gold)}
+  .readout{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--dim);margin-left:4px}
+  .stepbox{margin-top:14px;padding:14px 16px;background:#0c121c;border:1px solid var(--line);border-radius:10px;font-family:ui-monospace,Menlo,monospace;font-size:13px;min-height:52px}
+  .stepbox b{color:var(--gold)}
+  .footnote{color:var(--dim);font-size:12.5px;margin-top:40px;font-family:ui-monospace,Menlo,monospace;text-align:center}
+  #fake,#real{stroke-dasharray:400;stroke-dashoffset:400;opacity:0}
+  #fake.show{opacity:1;animation:draw .7s ease forwards}
+  #real.show{opacity:1;animation:draw 1s ease forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .lab{opacity:0;transition:opacity .3s}.lab.show{opacity:1}
+  .star{transform-box:fill-box;transform-origin:center;animation:tw 2s ease-in-out infinite}@keyframes tw{0%,100%{opacity:.6;transform:scale(.9)}50%{opacity:1;transform:scale(1.15)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">SMC Master Handbook · Module 9.2</p>
+  <h1>The First Move Is the Fake Move</h1>
+  <p class="sub">News supplies the volatility that <em>is</em> the sweep. In the accumulation → manipulation → distribution arc, a release is the perfect cover for the manipulation leg: the spike "explains itself," so the stop-run looks like a fundamental reaction.</p>
+  <p class="note">Nothing new is happening — it is the same model with a scheduled catalyst attached. When a high-impact release prints, do not chase the first candle. Watch which liquidity it takes; if it sweeps against your bias then displaces back, the fake move just handed you the discount.</p>
+  <div class="rule"></div>
+
+  <section>
+    <span class="tag">9.2</span>
+    <h2>Spike, Trap, then Deliver</h2>
+    <p class="lede">The initial impulse runs the liquidity nearest price, trips stops and induces breakout entries — and only then does price deliver toward the higher-timeframe draw. Step through the sequence, or press play.</p>
+
+    <svg id="chart" viewBox="0 0 340 282" role="img" aria-label="News manipulation diagram">
+      <line x1="20" y1="60" x2="325" y2="60" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="5 3"/>
+      <text x="210" y="54" fill="#a855f7" font-size="10" font-family="ui-monospace,Menlo,monospace">Buy-side liquidity</text>
+      <line x1="20" y1="220" x2="325" y2="220" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="5 3"/>
+      <text x="22" y="236" fill="#a855f7" font-size="10" font-family="ui-monospace,Menlo,monospace">Draw on liquidity (target)</text>
+      <rect x="40" y="120" width="120" height="40" fill="#3b82f6" opacity="0.12"/>
+      <text x="48" y="115" fill="#60a5fa" font-size="9" font-family="ui-monospace,Menlo,monospace">pre-news range</text>
+      <line x1="150" y1="100" x2="150" y2="240" stroke="#f97316" stroke-width="1.5" stroke-dasharray="3 3"/>
+      <text x="128" y="252" fill="#fdba74" font-size="9" font-family="ui-monospace,Menlo,monospace">release</text>
+      <polyline points="50,140 80,138 110,142 140,140" fill="none" stroke="#e6edf6" stroke-width="2"/>
+      <polyline id="fake" points="140,140 155,95 168,62 178,90" fill="none" stroke="#ef4444" stroke-width="2.5"/>
+      <text class="lab" id="lfake" x="172" y="80" fill="#fca5a5" font-size="9" font-weight="bold" font-family="ui-monospace,Menlo,monospace">FAKE ↑</text>
+      <polyline id="real" points="178,90 200,130 230,165 260,195 290,218" fill="none" stroke="#22c55e" stroke-width="2.5"/>
+      <text class="lab" id="lreal" x="220" y="150" fill="#86efac" font-size="9" font-weight="bold" font-family="ui-monospace,Menlo,monospace">REAL move ↓ to draw</text>
+      <text class="lab star" id="lstar" x="296" y="216" fill="#22c55e" font-size="14">★</text>
+    </svg>
+
+    <div class="toggle-row">
+      <button class="seg-btn on" data-step="0">1. Before</button>
+      <button class="seg-btn" data-step="1">2. Fake spike</button>
+      <button class="seg-btn" data-step="2">3. Real move</button>
+    </div>
+    <div class="btnrow"><button class="ctl" id="play">▶ Play</button><span class="readout" id="status">step 1</span></div>
+    <div class="stepbox" id="stepbox"></div>
+    <figcaption>This is the source of the trader's heuristic that the first move on news is often the fake move. Chase the first candle and you are the liquidity.</figcaption>
+  </section>
+
+  <p class="footnote">SMC Master Handbook · Module 9 · news is an excuse for the algo to run liquidity both sides</p>
+</div>
+<script>
+"use strict";
+const fake=document.getElementById("fake"),real=document.getElementById("real");
+const labs={fake:document.getElementById("lfake"),real:document.getElementById("lreal"),star:document.getElementById("lstar")};
+const btns=document.querySelectorAll(".seg-btn"),stepbox=document.getElementById("stepbox"),status=document.getElementById("status"),play=document.getElementById("play");
+const TXT=["<b>Before.</b> Price coils in the pre-news range, liquidity resting on both sides.",
+"<b>Fake spike.</b> The release spikes up to run buy-side liquidity and trap breakout longs — the move that 'makes no sense' afterward.",
+"<b>Real move.</b> Having trapped the crowd, price delivers down toward the draw the HTF already mapped. The first move was the fake."];
+function set(step){
+  step=+step;
+  fake.classList.toggle("show",step>=1);labs.fake.classList.toggle("show",step>=1);
+  real.classList.toggle("show",step>=2);labs.real.classList.toggle("show",step>=2);labs.star.classList.toggle("show",step>=2);
+  // restart draw animation on reveal
+  if(step>=1){fake.style.animation="none";void fake.offsetWidth;fake.style.animation="";}
+  if(step>=2){real.style.animation="none";void real.offsetWidth;real.style.animation="";}
+  btns.forEach(b=>b.classList.toggle("on",+b.dataset.step===step));
+  stepbox.innerHTML=TXT[step];status.textContent="step "+(step+1);
+}
+btns.forEach(b=>b.addEventListener("click",()=>set(b.dataset.step)));
+play.addEventListener("click",()=>{set(0);setTimeout(()=>set(1),700);setTimeout(()=>set(2),1700);});
+set(0);
+if(!matchMedia("(prefers-reduced-motion: reduce)").matches){setTimeout(()=>{set(1);setTimeout(()=>set(2),1000);},700);}else{set(2);}
+</script>
+</body>
+</html>

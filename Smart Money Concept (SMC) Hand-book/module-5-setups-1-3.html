@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SMC Handbook · Module 5 (1–3) — Trading Setups</title>
+<style>
+  :root{
+    --ink:#0a0e14; --panel:#111722; --panel-2:#161e2b; --line:#243044;
+    --bull:#22c55e; --bear:#ef4444; --zone:#3b82f6; --entry:#f97316;
+    --liq:#a855f7; --struct:#8a98ad; --text:#e6edf6; --dim:#8493a8; --gold:#e8b923;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    *{animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important}
+  }
+  body{margin:0; background:radial-gradient(1200px 600px at 80% -10%, #16202e 0%, transparent 60%), var(--ink); color:var(--text); font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; line-height:1.5; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px; margin:0 auto; padding:48px 24px 96px}
+  .eyebrow{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; letter-spacing:.32em; text-transform:uppercase; color:var(--gold); margin:0 0 14px}
+  h1{font-size:clamp(32px,5.5vw,56px); line-height:1.04; margin:0 0 10px; font-weight:600; letter-spacing:-.01em}
+  .sub{color:var(--dim); font-size:18px; max-width:62ch; margin:0 0 8px}
+  .note{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--dim); border-left:2px solid var(--gold); padding:8px 0 8px 14px; margin:18px 0 0; max-width:74ch}
+  .rule{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:28px 0 0}
+  section{margin-top:56px; background:linear-gradient(180deg,var(--panel),var(--panel-2)); border:1px solid var(--line); border-radius:16px; padding:28px 26px 30px; box-shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 24px 48px -32px rgba(0,0,0,.8)}
+  .tag{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink); background:var(--gold); display:inline-block; padding:4px 9px; border-radius:5px; font-weight:700}
+  .skill{font-family:ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:.1em; color:var(--dim); margin-left:10px}
+  h2{font-size:clamp(22px,3.2vw,28px); margin:14px 0 6px; font-weight:600; letter-spacing:-.01em}
+  .lede{color:var(--dim); margin:0 0 14px; font-size:15.5px; max-width:74ch}
+  .stats{display:flex; flex-wrap:wrap; gap:8px; margin:0 0 16px}
+  .stat{font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--text); background:#0e1622; border:1px solid var(--line); padding:6px 10px; border-radius:8px}
+  .stat b{color:var(--gold)}
+  figure{margin:0}
+  svg{width:100%; height:auto; display:block; background:#0c121c; border:1px solid var(--line); border-radius:12px}
+  figcaption{color:var(--dim); font-size:13px; margin-top:12px; font-family:ui-monospace,Menlo,monospace}
+  .controls{display:flex; gap:10px; flex-wrap:wrap; margin:16px 0 4px}
+  button.ctl{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; letter-spacing:.04em; color:var(--text); background:#0e1622; border:1px solid var(--line); padding:9px 14px; border-radius:9px; cursor:pointer; transition:border-color .15s, transform .08s, background .15s}
+  button.ctl:hover{border-color:var(--gold)}
+  button.ctl:active{transform:translateY(1px)}
+  button.ctl:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+  button.ctl[aria-pressed="true"]{border-color:var(--gold); background:#1a2333; color:var(--gold)}
+  .legend{display:flex; gap:14px; flex-wrap:wrap; margin:6px 0 16px; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--dim)}
+  .legend span{display:inline-flex; align-items:center; gap:7px}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .toc{display:flex; flex-wrap:wrap; gap:10px; margin-top:22px}
+  .toc a{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--dim); text-decoration:none; border:1px solid var(--line); padding:7px 11px; border-radius:8px}
+  .toc a:hover{color:var(--gold); border-color:var(--gold)}
+  .candle{opacity:0; animation:rise .5s ease forwards}
+  @keyframes rise{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)}}
+  .footnote{color:var(--dim); font-size:12.5px; margin-top:40px; font-family:ui-monospace,Menlo,monospace; text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">SMC Master Handbook · Module 5 · Batch 1 of 3</p>
+  <h1>Trading Setups 1–3</h1>
+  <p class="sub">OB+FVG confluence, the liquidity-sweep reversal, and the BOS retracement trend-rider. Each chart animates the full trade: entry, stop, TP1, TP2, and management.</p>
+  <p class="note">All win rates and R:R figures are community estimates and illustrative teaching values — not figures from a verified dataset. The mechanics are the real content; the numbers are hypotheses for your own backtest.</p>
+  <div class="rule"></div>
+
+  <nav class="toc" aria-label="Setups in this batch">
+    <a href="#s1">Setup 1 · OB + FVG</a>
+    <a href="#s2">Setup 2 · Sweep + OB Reversal</a>
+    <a href="#s3">Setup 3 · BOS Retracement</a>
+  </nav>
+
+  <!-- SETUP 1 -->
+  <section id="s1">
+    <span class="tag">Setup 1</span><span class="skill">Beginner · OB + FVG Confluence</span>
+    <h2>OB + FVG Confluence</h2>
+    <div class="stats">
+      <span class="stat">Win <b>~55–62%</b> (est.)</span>
+      <span class="stat">R:R <b>1:3</b></span>
+      <span class="stat">TF <b>5m / 15m–1H</b></span>
+      <span class="stat">London / NY KZ</span>
+      <span class="stat">EURUSD · GBPUSD · XAUUSD</span>
+    </div>
+    <p class="lede">Two stacked PD arrays in the correct half of the range. Enter at the FVG's CE inside the OB after inducement is swept and the 5m confirms. Play the trade to watch it resolve.</p>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--zone)"></i>OB / FVG</span>
+      <span><i class="dot" style="background:var(--entry)"></i>entry</span>
+      <span><i class="dot" style="background:var(--bear)"></i>stop</span>
+      <span><i class="dot" style="background:var(--gold)"></i>target</span>
+      <span><i class="dot" style="background:var(--liq)"></i>liquidity</span>
+    </div>
+    <div class="controls">
+      <button class="ctl" id="play1" aria-pressed="false">▶ Play trade</button>
+    </div>
+    <figure>
+      <svg id="svg1" viewBox="0 0 760 380" role="img" aria-label="OB plus FVG confluence long trade with entry, stop, TP1 and TP2"></svg>
+      <figcaption id="cap1">Edge: stacked OB+FVG in discount gives a tighter reaction than either alone; the CE entry compresses risk.</figcaption>
+    </figure>
+  </section>
+
+  <!-- SETUP 2 -->
+  <section id="s2">
+    <span class="tag">Setup 2</span><span class="skill">Intermediate · High R:R</span>
+    <h2>Liquidity Sweep + OB Reversal</h2>
+    <div class="stats">
+      <span class="stat">Win <b>~48–55%</b> (est.)</span>
+      <span class="stat">R:R <b>1:4</b></span>
+      <span class="stat">TF <b>5m–15m / 1H</b></span>
+      <span class="stat">London / NY Open</span>
+      <span class="stat">XAUUSD · EURUSD · indices · BTC</span>
+    </div>
+    <p class="lede">Wait for the pool to be swept (spike, wick, close back inside), then a CHoCH, then enter the post-CHoCH OB. Stop beyond the sweep wick; target the opposite pool. Play the reversal.</p>
+    <div class="controls">
+      <button class="ctl" id="play2" aria-pressed="false">▶ Play trade</button>
+    </div>
+    <figure>
+      <svg id="svg2" viewBox="0 0 760 380" role="img" aria-label="Liquidity sweep plus order block reversal short trade"></svg>
+      <figcaption id="cap2">Edge: the sweep clears opposing liquidity and traps the breakout crowd — a cleared path plus trapped-trader fuel.</figcaption>
+    </figure>
+  </section>
+
+  <!-- SETUP 3 -->
+  <section id="s3">
+    <span class="tag">Setup 3</span><span class="skill">Beginner–Intermediate · Trend Rider</span>
+    <h2>BOS + Retracement to OB</h2>
+    <div class="stats">
+      <span class="stat">Win <b>~55–60%</b> (est.)</span>
+      <span class="stat">R:R <b>1:3+</b></span>
+      <span class="stat">TF <b>15m / 1H–4H</b></span>
+      <span class="stat">Trend-aligned KZ</span>
+      <span class="stat">XAUUSD · GBPUSD · NAS100 · BTC</span>
+    </div>
+    <p class="lede">With-trend only. A fresh BOS makes a new origin OB; retrace to it after a minor IDM sweep, enter, and trail the runner. Toggle between a fixed exit and a trailed exit to see the asymmetry.</p>
+    <div class="controls" role="group" aria-label="Exit style">
+      <button class="ctl" data-exit="fixed" aria-pressed="true">Fixed exit (TP2)</button>
+      <button class="ctl" data-exit="trail" aria-pressed="false">Trailed runner</button>
+    </div>
+    <figure>
+      <svg id="svg3" viewBox="0 0 760 380" role="img" aria-label="BOS retracement to order block trend-riding long trade"></svg>
+      <figcaption id="cap3">Edge: re-entry in the direction of dominant order flow; trailing converts trend persistence into asymmetric R:R.</figcaption>
+    </figure>
+  </section>
+
+  <p class="footnote">SMC Master Handbook · Module 5 (Setups 1–3) · schematic teaching models, not trade signals · numbers are unverified estimates</p>
+</div>
+
+<script>
+"use strict";
+const NS="http://www.w3.org/2000/svg";
+const C={bull:"#22c55e",bear:"#ef4444",zone:"#3b82f6",entry:"#f97316",liq:"#a855f7",struct:"#8a98ad",gold:"#e8b923",dim:"#8493a8",text:"#e6edf6"};
+const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function candle(p,x,oY,cY,hY,lY,{w=13,delay=0,anim=true}={}){
+  const col=cY<oY?C.bull:C.bear;
+  const g=document.createElementNS(NS,"g");
+  if(anim&&!reduce){g.setAttribute("class","candle");g.style.animationDelay=delay+"ms";}
+  const wk=document.createElementNS(NS,"line");
+  wk.setAttribute("x1",x);wk.setAttribute("x2",x);wk.setAttribute("y1",hY);wk.setAttribute("y2",lY);
+  wk.setAttribute("stroke",col);wk.setAttribute("stroke-width","2");
+  const b=document.createElementNS(NS,"rect");
+  const top=Math.min(oY,cY),h=Math.max(Math.abs(oY-cY),2);
+  b.setAttribute("x",x-w/2);b.setAttribute("y",top);b.setAttribute("width",w);b.setAttribute("height",h);
+  b.setAttribute("rx","1.5");b.setAttribute("fill",col);
+  g.appendChild(wk);g.appendChild(b);p.appendChild(g);return g;
+}
+function line(p,x1,y1,x2,y2,col,{dash=null,w=1.5,op=1}={}){
+  const l=document.createElementNS(NS,"line");
+  l.setAttribute("x1",x1);l.setAttribute("y1",y1);l.setAttribute("x2",x2);l.setAttribute("y2",y2);
+  l.setAttribute("stroke",col);l.setAttribute("stroke-width",w);l.setAttribute("opacity",op);
+  if(dash)l.setAttribute("stroke-dasharray",dash);p.appendChild(l);return l;
+}
+function rect(p,x,y,w,h,col,{op=1,rx=3,stroke=null}={}){
+  const r=document.createElementNS(NS,"rect");
+  r.setAttribute("x",x);r.setAttribute("y",y);r.setAttribute("width",w);r.setAttribute("height",h);
+  r.setAttribute("fill",col);r.setAttribute("opacity",op);r.setAttribute("rx",rx);
+  if(stroke){r.setAttribute("stroke",stroke);r.setAttribute("stroke-width","1.5");}
+  p.appendChild(r);return r;
+}
+function txt(p,x,y,s,col,{size=12,weight=400,anchor="start"}={}){
+  const t=document.createElementNS(NS,"text");
+  t.setAttribute("x",x);t.setAttribute("y",y);t.setAttribute("fill",col);
+  t.setAttribute("font-size",size);t.setAttribute("font-weight",weight);
+  t.setAttribute("font-family","monospace");t.setAttribute("text-anchor",anchor);
+  t.textContent=s;p.appendChild(t);return t;
+}
+function marker(p,x,y,s,col,r=6){
+  const c=document.createElementNS(NS,"circle");
+  c.setAttribute("cx",x);c.setAttribute("cy",y);c.setAttribute("r",r);
+  c.setAttribute("fill",col);c.setAttribute("stroke","#fff");c.setAttribute("stroke-width","1.5");
+  p.appendChild(c); if(s)txt(p,x+10,y-8,s,col,{size:11}); return c;
+}
+function xmark(p,x,y,col){line(p,x-6,y-6,x+6,y+6,col,{w:2.5});line(p,x-6,y+6,x+6,y-6,col,{w:2.5});}
+function star(p,x,y,col,s=9){
+  const pts=[];for(let i=0;i<10;i++){const a=Math.PI/5*i-Math.PI/2;const rr=i%2?s*0.45:s;pts.push((x+rr*Math.cos(a))+","+(y+rr*Math.sin(a)));}
+  const poly=document.createElementNS(NS,"polygon");poly.setAttribute("points",pts.join(" "));poly.setAttribute("fill",col);p.appendChild(poly);
+}
+function clear(s){while(s.firstChild)s.removeChild(s.firstChild);}
+
+/* ---------- SETUP 1 ---------- */
+const svg1=document.getElementById("svg1");
+function drawS1(animate){
+  clear(svg1);
+  line(svg1,40,60,720,60,C.gold,{dash:"5 4"});txt(svg1,560,53,"★ TP2: HTF draw (old high)",C.gold,{size:10});
+  line(svg1,40,150,720,150,C.gold,{dash:"3 4",op:.7});txt(svg1,560,143,"★ TP1: internal liquidity",C.gold,{size:10});
+  // approach down + impulse leg + BOS
+  const app=[[90,140,180,134,188],[120,180,210,174,218],[150,210,235,204,242]];
+  app.forEach((p,i)=>candle(svg1,p[0],p[1],p[2],p[3],p[4],{delay:animate?i*55:0,anim:animate}));
+  // OB = last bearish before up move; FVG on departure
+  rect(svg1,165,236,40,42,C.zone,{op:0.3,stroke:C.zone});txt(svg1,165,296,"OB + FVG (discount)",C.zone,{size:11});
+  line(svg1,165,257,400,257,C.gold,{dash:"2 3"});txt(svg1,405,260,"FVG CE",C.gold,{size:9});
+  // impulse up then BOS above prior
+  const imp=[[195,236,180,242,240],[225,180,130,188,186],[255,130,90,138,134]];
+  imp.forEach((p,i)=>candle(svg1,p[0],p[1],p[2],p[3],p[4],{delay:animate?(3+i)*55:0,anim:animate}));
+  marker(svg1,280,86,"BOS (15m)",C.gold,5);
+  if(animate){
+    // pullback: sweep IDM then tap CE
+    const pb=[[280,90,140,84,148],[310,140,200,134,210]];
+    pb.forEach((p,i)=>candle(svg1,p[0],p[1],p[2],p[3],p[4],{delay:(6+i)*55,anim:true}));
+    line(svg1,250,212,420,212,C.liq,{dash:"3 3"});txt(svg1,300,210,"IDM swept",C.liq,{size:10});
+    candle(svg1,340,200,255,258,262,{delay:8*55,anim:true}); // tap CE ~257
+    marker(svg1,365,257,"entry @ CE",C.entry,6);
+    xmark(svg1,340,288,C.bear);txt(svg1,330,292,"stop below OB low",C.bear,{size:10,anchor:"end"});
+    // run to TP1 then TP2
+    const run=[[365,255,150,260,258],[395,150,120,158,156],[425,120,150,114,158]];
+    run.forEach((p,i)=>candle(svg1,p[0],p[1],p[2],p[3],p[4],{delay:(9+i)*55,anim:true}));
+    marker(svg1,425,150,"TP1 (50% off, BE)",C.gold,5);
+    const run2=[[455,150,100,158,156],[485,100,68,108,104],[515,68,58,76,72]];
+    run2.forEach((p,i)=>candle(svg1,p[0],p[1],p[2],p[3],p[4],{delay:(12+i)*55,anim:true}));
+    star(svg1,540,60,C.gold,8);txt(svg1,556,62,"TP2 ~1:3.3 blended",C.gold,{size:11});
+    cap1.textContent="Reaction at the CE, half booked at TP1 with stop to BE, remainder trailed into the HTF draw for ~1:3.3.";
+  }else{
+    txt(svg1,165,316,"wait for IDM sweep + 5m CHoCH before entry",C.dim,{size:11});
+    cap1.textContent="Edge: stacked OB+FVG in discount gives a tighter reaction than either alone; the CE entry compresses risk.";
+  }
+}
+var cap1=document.getElementById("cap1");
+document.getElementById("play1").addEventListener("click",function(){drawS1(true);this.textContent="↻ Replay";});
+
+/* ---------- SETUP 2 ---------- */
+const svg2=document.getElementById("svg2");
+var cap2=document.getElementById("cap2");
+function drawS2(animate){
+  clear(svg2);
+  line(svg2,40,90,720,90,C.liq,{dash:"5 4"});txt(svg2,470,83,"EQH — buy-side liquidity",C.liq,{size:10});
+  line(svg2,40,330,720,330,C.gold,{dash:"5 4"});txt(svg2,560,323,"★ TP2: opposite pool (sell-side)",C.gold,{size:10});
+  line(svg2,40,200,720,200,C.gold,{dash:"3 4",op:.7});txt(svg2,560,193,"★ TP1: equilibrium",C.gold,{size:10});
+  // rally into EQH
+  const app=[[90,250,210,258,205],[120,210,160,218,156],[150,160,120,168,116],[180,120,98,128,96]];
+  app.forEach((p,i)=>candle(svg2,p[0],p[1],p[2],p[3],p[4],{delay:animate?i*55:0,anim:animate}));
+  // sweep candle: spike above 90, close back inside
+  candle(svg2,210,98,118,72,124,{delay:animate?4*55:0,anim:animate});
+  txt(svg2,226,78,"sweep ▸ wick ▸ close inside",C.dim,{size:10});
+  if(animate){
+    xmark(svg2,210,68,C.bear);txt(svg2,196,64,"stop above wick",C.bear,{size:10,anchor:"end"});
+    // CHoCH down
+    const ch=[[240,118,160,112,168],[270,160,200,154,208]];
+    ch.forEach((p,i)=>candle(svg2,p[0],p[1],p[2],p[3],p[4],{delay:(5+i)*55,anim:true}));
+    marker(svg2,295,206,"CHoCH down",C.gold,5);
+    // bearish OB + retrace into it
+    rect(svg2,300,118,40,34,C.zone,{op:0.3,stroke:C.zone});txt(svg2,344,135,"bearish OB",C.zone,{size:11});
+    const rt=[[300,200,160,206,158],[330,160,135,166,168]];
+    rt.forEach((p,i)=>candle(svg2,p[0],p[1],p[2],p[3],p[4],{delay:(7+i)*55,anim:true}));
+    marker(svg2,355,138,"entry on retrace",C.entry,6);
+    // drop to TP1 then TP2
+    const dr=[[355,138,200,132,206],[385,200,235,194,242],[415,235,200,242,244]];
+    dr.forEach((p,i)=>candle(svg2,p[0],p[1],p[2],p[3],p[4],{delay:(9+i)*55,anim:true}));
+    marker(svg2,415,200,"TP1 (50% off, BE)",C.gold,5);
+    const dr2=[[445,200,260,194,268],[475,260,310,254,318],[505,310,330,304,336]];
+    dr2.forEach((p,i)=>candle(svg2,p[0],p[1],p[2],p[3],p[4],{delay:(12+i)*55,anim:true}));
+    star(svg2,530,330,C.gold,8);txt(svg2,546,330,"TP2 ~1:4 blended",C.gold,{size:11});
+    cap2.textContent="Entered after the close-back-inside and CHoCH — half off at equilibrium, runner to the opposite pool for ~1:4.";
+  }else{
+    txt(svg2,226,150,"do NOT short the spike — wait for close + CHoCH",C.dim,{size:11});
+    cap2.textContent="Edge: the sweep clears opposing liquidity and traps the breakout crowd — a cleared path plus trapped-trader fuel.";
+  }
+}
+document.getElementById("play2").addEventListener("click",function(){drawS2(true);this.textContent="↻ Replay";});
+
+/* ---------- SETUP 3 ---------- */
+const svg3=document.getElementById("svg3");
+var cap3=document.getElementById("cap3");
+function drawS3(exit){
+  clear(svg3);
+  line(svg3,40,55,720,55,C.gold,{dash:"5 4"});txt(svg3,560,48,"★ TP2 / draw: next HTF liq",C.gold,{size:10});
+  line(svg3,40,150,720,150,C.struct,{dash:"4 4"});txt(svg3,560,143,"prior high (★ TP1, just broken)",C.struct,{size:10});
+  // uptrend leg + fresh BOS
+  const up=[[90,300,260,308,255],[120,260,215,268,210],[150,215,165,222,160],[180,165,130,172,126]];
+  up.forEach((p,i)=>candle(svg3,p[0],p[1],p[2],p[3],p[4],{delay:i*55}));
+  marker(svg3,205,126,"fresh 15m BOS",C.gold,5);
+  // OB at origin of impulse (the last bearish dip)
+  rect(svg3,165,200,40,42,C.zone,{op:0.3,stroke:C.zone});txt(svg3,210,224,"OB (origin, discount)",C.zone,{size:11});
+  // pullback: IDM sweep then tap OB
+  const pb=[[210,130,175,124,182],[240,175,225,168,236]];
+  pb.forEach((p,i)=>candle(svg3,p[0],p[1],p[2],p[3],p[4],{delay:(4+i)*55}));
+  line(svg3,200,238,430,238,C.liq,{dash:"3 3"});txt(svg3,300,236,"minor IDM swept",C.liq,{size:10});
+  candle(svg3,270,225,222,278,280,{delay:6*55}); // tap OB
+  marker(svg3,295,222,"entry @ OB 50%",C.entry,6);
+  xmark(svg3,270,290,C.bear);txt(svg3,260,294,"stop below OB low",C.bear,{size:10,anchor:"end"});
+  // up to TP1
+  const r1=[[295,222,150,228,226],[325,150,128,158,156]];
+  r1.forEach((p,i)=>candle(svg3,p[0],p[1],p[2],p[3],p[4],{delay:(7+i)*55}));
+  marker(svg3,350,150,"TP1 (50% off)",C.gold,5);
+  if(exit==="fixed"){
+    const r2=[[355,128,95,134,132],[385,95,70,102,98],[415,70,58,78,74]];
+    r2.forEach((p,i)=>candle(svg3,p[0],p[1],p[2],p[3],p[4],{delay:(9+i)*55}));
+    star(svg3,440,55,C.gold,8);txt(svg3,456,57,"TP2 fixed ~1:3",C.gold,{size:11});
+    txt(svg3,150,330,"fixed exit banks ~1:3 — leaves trend extension on the table",C.dim,{size:11});
+    cap3.textContent="Fixed exit at TP2 banks a clean ~1:3 but caps the upside in a strongly trending market.";
+  }else{
+    // trailed: rides higher with HL trail, stops on CHoCH
+    const r2=[[355,128,95,134,132],[385,95,72,102,98],[415,72,60,80,90],[445,60,48,68,80],[475,48,40,56,70]];
+    r2.forEach((p,i)=>candle(svg3,p[0],p[1],p[2],p[3],p[4],{delay:(9+i)*55}));
+    // trail line stepping under HLs
+    line(svg3,330,168,360,168,C.bull,{dash:"2 2"});line(svg3,360,140,390,140,C.bull,{dash:"2 2"});
+    line(svg3,390,110,420,110,C.bull,{dash:"2 2"});line(svg3,420,92,450,92,C.bull,{dash:"2 2"});
+    txt(svg3,330,182,"trail under each HL →",C.bull,{size:9});
+    candle(svg3,505,40,72,34,80,{delay:14*55}); // CHoCH down ends trail
+    marker(svg3,530,72,"15m CHoCH ends trail",C.gold,5);
+    star(svg3,475,40,C.gold,8);
+    txt(svg3,150,330,"trailed runner banks ~1:6 blended — trend persistence = asymmetry",C.bull,{size:11});
+    cap3.textContent="Trailing the runner behind each higher low rides the trend to ~1:6 — far beyond the fixed target.";
+  }
+}
+document.querySelectorAll("button[data-exit]").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll("button[data-exit]").forEach(x=>x.setAttribute("aria-pressed","false"));
+    b.setAttribute("aria-pressed","true");drawS3(b.getAttribute("data-exit"));
+  });
+});
+
+/* init */
+drawS1(false);
+drawS2(false);
+drawS3("fixed");
+</script>
+</body>
+</html>

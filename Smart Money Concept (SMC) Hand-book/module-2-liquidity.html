@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SMC Handbook · Module 2 — Liquidity</title>
+<style>
+  :root{
+    --ink:#0a0e14; --panel:#111722; --panel-2:#161e2b; --line:#243044;
+    --bull:#22c55e; --bear:#ef4444; --zone:#3b82f6; --entry:#f97316;
+    --liq:#a855f7; --struct:#8a98ad; --text:#e6edf6; --dim:#8493a8; --gold:#e8b923;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    *{animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important}
+  }
+  body{
+    margin:0; background:
+      radial-gradient(1200px 600px at 80% -10%, #16202e 0%, transparent 60%), var(--ink);
+    color:var(--text);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:48px 24px 96px}
+  .eyebrow{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; letter-spacing:.32em; text-transform:uppercase; color:var(--gold); margin:0 0 14px}
+  h1{font-size:clamp(34px,6vw,62px); line-height:1.02; margin:0 0 10px; font-weight:600; letter-spacing:-.01em}
+  .sub{color:var(--dim); font-size:18px; max-width:62ch; margin:0 0 8px}
+  .rule{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:28px 0 0}
+  section{margin-top:56px; background:linear-gradient(180deg,var(--panel),var(--panel-2)); border:1px solid var(--line); border-radius:16px; padding:28px 26px 30px; box-shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 24px 48px -32px rgba(0,0,0,.8)}
+  .tag{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink); background:var(--gold); display:inline-block; padding:4px 9px; border-radius:5px; font-weight:700}
+  h2{font-size:clamp(22px,3.4vw,30px); margin:14px 0 6px; font-weight:600; letter-spacing:-.01em}
+  .lede{color:var(--dim); margin:0 0 18px; font-size:15.5px; max-width:72ch}
+  figure{margin:0}
+  svg{width:100%; height:auto; display:block; background:#0c121c; border:1px solid var(--line); border-radius:12px}
+  figcaption{color:var(--dim); font-size:13px; margin-top:12px; font-family:ui-monospace,Menlo,monospace}
+  .controls{display:flex; gap:10px; flex-wrap:wrap; margin:16px 0 4px}
+  button.ctl{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; letter-spacing:.04em; color:var(--text); background:#0e1622; border:1px solid var(--line); padding:9px 14px; border-radius:9px; cursor:pointer; transition:border-color .15s, transform .08s, background .15s}
+  button.ctl:hover{border-color:var(--gold)}
+  button.ctl:active{transform:translateY(1px)}
+  button.ctl:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+  button.ctl[aria-pressed="true"]{border-color:var(--gold); background:#1a2333; color:var(--gold)}
+  .legend{display:flex; gap:16px; flex-wrap:wrap; margin:6px 0 18px; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--dim)}
+  .legend span{display:inline-flex; align-items:center; gap:7px}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .readout{min-height:22px; margin-top:14px; padding:12px 14px; background:#0c121c; border:1px solid var(--line); border-radius:10px; font-size:14px; color:var(--text)}
+  .readout strong{color:var(--gold)}
+  .toc{display:flex; flex-wrap:wrap; gap:10px; margin-top:22px}
+  .toc a{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--dim); text-decoration:none; border:1px solid var(--line); padding:7px 11px; border-radius:8px}
+  .toc a:hover{color:var(--gold); border-color:var(--gold)}
+  .candle{opacity:0; animation:rise .5s ease forwards}
+  @keyframes rise{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)}}
+  .flash{animation:flash 1.4s ease-in-out infinite}
+  @keyframes flash{0%,100%{opacity:.3} 50%{opacity:1}}
+  .footnote{color:var(--dim); font-size:12.5px; margin-top:40px; font-family:ui-monospace,Menlo,monospace; text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">SMC Master Handbook · Module 2</p>
+  <h1>Liquidity</h1>
+  <p class="sub">The fuel of price. Where resting orders cluster, why price is drawn to them, and how sweeps and inducement engineer the moves that look random. Hover, toggle, and play each chart.</p>
+  <div class="rule"></div>
+
+  <nav class="toc" aria-label="Module contents">
+    <a href="#s21">2.1 The Liquidity Concept</a>
+    <a href="#s22">2.2 Liquidity Pools</a>
+    <a href="#s23">2.3 Sweep Mechanics</a>
+    <a href="#s24">2.4 Inducement</a>
+    <a href="#s25">2.5 Premium &amp; Discount</a>
+  </nav>
+
+  <!-- 2.1 -->
+  <section id="s21">
+    <span class="tag">2.1</span>
+    <h2>The Liquidity Concept — buy-side vs sell-side</h2>
+    <p class="lede">Buy-side liquidity sits above highs (made of buy orders); sell-side sits below lows (made of sell orders). Price rallies into BSL so sellers can fill, and drops into SSL so buyers can fill. Hover each pool.</p>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--liq)"></i>liquidity pool</span>
+      <span><i class="dot" style="background:var(--bull)"></i>bullish</span>
+      <span><i class="dot" style="background:var(--bear)"></i>bearish</span>
+      <span><i class="dot" style="background:var(--gold)"></i>highlighted</span>
+    </div>
+    <figure>
+      <svg id="svg21" viewBox="0 0 760 360" role="img" aria-label="Buy-side and sell-side liquidity map"></svg>
+      <figcaption>Counter-intuitive but key: up-moves into old highs are often distribution; down-moves into old lows often accumulation.</figcaption>
+    </figure>
+    <div class="readout" id="ro21">Hover the upper or lower dashed pool to read who is resting there and why.</div>
+  </section>
+
+  <!-- 2.2 -->
+  <section id="s22">
+    <span class="tag">2.2</span>
+    <h2>Liquidity Pools — four types</h2>
+    <p class="lede">Equal highs/lows, trendline liquidity, pattern liquidity, and old highs/lows. The more obvious and famous a level, the more reliably it holds stops. Switch between the four pool types.</p>
+    <div class="controls" role="group" aria-label="Choose liquidity pool type">
+      <button class="ctl" data-pool="eqh" aria-pressed="true">Equal Highs / Lows</button>
+      <button class="ctl" data-pool="trend" aria-pressed="false">Trendline</button>
+      <button class="ctl" data-pool="pattern" aria-pressed="false">Pattern</button>
+      <button class="ctl" data-pool="old" aria-pressed="false">Old High / Low</button>
+    </div>
+    <figure>
+      <svg id="svg22" viewBox="0 0 760 340" role="img" aria-label="Liquidity pool types diagram"></svg>
+      <figcaption id="cap22">Equal highs are a labelled buy-side pool, not a reversal pattern. Price tends to run them first.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 2.3 -->
+  <section id="s23">
+    <span class="tag">2.3</span>
+    <h2>Sweep Mechanics — spike, wick, close back inside</h2>
+    <p class="lede">A sweep is in-and-out: it pierces the level, leaves a wick, and closes back inside. A break is through-and-gone: it closes and holds beyond. Play the sweep, or compare it to a genuine break.</p>
+    <div class="controls" role="group" aria-label="Choose sweep scenario">
+      <button class="ctl" id="playSweep" aria-pressed="false">▶ Play the sweep</button>
+      <button class="ctl" data-sweep="sweep" aria-pressed="true">Show: sweep (rejection)</button>
+      <button class="ctl" data-sweep="break" aria-pressed="false">Show: genuine break</button>
+    </div>
+    <figure>
+      <svg id="svg23" viewBox="0 0 760 340" role="img" aria-label="Liquidity sweep anatomy versus genuine break"></svg>
+      <figcaption id="cap23">Entry only after the close-back-inside AND an LTF change of character. Don't pre-empt the sweep.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 2.4 -->
+  <section id="s24">
+    <span class="tag">2.4</span>
+    <h2>Inducement — the bait before the real zone</h2>
+    <p class="lede">Inducement is engineered liquidity placed in front of the true point of interest. Early traders enter at it; their stops fuel the move into the real zone. Step through the sequence.</p>
+    <div class="controls" role="group" aria-label="Step through inducement sequence">
+      <button class="ctl" id="idmStep" aria-pressed="false">Step ▸</button>
+      <button class="ctl" id="idmReset" aria-pressed="false">Reset</button>
+    </div>
+    <figure>
+      <svg id="svg24" viewBox="0 0 760 340" role="img" aria-label="Inducement sequence: bait, grab, deliver"></svg>
+      <figcaption id="cap24">Working rule: in a bullish leg, the IDM is the last minor low before the order block. Wait for it to be taken.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 2.5 -->
+  <section id="s25">
+    <span class="tag">2.5</span>
+    <h2>Premium &amp; Discount — the dealing range</h2>
+    <p class="lede">Bisect the range low-to-high. The 50% is equilibrium. Sell in premium (above), buy in discount (below). Toggle the nested LTF range to see "the discount of a discount."</p>
+    <div class="controls" role="group" aria-label="Premium discount options">
+      <button class="ctl" id="toggleNest" aria-pressed="false">Toggle nested LTF range</button>
+    </div>
+    <figure>
+      <svg id="svg25" viewBox="0 0 760 380" role="img" aria-label="Premium and discount dealing range with nested range"></svg>
+      <figcaption id="cap25">A+ long location: bullish bias + price in discount + bullish POI. Nesting tightens the entry.</figcaption>
+    </figure>
+  </section>
+
+  <p class="footnote">SMC Master Handbook · Module 2 of 9 · charts are schematic teaching models, not trade signals</p>
+</div>
+
+<script>
+"use strict";
+const NS="http://www.w3.org/2000/svg";
+const C={bull:"#22c55e",bear:"#ef4444",zone:"#3b82f6",entry:"#f97316",liq:"#a855f7",struct:"#8a98ad",gold:"#e8b923",dim:"#8493a8",text:"#e6edf6"};
+const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function candle(p,x,oY,cY,hY,lY,{w=14,delay=0,anim=true}={}){
+  const col=cY<oY?C.bull:C.bear;
+  const g=document.createElementNS(NS,"g");
+  if(anim&&!reduce){g.setAttribute("class","candle");g.style.animationDelay=delay+"ms";}
+  const wk=document.createElementNS(NS,"line");
+  wk.setAttribute("x1",x);wk.setAttribute("x2",x);wk.setAttribute("y1",hY);wk.setAttribute("y2",lY);
+  wk.setAttribute("stroke",col);wk.setAttribute("stroke-width","2");
+  const b=document.createElementNS(NS,"rect");
+  const top=Math.min(oY,cY),h=Math.max(Math.abs(oY-cY),2);
+  b.setAttribute("x",x-w/2);b.setAttribute("y",top);b.setAttribute("width",w);b.setAttribute("height",h);
+  b.setAttribute("rx","1.5");b.setAttribute("fill",col);
+  g.appendChild(wk);g.appendChild(b);p.appendChild(g);return g;
+}
+function line(p,x1,y1,x2,y2,col,{dash=null,w=1.5,op=1}={}){
+  const l=document.createElementNS(NS,"line");
+  l.setAttribute("x1",x1);l.setAttribute("y1",y1);l.setAttribute("x2",x2);l.setAttribute("y2",y2);
+  l.setAttribute("stroke",col);l.setAttribute("stroke-width",w);l.setAttribute("opacity",op);
+  if(dash)l.setAttribute("stroke-dasharray",dash);p.appendChild(l);return l;
+}
+function rect(p,x,y,w,h,col,{op=1,rx=3}={}){
+  const r=document.createElementNS(NS,"rect");
+  r.setAttribute("x",x);r.setAttribute("y",y);r.setAttribute("width",w);r.setAttribute("height",h);
+  r.setAttribute("fill",col);r.setAttribute("opacity",op);r.setAttribute("rx",rx);p.appendChild(r);return r;
+}
+function txt(p,x,y,s,col,{size=12,weight=400,anchor="start"}={}){
+  const t=document.createElementNS(NS,"text");
+  t.setAttribute("x",x);t.setAttribute("y",y);t.setAttribute("fill",col);
+  t.setAttribute("font-size",size);t.setAttribute("font-weight",weight);
+  t.setAttribute("font-family","monospace");t.setAttribute("text-anchor",anchor);
+  t.textContent=s;p.appendChild(t);return t;
+}
+function marker(p,x,y,s,col,r=6){
+  const c=document.createElementNS(NS,"circle");
+  c.setAttribute("cx",x);c.setAttribute("cy",y);c.setAttribute("r",r);
+  c.setAttribute("fill",col);c.setAttribute("stroke","#fff");c.setAttribute("stroke-width","1.5");
+  p.appendChild(c); if(s)txt(p,x+10,y-8,s,col,{size:11}); return c;
+}
+function xmark(p,x,y,col){ // stop-loss ✕
+  line(p,x-6,y-6,x+6,y+6,col,{w:2.5});line(p,x-6,y+6,x+6,y-6,col,{w:2.5});
+}
+function star(p,x,y,col,s=9){
+  const pts=[];for(let i=0;i<10;i++){const ang=Math.PI/5*i-Math.PI/2;const rr=i%2?s*0.45:s;pts.push((x+rr*Math.cos(ang))+","+(y+rr*Math.sin(ang)));}
+  const poly=document.createElementNS(NS,"polygon");poly.setAttribute("points",pts.join(" "));
+  poly.setAttribute("fill",col);p.appendChild(poly);
+}
+function clear(s){while(s.firstChild)s.removeChild(s.firstChild);}
+
+/* ---------- 2.1 ---------- */
+(function(){
+  const s=document.getElementById("svg21");
+  const bsl=document.createElementNS(NS,"g"), ssl=document.createElementNS(NS,"g");
+  // BSL line + hover region
+  line(s,40,75,720,75,C.liq,{dash:"6 5"});
+  txt(s,520,67,"Buy-side liquidity (above highs)",C.liq);
+  const bslHit=rect(s,40,55,680,40,"#a855f7",{op:0.06,rx:4}); bslHit.style.cursor="pointer";
+  // SSL line + hover region
+  line(s,40,300,720,300,C.liq,{dash:"6 5"});
+  txt(s,44,322,"Sell-side liquidity (below lows)",C.liq);
+  const sslHit=rect(s,40,300,680,40,"#a855f7",{op:0.06,rx:4}); sslHit.style.cursor="pointer";
+  // equilibrium
+  line(s,40,188,720,188,C.struct,{dash:"2 6",op:.5});txt(s,640,182,"equilibrium",C.dim,{size:10});
+  // price weaving up into BSL then dropping toward SSL
+  const seq=[
+    [70,250,210,260,205],[100,210,175,218,170],[130,175,200,168,208],
+    [160,200,160,208,158],[190,160,120,168,116],[220,120,95,128,90],  // rallies into BSL
+    [250,95,130,88,138],[280,130,165,124,172],[310,165,140,172,178],
+    [340,140,180,134,188],[370,180,220,174,228],[400,220,260,214,300], // drops toward SSL
+    [430,260,290,254,300],[460,290,250,298,294],[490,250,210,258,214],
+    [520,210,175,218,170],[550,175,140,182,136]
+  ];
+  seq.forEach((p,i)=>candle(s,p[0],p[1],p[2],p[3],p[4],{delay:i*55}));
+  marker(s,220,90,"price rallies → SELLERS fill",C.dim,4);
+  marker(s,400,300,"",C.dim,4);txt(s,250,300,"price drops → BUYERS fill",C.dim,{size:11});
+  const ro=document.getElementById("ro21");
+  bslHit.addEventListener("mouseenter",()=>{bslHit.setAttribute("fill",C.gold);bslHit.setAttribute("opacity","0.16");ro.innerHTML="<strong>Buy-side liquidity (BSL).</strong> Above highs sit the stops of short sellers (a short's stop is a BUY) plus buy-stop breakout orders. A large seller drives price up into this pool to offload into the buying.";});
+  bslHit.addEventListener("mouseleave",()=>{bslHit.setAttribute("fill","#a855f7");bslHit.setAttribute("opacity","0.06");ro.innerHTML="Hover the upper or lower dashed pool to read who is resting there and why.";});
+  sslHit.addEventListener("mouseenter",()=>{sslHit.setAttribute("fill",C.gold);sslHit.setAttribute("opacity","0.16");ro.innerHTML="<strong>Sell-side liquidity (SSL).</strong> Below lows sit the stops of longs (a long's stop is a SELL) plus sell-stop breakout orders. A large buyer drives price down into this pool to accumulate into the selling.";});
+  sslHit.addEventListener("mouseleave",()=>{sslHit.setAttribute("fill","#a855f7");sslHit.setAttribute("opacity","0.06");ro.innerHTML="Hover the upper or lower dashed pool to read who is resting there and why.";});
+})();
+
+/* ---------- 2.2 pools ---------- */
+const svg22=document.getElementById("svg22"),cap22=document.getElementById("cap22");
+function drawPool(kind){
+  clear(svg22);
+  if(kind==="eqh"){
+    line(svg22,40,90,720,90,C.liq,{dash:"5 4"});txt(svg22,470,82,"Equal Highs — buy-stops pooled above",C.liq);
+    [120,260,400].forEach((x,i)=>{candle(svg22,x,150,95,160,158,{delay:i*120});candle(svg22,x+40,95,150,92,158,{delay:i*120+60});});
+    [120,260,400].forEach(x=>marker(svg22,x,92,"",C.liq,4));
+    // sweep above then reject
+    candle(svg22,500,150,160,72,168,{delay:500});txt(svg22,516,78,"sweep ▸ then reversal",C.gold,{size:11});
+    candle(svg22,540,160,210,154,218,{delay:560});candle(svg22,580,210,250,204,258,{delay:620});
+    cap22.textContent="Equal highs are a labelled buy-side pool, not a reversal pattern. Price tends to run them first.";
+  }else if(kind==="trend"){
+    // ascending trendline with touches; stops below the diagonal
+    line(svg22,90,300,640,120,C.struct,{w:2});txt(svg22,470,150,"retail trendline (support)",C.struct,{size:11});
+    const tch=[[120,285,250,292,295],[230,235,205,242,248],[340,195,165,202,250],[450,160,128,168,205]];
+    tch.forEach((p,i)=>candle(svg22,p[0],p[1],p[2],p[3],p[4],{delay:i*100}));
+    [120,230,340,450].forEach((x,i)=>marker(svg22,x,[300,250,205,168][i]+8,"",C.liq,4));
+    txt(svg22,300,330,"stops sit ALONG the diagonal = trendline liquidity",C.liq,{size:11});
+    // break = sweep
+    candle(svg22,520,150,210,144,260,{delay:450});star(svg22,520,260,C.gold,7);txt(svg22,536,250,"'break' = the swept pool",C.gold,{size:11});
+    cap22.textContent="The taught trendline-break is usually the engineered sweep of the liquidity beneath the line.";
+  }else if(kind==="pattern"){
+    // contracting triangle, breakout level holds stops
+    line(svg22,100,110,560,200,C.struct,{w:1.5});  // upper
+    line(svg22,100,300,560,200,C.struct,{w:1.5});  // lower
+    txt(svg22,150,100,"triangle (retail pattern)",C.struct,{size:11});
+    const tri=[[140,150,250,144,258],[200,250,180,258,256],[260,190,235,184,242],[320,235,205,242,238],[380,210,222,204,228],[440,222,212,228,232]];
+    tri.forEach((p,i)=>candle(svg22,p[0],p[1],p[2],p[3],p[4],{delay:i*90}));
+    line(svg22,460,205,720,205,C.liq,{dash:"4 4"});txt(svg22,470,198,"breakout level = stops pooled",C.liq,{size:11});
+    candle(svg22,520,205,240,200,250,{delay:560});star(svg22,520,250,C.gold,7);txt(svg22,536,255,"swept on 'breakout'",C.gold,{size:11});
+    cap22.textContent="The more famous the pattern, the more reliably its trigger level holds the stops to be swept.";
+  }else{
+    // old high / low big draws
+    line(svg22,40,80,720,80,C.liq,{dash:"6 4",w:2});txt(svg22,560,72,"PDH / PWH (primary draw)",C.liq);
+    line(svg22,40,300,720,300,C.liq,{dash:"6 4",w:2});txt(svg22,44,322,"PDL / PWL (primary draw)",C.liq);
+    const seq=[[90,250,210,258,205],[140,210,175,218,170],[190,175,205,168,212],[240,205,160,212,158],[290,160,125,168,120],[340,125,150,118,158],[390,150,110,158,108],[440,110,88,118,82],[490,88,130,82,138],[540,130,175,124,182],[590,175,210,168,218]];
+    seq.forEach((p,i)=>candle(svg22,p[0],p[1],p[2],p[3],p[4],{delay:i*55}));
+    txt(svg22,300,250,"intraday price travels between old highs and old lows",C.dim,{size:11});
+    cap22.textContent="Daily/weekly highs and lows are the heavyweight draws — usually your top-down draw on liquidity.";
+  }
+}
+document.querySelectorAll("button[data-pool]").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll("button[data-pool]").forEach(x=>x.setAttribute("aria-pressed","false"));
+    b.setAttribute("aria-pressed","true");drawPool(b.getAttribute("data-pool"));
+  });
+});
+
+/* ---------- 2.3 sweep ---------- */
+const svg23=document.getElementById("svg23"),cap23=document.getElementById("cap23");
+function drawSweep(kind,animate){
+  clear(svg23);
+  line(svg23,40,110,720,110,C.liq,{dash:"5 4"});txt(svg23,470,102,"old high / EQH (BSL)",C.liq);
+  const base=[[90,300,255,308,250],[130,255,215,262,210],[170,215,175,222,170],[210,175,205,168,212],[250,205,160,212,158],[290,160,135,168,150]];
+  base.forEach((p,i)=>candle(svg23,p[0],p[1],p[2],p[3],p[4],{delay:animate?i*60:0,anim:animate}));
+  if(kind==="sweep"){
+    // spike pierces high, long wick, close back inside
+    const g=candle(svg23,330,150,165,86,172,{delay:animate?6*60:0,anim:animate});
+    txt(svg23,346,92,"spike + wick (orders taken)",C.dim,{size:11});
+    if(animate&&!reduce)g.querySelector("line").setAttribute("class","flash");
+    candle(svg23,370,165,200,158,208,{delay:animate?7*60:0,anim:animate});
+    txt(svg23,386,205,"close back inside ▸ CHoCH",C.gold,{size:11,weight:700});
+    candle(svg23,410,200,240,194,248,{delay:animate?8*60:0,anim:animate});
+    marker(svg23,410,240,"entry (short)",C.entry,6);
+    xmark(svg23,330,80,C.bear);txt(svg23,300,72,"stop above wick",C.bear,{size:10,anchor:"end"});
+    candle(svg23,450,240,275,234,282,{delay:animate?9*60:0,anim:animate});
+    star(svg23,490,300,C.gold,8);txt(svg23,506,300,"target: opposite pool",C.gold,{size:11});
+    cap23.textContent="Sweep = in-and-out. The wick takes the stops, the close rejects, a CHoCH confirms the reversal.";
+  }else{
+    // genuine break: closes and holds above, consolidates, continues
+    candle(svg23,330,150,92,158,156,{delay:animate?6*60:0,anim:animate}); // close 92 above 110
+    txt(svg23,346,90,"closes & HOLDS above",C.bull,{size:11,weight:700});
+    candle(svg23,370,92,80,98,96,{delay:animate?7*60:0,anim:animate});
+    candle(svg23,410,80,88,74,96,{delay:animate?8*60:0,anim:animate});  // consolidates beyond
+    candle(svg23,450,88,60,94,92,{delay:animate?9*60:0,anim:animate});
+    candle(svg23,490,60,42,66,64,{delay:animate?10*60:0,anim:animate});
+    txt(svg23,360,260,"through-and-gone — respect it as a break",C.dim,{size:11});
+    cap23.textContent="Genuine break: body closes beyond and price consolidates higher rather than snapping back.";
+  }
+}
+let sweepTimer=null;
+document.getElementById("playSweep").addEventListener("click",function(){
+  document.querySelectorAll("button[data-sweep]").forEach(x=>x.setAttribute("aria-pressed","false"));
+  document.querySelector('button[data-sweep="sweep"]').setAttribute("aria-pressed","true");
+  drawSweep("sweep",true);
+  this.setAttribute("aria-pressed","true");this.textContent="↻ Replay sweep";
+});
+document.querySelectorAll("button[data-sweep]").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll("button[data-sweep]").forEach(x=>x.setAttribute("aria-pressed","false"));
+    b.setAttribute("aria-pressed","true");drawSweep(b.getAttribute("data-sweep"),false);
+  });
+});
+
+/* ---------- 2.4 inducement step-through ---------- */
+const svg24=document.getElementById("svg24"),cap24=document.getElementById("cap24");
+let idmS=0;
+const idmCaps=[
+  "Step 1: an unmitigated order block (the true POI) sits below in discount, waiting.",
+  "Step 2: price leaves a minor low — the inducement (IDM). Early longs enter above it.",
+  "Step 3: price dips and sweeps the IDM, taking the early longs' stops as fuel.",
+  "Step 4: with fuel collected, price taps the real OB — your entry — and delivers up."
+];
+function drawIDM(step){
+  clear(svg24);
+  // OB / true POI box (discount)
+  rect(svg24,300,210,180,28,C.zone,{op:step>=0?0.3:0.12});txt(svg24,308,228,"OB — true POI (unmitigated)",C.zone,{size:11});
+  // approach candles
+  const app=[[90,120,150,114,158],[130,150,180,144,188],[170,180,160,188,196],[210,160,195,154,202]];
+  app.forEach((p,i)=>candle(svg24,p[0],p[1],p[2],p[3],p[4],{delay:i*55}));
+  if(step>=1){
+    candle(svg24,250,195,225,188,232,{delay:0});
+    line(svg24,250,255,560,255,C.liq,{dash:"3 4"});
+    marker(svg24,250,255,"",C.liq,4);txt(svg24,300,250,"IDM (minor low = bait)",C.liq,{size:11});
+    txt(svg24,90,300,"↑ early longs enter above the IDM",C.dim,{size:11});
+  }
+  if(step>=2){
+    candle(svg24,290,225,250,218,262,{delay:0}); // dips to sweep IDM
+    xmark(svg24,250,272,C.bear);txt(svg24,300,278,"IDM swept — stops taken",C.gold,{size:11,weight:700});
+  }
+  if(step>=3){
+    candle(svg24,330,250,224,256,266,{delay:0}); // taps OB
+    marker(svg24,360,224,"ENTRY at OB",C.entry,6);
+    candle(svg24,400,224,180,230,232,{delay:80});
+    candle(svg24,440,180,135,186,188,{delay:160});
+    candle(svg24,480,135,95,142,140,{delay:240});
+    star(svg24,520,85,C.gold,8);txt(svg24,536,90,"delivery up",C.gold,{size:11});
+  }
+  cap24.textContent=idmCaps[step];
+}
+document.getElementById("idmStep").addEventListener("click",()=>{idmS=Math.min(idmS+1,3);drawIDM(idmS);});
+document.getElementById("idmReset").addEventListener("click",()=>{idmS=0;drawIDM(0);});
+
+/* ---------- 2.5 premium / discount ---------- */
+const svg25=document.getElementById("svg25"),cap25=document.getElementById("cap25");
+let nested=false;
+function drawPD(){
+  clear(svg25);
+  const hi=70,lo=330,eq=(hi+lo)/2;
+  line(svg25,40,hi,720,hi,C.liq,{dash:"5 4"});txt(svg25,560,hi-6,"100% — swing high (BSL)",C.liq);
+  line(svg25,40,lo,720,lo,C.liq,{dash:"5 4"});txt(svg25,44,lo+18,"0% — swing low (SSL)",C.liq);
+  rect(svg25,40,hi,680,eq-hi,C.bear,{op:0.10,rx:0});txt(svg25,52,hi+24,"PREMIUM — sell zone (look for shorts)",C.bear,{size:12});
+  rect(svg25,40,eq,680,lo-eq,C.bull,{op:0.10,rx:0});txt(svg25,52,lo-12,"DISCOUNT — buy zone (look for longs)",C.bull,{size:12});
+  line(svg25,40,eq,720,eq,C.gold,{w:2});txt(svg25,610,eq-6,"50% equilibrium",C.gold,{size:11});
+  // price path
+  const seq=[[90,300,250,308,260],[140,250,180,258,176],[190,180,210,172,218],[240,210,140,218,136],[290,140,110,148,106],[340,110,160,104,168],[390,160,210,154,218],[440,210,255,204,300]];
+  seq.forEach((p,i)=>candle(svg25,p[0],p[1],p[2],p[3],p[4],{delay:i*55}));
+  if(!nested){
+    rect(svg25,500,255,140,40,C.zone,{op:0.28});txt(svg25,508,278,"bullish POI (discount)",C.zone,{size:10});
+    marker(svg25,520,275,"long",C.entry,5);
+    cap25.textContent="A+ long location: bullish bias + price in discount + bullish POI. Nesting tightens the entry.";
+  }else{
+    // nested LTF range inside the discount
+    const nhi=250,nlo=320,neq=(nhi+nlo)/2;
+    rect(svg25,470,nhi,250,nlo-nhi,"#ffffff",{op:0.04,rx:6});
+    line(svg25,470,nhi,720,nhi,C.struct,{dash:"3 3"});txt(svg25,476,nhi-4,"LTF range high",C.struct,{size:9});
+    line(svg25,470,nlo,720,nlo,C.struct,{dash:"3 3"});txt(svg25,476,nlo+12,"LTF range low",C.struct,{size:9});
+    line(svg25,470,neq,720,neq,C.gold,{dash:"2 4",op:.7});txt(svg25,650,neq-3,"LTF 50%",C.gold,{size:9});
+    rect(svg25,560,neq+2,120,nlo-neq-4,C.zone,{op:0.3});txt(svg25,566,nlo-6,"discount of discount",C.zone,{size:9});
+    marker(svg25,600,nlo-8,"precision long",C.entry,5);
+    cap25.textContent="Nesting: inside the HTF discount, buy the discount of the LTF range — two layers of favourable positioning.";
+  }
+}
+document.getElementById("toggleNest").addEventListener("click",function(){
+  nested=!nested;this.setAttribute("aria-pressed",nested?"true":"false");
+  this.textContent=nested?"Hide nested LTF range":"Toggle nested LTF range";drawPD();
+});
+
+/* init */
+drawPool("eqh");
+drawSweep("sweep",false);
+drawIDM(0);
+drawPD();
+</script>
+</body>
+</html>

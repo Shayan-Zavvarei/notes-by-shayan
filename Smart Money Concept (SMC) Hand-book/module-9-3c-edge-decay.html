@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SMC Handbook · 9.3 — Normal Drawdown vs Edge Decay</title>
+<style>
+  :root{--ink:#0a0e14;--panel:#111722;--panel-2:#161e2b;--line:#243044;--bull:#22c55e;--bear:#ef4444;--zone:#3b82f6;--entry:#f97316;--liq:#a855f7;--struct:#8a98ad;--text:#e6edf6;--dim:#8493a8;--gold:#e8b923}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{animation:none !important;transition-duration:.001ms !important}}
+  body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#16202e 0%,transparent 60%),var(--ink);color:var(--text);font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:48px 24px 96px}
+  .eyebrow{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);margin:0 0 14px}
+  h1{font-size:clamp(32px,5.5vw,56px);line-height:1.04;margin:0 0 10px;font-weight:600;letter-spacing:-.01em}
+  .sub{color:var(--dim);font-size:18px;max-width:64ch;margin:0 0 8px}
+  .note{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--text);border-left:2px solid var(--gold);padding:8px 0 8px 14px;margin:18px 0 0;max-width:78ch}
+  .rule{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:28px 0 0}
+  section{margin-top:48px;background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:16px;padding:28px 26px 30px;box-shadow:0 1px 0 rgba(255,255,255,.02) inset,0 24px 48px -32px rgba(0,0,0,.8)}
+  .tag{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);background:var(--gold);display:inline-block;padding:4px 9px;border-radius:5px;font-weight:700}
+  h2{font-size:clamp(22px,3.2vw,28px);margin:14px 0 6px;font-weight:600;letter-spacing:-.01em}
+  .lede{color:var(--dim);margin:0 0 16px;font-size:15.5px;max-width:78ch}
+  figcaption{color:var(--dim);font-size:13px;margin-top:12px;font-family:ui-monospace,Menlo,monospace;max-width:78ch}
+  svg{width:100%;height:auto;display:block;background:#0c121c;border:1px solid var(--line);border-radius:12px}
+  .toggle-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  button.seg-btn{flex:1;min-width:120px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--text);background:#0e1622;border:1px solid var(--line);padding:11px 14px;border-radius:9px;cursor:pointer;transition:border-color .2s,background .2s}
+  button.seg-btn:hover{border-color:var(--gold)}button.seg-btn.on{border-color:var(--gold);color:var(--gold);background:#101826}
+  .stepbox{margin-top:14px;padding:14px 16px;background:#0c121c;border:1px solid var(--line);border-radius:10px;font-family:ui-monospace,Menlo,monospace;font-size:13px;min-height:52px}
+  .footnote{color:var(--dim);font-size:12.5px;margin-top:40px;font-family:ui-monospace,Menlo,monospace;text-align:center}
+  #curve{stroke-dasharray:700;stroke-dashoffset:700;animation:draw 1.5s ease forwards}@keyframes draw{to{stroke-dashoffset:0}}
+  .lbl{animation:fade .5s ease 1.2s both}@keyframes fade{from{opacity:0}to{opacity:1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">SMC Master Handbook · Module 9.3</p>
+  <h1>Normal Drawdown vs Edge Decay</h1>
+  <p class="sub">The hardest discipline is distinguishing a normal drawdown (variance the math guarantees) from genuine edge decay (the premise no longer holding). They feel identical — which is why feeling cannot be the judge.</p>
+  <p class="note">A losing streak that stays within the maximum drawdown your backtest already showed is expected and is <em>not</em> evidence the edge is broken. Edge decay is performance that degrades beyond statistical expectation across a meaningful sample.</p>
+  <div class="rule"></div>
+
+  <section>
+    <span class="tag">9.3</span>
+    <h2>Let the Band, Not the Feeling, Decide</h2>
+    <p class="lede">Three signals separate decay from noise: metrics breaching control limits (outside ~2σ over 30+ trades); the premise disappearing (a regime change); and — most diagnostic — clean A-grade execution with negative results, which points to <em>selection</em>, not execution. Switch between a normal drawdown and edge decay.</p>
+
+    <div class="toggle-row">
+      <button class="seg-btn on" data-mode="normal">Normal drawdown</button>
+      <button class="seg-btn" data-mode="decay">Edge decay</button>
+    </div>
+
+    <svg id="chart" viewBox="0 0 300 232" role="img" aria-label="Edge decay monitor"></svg>
+    <div class="stepbox" id="stepbox"></div>
+    <figcaption>The trap to avoid is the opposite error: abandoning a sound edge during its normal, backtested drawdown — which is exactly when most traders quit, right before it reasserts.</figcaption>
+  </section>
+
+  <p class="footnote">SMC Master Handbook · Module 9 · drawdowns end; abandoned systems don't get the chance to recover</p>
+</div>
+<script>
+"use strict";
+const chart=document.getElementById("chart"),stepbox=document.getElementById("stepbox"),btns=document.querySelectorAll(".seg-btn"),mean=130;
+const PATH={normal:"30,120 60,108 90,140 120,150 150,125 180,118 210,138 240,112 270,128",
+            decay:"30,120 60,110 90,135 120,118 150,140 180,150 210,170 240,195 270,215"};
+const TXT={normal:"The curve dips but stays inside the variance band your backtest predicted. This is a normal drawdown — keep executing the same process. Quitting here is the classic trap.",
+           decay:"Rolling expectancy breaches the lower control limit over 30+ trades while execution stays A-grade: a selection problem, not variance. Cut or rebuild the setup."};
+function render(m){
+  const decay=m==="decay";
+  chart.innerHTML=
+    '<rect x="20" y="90" width="270" height="80" fill="#22c55e" opacity="0.07"/>'+
+    '<line x1="20" y1="90" x2="290" y2="90" stroke="#475569" stroke-width="1" stroke-dasharray="4 3"/>'+
+    '<text x="222" y="86" fill="#64748b" font-size="9" font-family="ui-monospace,Menlo,monospace">+2σ</text>'+
+    '<line x1="20" y1="'+mean+'" x2="290" y2="'+mean+'" stroke="#8a98ad" stroke-width="1.5"/>'+
+    '<text x="218" y="'+(mean-4)+'" fill="#94a3b8" font-size="9" font-family="ui-monospace,Menlo,monospace">backtest mean</text>'+
+    '<line x1="20" y1="170" x2="290" y2="170" stroke="#475569" stroke-width="1" stroke-dasharray="4 3"/>'+
+    '<text x="222" y="183" fill="#64748b" font-size="9" font-family="ui-monospace,Menlo,monospace">−2σ</text>'+
+    '<polyline id="curve" points="'+PATH[m]+'" fill="none" stroke="'+(decay?"#ef4444":"#22c55e")+'" stroke-width="2.5"/>'+
+    (decay?'<line x1="240" y1="170" x2="270" y2="215" stroke="#ef4444" stroke-width="1" stroke-dasharray="3 2"/>':'')+
+    (decay?'<text class="lbl" x="150" y="210" fill="#fca5a5" font-size="10" font-weight="bold" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">breaches band → cut / rebuild</text>'
+          :'<text class="lbl" x="150" y="200" fill="#86efac" font-size="10" font-weight="bold" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">inside band → keep the process</text>');
+  stepbox.innerHTML="<strong style='color:#e8b923'>"+(decay?"Edge decay: ":"Normal drawdown: ")+"</strong>"+TXT[m];
+  btns.forEach(b=>b.classList.toggle("on",b.dataset.mode===m));
+}
+btns.forEach(b=>b.addEventListener("click",()=>render(b.dataset.mode)));
+render("normal");
+</script>
+</body>
+</html>

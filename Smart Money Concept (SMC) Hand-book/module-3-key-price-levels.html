@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SMC Handbook · Module 3 — Key Price Levels</title>
+<style>
+  :root{
+    --ink:#0a0e14; --panel:#111722; --panel-2:#161e2b; --line:#243044;
+    --bull:#22c55e; --bear:#ef4444; --zone:#3b82f6; --entry:#f97316;
+    --liq:#a855f7; --struct:#8a98ad; --text:#e6edf6; --dim:#8493a8; --gold:#e8b923;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    *{animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important}
+  }
+  body{margin:0; background:radial-gradient(1200px 600px at 80% -10%, #16202e 0%, transparent 60%), var(--ink); color:var(--text); font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; line-height:1.5; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px; margin:0 auto; padding:48px 24px 96px}
+  .eyebrow{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; letter-spacing:.32em; text-transform:uppercase; color:var(--gold); margin:0 0 14px}
+  h1{font-size:clamp(34px,6vw,62px); line-height:1.02; margin:0 0 10px; font-weight:600; letter-spacing:-.01em}
+  .sub{color:var(--dim); font-size:18px; max-width:62ch; margin:0 0 8px}
+  .rule{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:28px 0 0}
+  section{margin-top:56px; background:linear-gradient(180deg,var(--panel),var(--panel-2)); border:1px solid var(--line); border-radius:16px; padding:28px 26px 30px; box-shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 24px 48px -32px rgba(0,0,0,.8)}
+  .tag{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink); background:var(--gold); display:inline-block; padding:4px 9px; border-radius:5px; font-weight:700}
+  h2{font-size:clamp(22px,3.4vw,30px); margin:14px 0 6px; font-weight:600; letter-spacing:-.01em}
+  .lede{color:var(--dim); margin:0 0 18px; font-size:15.5px; max-width:72ch}
+  figure{margin:0}
+  svg{width:100%; height:auto; display:block; background:#0c121c; border:1px solid var(--line); border-radius:12px}
+  figcaption{color:var(--dim); font-size:13px; margin-top:12px; font-family:ui-monospace,Menlo,monospace}
+  .controls{display:flex; gap:10px; flex-wrap:wrap; margin:16px 0 4px}
+  button.ctl{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; letter-spacing:.04em; color:var(--text); background:#0e1622; border:1px solid var(--line); padding:9px 14px; border-radius:9px; cursor:pointer; transition:border-color .15s, transform .08s, background .15s}
+  button.ctl:hover{border-color:var(--gold)}
+  button.ctl:active{transform:translateY(1px)}
+  button.ctl:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+  button.ctl[aria-pressed="true"]{border-color:var(--gold); background:#1a2333; color:var(--gold)}
+  .legend{display:flex; gap:16px; flex-wrap:wrap; margin:6px 0 18px; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--dim)}
+  .legend span{display:inline-flex; align-items:center; gap:7px}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .readout{min-height:22px; margin-top:14px; padding:12px 14px; background:#0c121c; border:1px solid var(--line); border-radius:10px; font-size:14px; color:var(--text)}
+  .readout strong{color:var(--gold)}
+  .toc{display:flex; flex-wrap:wrap; gap:10px; margin-top:22px}
+  .toc a{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--dim); text-decoration:none; border:1px solid var(--line); padding:7px 11px; border-radius:8px}
+  .toc a:hover{color:var(--gold); border-color:var(--gold)}
+  .candle{opacity:0; animation:rise .5s ease forwards}
+  @keyframes rise{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)}}
+  .flash{animation:flash 1.4s ease-in-out infinite}
+  @keyframes flash{0%,100%{opacity:.3} 50%{opacity:1}}
+  .footnote{color:var(--dim); font-size:12.5px; margin-top:40px; font-family:ui-monospace,Menlo,monospace; text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">SMC Master Handbook · Module 3</p>
+  <h1>Key Price Levels</h1>
+  <p class="sub">The zones you actually enter from. Order blocks, breakers, rejection and propulsion blocks, fair value gaps, the imbalance family, and the PD array hierarchy that ranks them all.</p>
+  <div class="rule"></div>
+
+  <nav class="toc" aria-label="Module contents">
+    <a href="#s31">3.1 Order Blocks</a>
+    <a href="#s32">3.2 Breaker Blocks</a>
+    <a href="#s33">3.3 Rejection &amp; Propulsion</a>
+    <a href="#s34">3.4 Fair Value Gaps</a>
+    <a href="#s35">3.5 Volume Imbalance &amp; Void</a>
+    <a href="#s36">3.6 PD Array Hierarchy</a>
+  </nav>
+
+  <!-- 3.1 -->
+  <section id="s31">
+    <span class="tag">3.1</span>
+    <h2>Order Blocks — the institutional footprint</h2>
+    <p class="lede">The last opposing candle before a structure-breaking move. Bullish OB = last red candle before an up-BOS; bearish OB = last green before a down-BOS. Toggle direction, then play the return-and-react.</p>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--zone)"></i>OB / FVG zone</span>
+      <span><i class="dot" style="background:var(--bull)"></i>bullish</span>
+      <span><i class="dot" style="background:var(--bear)"></i>bearish</span>
+      <span><i class="dot" style="background:var(--entry)"></i>entry</span>
+    </div>
+    <div class="controls" role="group" aria-label="Order block direction">
+      <button class="ctl" data-ob="bull" aria-pressed="true">Bullish OB</button>
+      <button class="ctl" data-ob="bear" aria-pressed="false">Bearish OB</button>
+      <button class="ctl" id="playOB" aria-pressed="false">▶ Play return &amp; react</button>
+    </div>
+    <figure>
+      <svg id="svg31" viewBox="0 0 760 360" role="img" aria-label="Bullish and bearish order block with return and reaction"></svg>
+      <figcaption id="cap31">Highest grade: caused a BOS, left an FVG, sits in the right zone, has inducement, is unmitigated.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 3.2 -->
+  <section id="s32">
+    <span class="tag">3.2</span>
+    <h2>Breaker Blocks — a failed OB that flips</h2>
+    <p class="lede">A breaker requires a sweep of a prior swing then a structure break the other way. The failed move's origin becomes support/resistance in the new direction. Step through the formation.</p>
+    <div class="controls" role="group" aria-label="Breaker sequence">
+      <button class="ctl" id="brkStep" aria-pressed="false">Step ▸</button>
+      <button class="ctl" id="brkReset" aria-pressed="false">Reset</button>
+    </div>
+    <figure>
+      <svg id="svg32" viewBox="0 0 760 340" role="img" aria-label="Bullish breaker block formation sequence"></svg>
+      <figcaption id="cap32">Three sources of fuel in one zone: a liquidity sweep, a structure flip, and trapped traders.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 3.3 -->
+  <section id="s33">
+    <span class="tag">3.3</span>
+    <h2>Rejection &amp; Propulsion Blocks</h2>
+    <p class="lede">Rejection block uses the long wick of a sweep-and-reject. Propulsion block is an OB sitting on prior orders that relaunches price. Order block (body) is your default. Compare all three.</p>
+    <div class="controls" role="group" aria-label="Block type comparison">
+      <button class="ctl" data-blk="ob" aria-pressed="true">Order Block</button>
+      <button class="ctl" data-blk="rej" aria-pressed="false">Rejection Block</button>
+      <button class="ctl" data-blk="prop" aria-pressed="false">Propulsion Block</button>
+    </div>
+    <figure>
+      <svg id="svg33" viewBox="0 0 760 340" role="img" aria-label="Order, rejection, and propulsion block comparison"></svg>
+      <figcaption id="cap33">OB is primary; rejection and propulsion are refinements you reach for when price action calls for them.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 3.4 -->
+  <section id="s34">
+    <span class="tag">3.4</span>
+    <h2>Fair Value Gaps — the 3-candle imbalance</h2>
+    <p class="lede">When candle 1's wick and candle 3's wick don't overlap, the gap between them is the FVG. The 50% line (consequent encroachment) is the precision entry. Step through formation, partial fill, full fill, and inverse.</p>
+    <div class="controls" role="group" aria-label="FVG scenarios">
+      <button class="ctl" data-fvg="form" aria-pressed="true">Formation</button>
+      <button class="ctl" data-fvg="ce" aria-pressed="false">CE partial fill</button>
+      <button class="ctl" data-fvg="full" aria-pressed="false">Full fill</button>
+      <button class="ctl" data-fvg="inv" aria-pressed="false">Inverse FVG</button>
+    </div>
+    <figure>
+      <svg id="svg34" viewBox="0 0 760 340" role="img" aria-label="Fair value gap formation, fills, and inversion"></svg>
+      <figcaption id="cap34">Trade the reaction at the CE of a fresh gap. A fully filled gap is a used level.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 3.5 -->
+  <section id="s35">
+    <span class="tag">3.5</span>
+    <h2>Volume Imbalance &amp; Void</h2>
+    <p class="lede">FVG = wick-to-wick gap (clear daylight). Volume imbalance = body-to-body gap with wicks overlapping (thin slit). Void = extreme one-sided run. Priority for entry: FVG &gt; VI &gt; Void.</p>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--zone)"></i>imbalance</span>
+      <span>FVG = enter · VI = refine · Void = target</span>
+    </div>
+    <figure>
+      <svg id="svg35" viewBox="0 0 760 320" role="img" aria-label="Comparison of FVG, volume imbalance, and void"></svg>
+      <figcaption>Use FVGs to enter, volume imbalances to refine, and voids to project where price is drawn.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 3.6 -->
+  <section id="s36">
+    <span class="tag">3.6</span>
+    <h2>PD Array Hierarchy &amp; the Stack</h2>
+    <p class="lede">OB &gt; Breaker &gt; FVG &gt; Rejection Block &gt; Volume Imbalance &gt; Void. Enter from the highest-ranked array; use lower ones as targets and confluence. Click the stack layers to build an A+ POI.</p>
+    <figure>
+      <svg id="svg36" viewBox="0 0 760 380" role="img" aria-label="PD array hierarchy bars and a confluence stack builder"></svg>
+      <figcaption id="cap36">More aligned arrays = higher conviction. Four or five stacked elements is an A+ point of interest.</figcaption>
+    </figure>
+    <div class="readout" id="ro36">Click each layer on the right to add it to the stack and read what it contributes.</div>
+  </section>
+
+  <p class="footnote">SMC Master Handbook · Module 3 of 9 · charts are schematic teaching models, not trade signals</p>
+</div>
+
+<script>
+"use strict";
+const NS="http://www.w3.org/2000/svg";
+const C={bull:"#22c55e",bear:"#ef4444",zone:"#3b82f6",entry:"#f97316",liq:"#a855f7",struct:"#8a98ad",gold:"#e8b923",dim:"#8493a8",text:"#e6edf6"};
+const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function candle(p,x,oY,cY,hY,lY,{w=14,delay=0,anim=true}={}){
+  const col=cY<oY?C.bull:C.bear;
+  const g=document.createElementNS(NS,"g");
+  if(anim&&!reduce){g.setAttribute("class","candle");g.style.animationDelay=delay+"ms";}
+  const wk=document.createElementNS(NS,"line");
+  wk.setAttribute("x1",x);wk.setAttribute("x2",x);wk.setAttribute("y1",hY);wk.setAttribute("y2",lY);
+  wk.setAttribute("stroke",col);wk.setAttribute("stroke-width","2");
+  const b=document.createElementNS(NS,"rect");
+  const top=Math.min(oY,cY),h=Math.max(Math.abs(oY-cY),2);
+  b.setAttribute("x",x-w/2);b.setAttribute("y",top);b.setAttribute("width",w);b.setAttribute("height",h);
+  b.setAttribute("rx","1.5");b.setAttribute("fill",col);
+  g.appendChild(wk);g.appendChild(b);p.appendChild(g);return g;
+}
+function line(p,x1,y1,x2,y2,col,{dash=null,w=1.5,op=1}={}){
+  const l=document.createElementNS(NS,"line");
+  l.setAttribute("x1",x1);l.setAttribute("y1",y1);l.setAttribute("x2",x2);l.setAttribute("y2",y2);
+  l.setAttribute("stroke",col);l.setAttribute("stroke-width",w);l.setAttribute("opacity",op);
+  if(dash)l.setAttribute("stroke-dasharray",dash);p.appendChild(l);return l;
+}
+function rect(p,x,y,w,h,col,{op=1,rx=3,stroke=null}={}){
+  const r=document.createElementNS(NS,"rect");
+  r.setAttribute("x",x);r.setAttribute("y",y);r.setAttribute("width",w);r.setAttribute("height",h);
+  r.setAttribute("fill",col);r.setAttribute("opacity",op);r.setAttribute("rx",rx);
+  if(stroke){r.setAttribute("stroke",stroke);r.setAttribute("stroke-width","1.5");}
+  p.appendChild(r);return r;
+}
+function txt(p,x,y,s,col,{size=12,weight=400,anchor="start"}={}){
+  const t=document.createElementNS(NS,"text");
+  t.setAttribute("x",x);t.setAttribute("y",y);t.setAttribute("fill",col);
+  t.setAttribute("font-size",size);t.setAttribute("font-weight",weight);
+  t.setAttribute("font-family","monospace");t.setAttribute("text-anchor",anchor);
+  t.textContent=s;p.appendChild(t);return t;
+}
+function marker(p,x,y,s,col,r=6){
+  const c=document.createElementNS(NS,"circle");
+  c.setAttribute("cx",x);c.setAttribute("cy",y);c.setAttribute("r",r);
+  c.setAttribute("fill",col);c.setAttribute("stroke","#fff");c.setAttribute("stroke-width","1.5");
+  p.appendChild(c); if(s)txt(p,x+10,y-8,s,col,{size:11}); return c;
+}
+function xmark(p,x,y,col){line(p,x-6,y-6,x+6,y+6,col,{w:2.5});line(p,x-6,y+6,x+6,y-6,col,{w:2.5});}
+function star(p,x,y,col,s=9){
+  const pts=[];for(let i=0;i<10;i++){const a=Math.PI/5*i-Math.PI/2;const rr=i%2?s*0.45:s;pts.push((x+rr*Math.cos(a))+","+(y+rr*Math.sin(a)));}
+  const poly=document.createElementNS(NS,"polygon");poly.setAttribute("points",pts.join(" "));poly.setAttribute("fill",col);p.appendChild(poly);
+}
+function clear(s){while(s.firstChild)s.removeChild(s.firstChild);}
+
+/* ---------- 3.1 order blocks ---------- */
+const svg31=document.getElementById("svg31"),cap31=document.getElementById("cap31");
+let obDir="bull";
+function drawOB(dir,withReturn){
+  clear(svg31);
+  if(dir==="bull"){
+    line(svg31,40,90,720,90,C.struct,{dash:"5 5"});txt(svg31,560,82,"prior high",C.struct);
+    // approach down into OB, last red candle, then aggressive rally + BOS, leaving FVG
+    candle(svg31,90,150,185,144,192,{delay:0});
+    candle(svg31,125,185,215,178,222,{delay:55});
+    candle(svg31,160,215,235,208,242,{delay:110}); // last bearish candle = OB
+    rect(svg31,143,228,34,40,C.zone,{op:0.28,stroke:C.zone});txt(svg31,143,288,"bullish OB",C.zone,{size:11});
+    txt(svg31,90,305,"last bearish candle before up-BOS",C.dim,{size:11});
+    // rally away
+    candle(svg31,195,235,170,242,240,{delay:165});
+    rect(svg31,210,150,30,40,C.zone,{op:0.16});txt(svg31,212,148,"FVG",C.zone,{size:10});
+    candle(svg31,230,170,120,178,200,{delay:220});
+    candle(svg31,265,120,80,128,126,{delay:275});
+    marker(svg31,290,72,"",C.gold,5);txt(svg31,300,70,"BOS",C.gold,{size:11,weight:700});
+    candle(svg31,300,80,60,88,86,{delay:330});
+    if(withReturn){
+      candle(svg31,340,60,110,54,118,{delay:0});
+      candle(svg31,375,110,160,104,168,{delay:60});
+      candle(svg31,410,160,235,154,244,{delay:120}); // returns to OB
+      marker(svg31,440,236,"tap → react",C.entry,6);
+      candle(svg31,440,236,185,242,244,{delay:180});
+      candle(svg31,475,185,135,192,190,{delay:240});
+      candle(svg31,510,135,90,142,140,{delay:300});
+      xmark(svg31,160,278,C.bear);txt(svg31,150,272,"stop below OB low",C.bear,{size:10,anchor:"end"});
+      star(svg31,540,70,C.gold,8);txt(svg31,556,72,"target",C.gold,{size:11});
+      cap31.textContent="Return to the unmitigated bullish OB triggers the resting orders — reaction up, stop below the block's low.";
+    }else{
+      cap31.textContent="Highest grade: caused a BOS, left an FVG, sits in the right zone, has inducement, is unmitigated.";
+    }
+  }else{
+    line(svg31,40,260,720,260,C.struct,{dash:"5 5"});txt(svg31,560,253,"prior low",C.struct);
+    candle(svg31,90,200,165,158,172,{delay:0});
+    candle(svg31,125,165,135,128,142,{delay:55});
+    candle(svg31,160,135,115,108,142,{delay:110}); // last bullish candle = OB
+    rect(svg31,143,108,34,34,C.zone,{op:0.28,stroke:C.zone});txt(svg31,143,102,"bearish OB",C.zone,{size:11});
+    candle(svg31,195,115,180,108,188,{delay:165});
+    rect(svg31,210,150,30,40,C.zone,{op:0.16});txt(svg31,212,205,"FVG",C.zone,{size:10});
+    candle(svg31,230,180,230,172,238,{delay:220});
+    candle(svg31,265,230,270,224,278,{delay:275});
+    marker(svg31,290,278,"",C.gold,5);txt(svg31,300,290,"BOS",C.gold,{size:11,weight:700});
+    if(withReturn){
+      candle(svg31,330,270,220,278,214,{delay:0});
+      candle(svg31,365,220,165,228,160,{delay:60});
+      candle(svg31,400,165,120,172,116,{delay:120}); // returns to OB
+      marker(svg31,430,120,"tap → react",C.entry,6);
+      candle(svg31,430,120,175,114,182,{delay:180});
+      candle(svg31,465,175,225,168,232,{delay:240});
+      candle(svg31,500,225,270,218,278,{delay:300});
+      xmark(svg31,160,100,C.bear);txt(svg31,150,96,"stop above OB high",C.bear,{size:10,anchor:"end"});
+      star(svg31,530,285,C.gold,8);txt(svg31,490,300,"target",C.gold,{size:11});
+      cap31.textContent="Return to the unmitigated bearish OB triggers the resting sell orders — reaction down, stop above the block's high.";
+    }else{
+      cap31.textContent="Bearish OB = last bullish candle before a down-BOS. Conservative zone = the body; key line = the 50%.";
+    }
+  }
+}
+document.querySelectorAll("button[data-ob]").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll("button[data-ob]").forEach(x=>x.setAttribute("aria-pressed","false"));
+    b.setAttribute("aria-pressed","true");obDir=b.getAttribute("data-ob");drawOB(obDir,false);
+    document.getElementById("playOB").textContent="▶ Play return & react";
+  });
+});
+document.getElementById("playOB").addEventListener("click",function(){drawOB(obDir,true);this.textContent="↻ Replay";});
+
+/* ---------- 3.2 breaker ---------- */
+const svg32=document.getElementById("svg32"),cap32=document.getElementById("cap32");
+let brkS=0;
+const brkCaps=[
+  "Step 1: price makes a low, rallies to a high, and an order block region forms beneath that high.",
+  "Step 2: price drops to a LOWER low, sweeping the first low — the OB has failed.",
+  "Step 3: price rallies and breaks ABOVE the prior high — a bullish structure flip (CHoCH/BOS).",
+  "Step 4: price returns to the failed-OB zone, now a bullish breaker — support — and launches up."
+];
+function drawBreaker(step){
+  clear(svg32);
+  const firstLow=255, priorHigh=120;
+  // step 0: low -> high
+  candle(svg32,90,260,230,268,265,{delay:0});
+  candle(svg32,125,230,190,238,196,{delay:55});
+  candle(svg32,160,190,150,198,156,{delay:110});
+  candle(svg32,195,150,128,158,156,{delay:165}); // makes the high region
+  line(svg32,40,priorHigh,720,priorHigh,C.struct,{dash:"5 5"});txt(svg32,560,priorHigh-6,"prior high",C.struct);
+  line(svg32,40,firstLow,300,firstLow,C.struct,{dash:"3 4",op:.7});txt(svg32,200,firstLow+16,"first low",C.struct,{size:10});
+  // breaker zone (the down candles forming the high) marked from step>=2
+  if(step>=1){
+    candle(svg32,230,150,195,144,202,{delay:0});
+    candle(svg32,265,195,235,188,242,{delay:55});
+    candle(svg32,300,235,275,228,300,{delay:110}); // lower low - sweep
+    xmark(svg32,300,300,C.gold);txt(svg32,316,300,"first low SWEPT (failed OB)",C.gold,{size:11,weight:700});
+  }
+  if(step>=2){
+    candle(svg32,335,275,210,282,280,{delay:0});
+    candle(svg32,370,210,150,218,216,{delay:55});
+    candle(svg32,405,150,100,158,156,{delay:110}); // break above prior high
+    marker(svg32,430,96,"",C.gold,5);txt(svg32,440,94,"break ABOVE = bullish flip",C.gold,{size:11,weight:700});
+    rect(svg32,178,128,40,40,C.zone,{op:0.3,stroke:C.zone});txt(svg32,150,124,"breaker",C.zone,{size:10,anchor:"end"});
+  }
+  if(step>=3){
+    candle(svg32,440,100,140,94,148,{delay:0});
+    candle(svg32,475,140,160,134,168,{delay:55}); // returns to breaker zone (~148)
+    marker(svg32,505,150,"return → support",C.entry,6);
+    candle(svg32,505,150,110,158,162,{delay:110});
+    candle(svg32,540,110,70,118,116,{delay:165});
+    xmark(svg32,198,176,C.bear);txt(svg32,210,184,"stop below breaker",C.bear,{size:10});
+    star(svg32,575,60,C.gold,8);txt(svg32,560,52,"target",C.gold,{size:11,anchor:"end"});
+  }
+  cap32.textContent=brkCaps[step];
+}
+document.getElementById("brkStep").addEventListener("click",()=>{brkS=Math.min(brkS+1,3);drawBreaker(brkS);});
+document.getElementById("brkReset").addEventListener("click",()=>{brkS=0;drawBreaker(0);});
+
+/* ---------- 3.3 block comparison ---------- */
+const svg33=document.getElementById("svg33"),cap33=document.getElementById("cap33");
+function drawBlk(kind){
+  clear(svg33);
+  if(kind==="ob"){
+    line(svg33,40,90,720,90,C.struct,{dash:"5 5"});txt(svg33,560,82,"prior high",C.struct);
+    candle(svg33,160,180,235,174,242,{delay:0}); // last red = OB body
+    rect(svg33,143,180,34,55,C.zone,{op:0.3,stroke:C.zone});txt(svg33,143,255,"OB (body)",C.zone,{size:11});
+    candle(svg33,200,235,160,242,240,{delay:55});
+    candle(svg33,240,160,110,168,166,{delay:110});
+    candle(svg33,280,110,70,118,116,{delay:165});
+    marker(svg33,305,66,"BOS",C.gold,5);
+    candle(svg33,360,90,150,84,158,{delay:220});
+    marker(svg33,395,225,"tap→react",C.entry,6);
+    candle(svg33,395,225,170,232,238,{delay:275});
+    candle(svg33,435,170,120,178,176,{delay:330});
+    cap33.textContent="Order block: use the BODY of the last opposing candle. Your default, all-purpose POI.";
+  }else if(kind==="rej"){
+    line(svg33,40,90,720,90,C.liq,{dash:"4 4"});txt(svg33,520,82,"liquidity (high) swept by wick",C.liq);
+    // long upper wick rejection candle
+    candle(svg33,200,180,210,72,216,{delay:0});
+    rect(svg33,183,90,34,90,C.zone,{op:0.26,stroke:C.zone});txt(svg33,150,130,"wick zone",C.zone,{size:11,anchor:"end"});
+    txt(svg33,150,150,"(rejection block)",C.dim,{size:10,anchor:"end"});
+    candle(svg33,240,210,255,204,262,{delay:55});
+    candle(svg33,280,255,300,248,306,{delay:110});
+    // return to wick zone -> reject down
+    candle(svg33,360,290,210,298,300,{delay:165});
+    candle(svg33,400,210,150,218,222,{delay:220});
+    marker(svg33,400,150,"return→reject",C.entry,6);
+    candle(svg33,440,150,108,158,156,{delay:275});
+    cap33.textContent="Rejection block: built from the long WICK of a sweep-and-reject. Prefer it when the footprint is in the shadow.";
+  }else{
+    // propulsion: original OB low, price doesn't return fully, higher OB relaunches
+    candle(svg33,140,250,300,244,306,{delay:0});
+    rect(svg33,123,250,34,50,C.zone,{op:0.22,stroke:C.zone});txt(svg33,123,320,"original OB",C.zone,{size:10});
+    candle(svg33,180,250,190,258,256,{delay:55});
+    candle(svg33,220,190,150,198,196,{delay:110});
+    // pullback that stops ABOVE original -> propulsion OB
+    candle(svg33,260,150,195,144,202,{delay:165});
+    rect(svg33,243,150,34,45,C.zone,{op:0.32,stroke:C.zone});txt(svg33,286,170,"propulsion OB",C.zone,{size:11});
+    txt(svg33,286,186,"(sits above original)",C.dim,{size:9});
+    marker(svg33,295,190,"relaunch",C.entry,6);
+    candle(svg33,300,195,140,202,200,{delay:220});
+    candle(svg33,340,140,95,148,146,{delay:275});
+    candle(svg33,380,95,60,102,100,{delay:330});
+    star(svg33,410,52,C.gold,8);txt(svg33,426,54,"strong continuation",C.gold,{size:11});
+    cap33.textContent="Propulsion block: an OB on prior orders that relaunches price. A continuation tool signalling strength.";
+  }
+}
+document.querySelectorAll("button[data-blk]").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll("button[data-blk]").forEach(x=>x.setAttribute("aria-pressed","false"));
+    b.setAttribute("aria-pressed","true");drawBlk(b.getAttribute("data-blk"));
+  });
+});
+
+/* ---------- 3.4 FVG ---------- */
+const svg34=document.getElementById("svg34"),cap34=document.getElementById("cap34");
+function fvgBase(){
+  // three candles forming a bullish FVG; gap between C1 high and C3 low
+  candle(svg34,160,250,225,235,262,{delay:0});   // C1, high=235
+  candle(svg34,200,225,135,232,232,{delay:55});  // C2 big
+  candle(svg34,240,135,110,142,150,{delay:110}); // C3, low=150
+  return {top:150,bot:235,ce:192,x0:120,x1:330};
+}
+function drawFVG(kind){
+  clear(svg34);
+  const g=fvgBase();
+  rect(svg34,g.x0,g.top,g.x1-g.x0,g.bot-g.top,C.zone,{op:0.16});
+  line(svg34,g.x0,g.top,g.x1,g.top,C.zone,{dash:"4 3"});txt(svg34,g.x1+4,g.top+4,"top (C3 low)",C.zone,{size:10});
+  line(svg34,g.x0,g.bot,g.x1,g.bot,C.zone,{dash:"4 3"});txt(svg34,g.x1+4,g.bot+4,"bottom (C1 high)",C.zone,{size:10});
+  if(kind==="form"){
+    txt(svg34,120,300,"C1 wick & C3 wick DON'T overlap = bullish FVG (support)",C.dim,{size:11});
+    candle(svg34,280,110,80,118,116,{delay:165});
+    cap34.textContent="Formation: the gap is measured from candle 1's high to candle 3's low — never the middle candle.";
+  }else if(kind==="ce"){
+    line(svg34,g.x0,g.ce,g.x1,g.ce,C.gold,{w:2});txt(svg34,g.x1+4,g.ce+4,"CE 50%",C.gold,{size:10});
+    candle(svg34,290,90,140,84,148,{delay:0});
+    candle(svg34,330,140,188,134,196,{delay:55}); // dips to CE
+    marker(svg34,360,190,"react at CE",C.entry,6);
+    candle(svg34,360,188,135,196,198,{delay:110});
+    candle(svg34,400,135,90,142,140,{delay:165});
+    cap34.textContent="Partial fill to the CE (50%) then reject — the textbook precision entry, leaving residual imbalance.";
+  }else if(kind==="full"){
+    candle(svg34,290,90,150,84,158,{delay:0});
+    candle(svg34,330,150,232,144,240,{delay:55}); // fills entire gap to bottom
+    txt(svg34,360,225,"gap fully filled",C.dim,{size:11});
+    marker(svg34,360,232,"react at far edge / OB below",C.entry,6);
+    candle(svg34,400,232,180,240,242,{delay:110});
+    candle(svg34,440,180,130,188,186,{delay:165});
+    cap34.textContent="Full fill: price closes the whole inefficiency, then reacts from the far edge. The gap's pull is now spent.";
+  }else{
+    // inverse: price closes BELOW the gap, gap flips to resistance
+    candle(svg34,280,150,200,144,208,{delay:0});
+    candle(svg34,320,200,255,194,262,{delay:55}); // closes below bottom (235)
+    txt(svg34,150,295,"price CLOSES below the bullish FVG → it inverts",C.bear,{size:11});
+    candle(svg34,400,255,215,262,260,{delay:110}); // retest from below
+    marker(svg34,430,205,"retest → now RESISTANCE",C.entry,6);
+    candle(svg34,440,215,265,208,272,{delay:165});
+    candle(svg34,480,265,300,258,306,{delay:220});
+    cap34.textContent="Inverse FVG: a gap price closed through flips polarity — former support becomes resistance on retest.";
+  }
+}
+document.querySelectorAll("button[data-fvg]").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll("button[data-fvg]").forEach(x=>x.setAttribute("aria-pressed","false"));
+    b.setAttribute("aria-pressed","true");drawFVG(b.getAttribute("data-fvg"));
+  });
+});
+
+/* ---------- 3.5 imbalance comparison ---------- */
+(function(){
+  const s=document.getElementById("svg35");
+  txt(s,130,40,"FVG",C.zone,{size:13,weight:700,anchor:"middle"});
+  txt(s,380,40,"VOLUME IMBALANCE",C.zone,{size:13,weight:700,anchor:"middle"});
+  txt(s,630,40,"VOID",C.zone,{size:13,weight:700,anchor:"middle"});
+  // FVG : clear gap
+  candle(s,110,200,175,188,212,{delay:0,anim:false});
+  candle(s,140,175,95,182,182,{delay:0,anim:false});
+  candle(s,170,95,72,102,110,{delay:0,anim:false}); // low 110 above 188
+  rect(s,95,110,90,78,C.zone,{op:0.2}); txt(s,130,300,"wick-to-wick gap",C.dim,{size:11,anchor:"middle"});
+  txt(s,130,285,"→ ENTER (precise)",C.bull,{size:11,anchor:"middle"});
+  // Volume imbalance : thin slit, wicks overlap
+  candle(s,360,200,165,150,235,{delay:0,anim:false}); // close 165, wick up to 150
+  candle(s,395,150,95,140,185,{delay:0,anim:false});  // open 150 leaves body gap vs prev close 165; wicks overlap
+  rect(s,343,150,70,15,C.zone,{op:0.28}); txt(s,380,300,"body gap, wicks touch",C.dim,{size:11,anchor:"middle"});
+  txt(s,380,285,"→ REFINE (secondary)",C.gold,{size:11,anchor:"middle"});
+  // Void : extreme run
+  for(let i=0;i<4;i++){const y=210-i*30;candle(s,600,y,y-26,y+2,y-28,{delay:0,anim:false});}
+  rect(s,585,90,30,120,C.zone,{op:0.16}); txt(s,630,300,"one-sided, low precision",C.dim,{size:11,anchor:"middle"});
+  txt(s,630,285,"→ TARGET (magnet)",C.entry,{size:11,anchor:"middle"});
+})();
+
+/* ---------- 3.6 hierarchy bars + stack builder ---------- */
+const svg36=document.getElementById("svg36"),ro36=document.getElementById("ro36"),cap36=document.getElementById("cap36");
+const arrays=[
+  {n:"Order Block",w:200},{n:"Breaker",w:172},{n:"FVG",w:148},
+  {n:"Rejection Block",w:120},{n:"Volume Imbalance",w:92},{n:"Void",w:64}
+];
+const layers=[
+  {n:"HTF discount zone",msg:"Correct premium/discount placement — buying cheap where institutions buy."},
+  {n:"Bullish OB (body)",msg:"The literal institutional footprint — strongest array, the core of the entry."},
+  {n:"FVG inside the OB",msg:"Imbalance left on departure — proof of aggression and a precise CE line."},
+  {n:"Inducement in front",msg:"Engineered liquidity to fuel the tap — the institutional story is present."},
+  {n:"Liquidity swept @ origin",msg:"The forming move grabbed a pool — extra confluence and intent."}
+];
+let stackOn=[false,false,false,false,false];
+function drawHierarchy(){
+  clear(svg36);
+  txt(svg36,40,28,"PD ARRAY HIERARCHY (entry reliability)",C.gold,{size:12,weight:700});
+  arrays.forEach((a,i)=>{
+    const y=50+i*40;
+    rect(svg36,40,y,a.w,26,C.zone,{op:0.25+ (0.5*(1-i/6)),rx:5});
+    txt(svg36,48,y+18,(i+1)+". "+a.n,C.text,{size:12});
+  });
+  txt(svg36,40,310,"strongest → weakest. Enter high, target low.",C.dim,{size:11});
+
+  // stack builder on right
+  txt(svg36,440,28,"BUILD THE STACK ▸ (click)",C.gold,{size:12,weight:700});
+  rect(svg36,440,40,280,250,"#ffffff",{op:0.03,rx:8});
+  let count=0;
+  layers.forEach((L,i)=>{
+    const y=58+i*42;
+    const on=stackOn[i];
+    const r=rect(svg36,452,y,256,32,on?C.zone:"#0e1622",{op:on?0.5:1,rx:6,stroke:on?C.gold:C.line});
+    r.style.cursor="pointer";
+    r.addEventListener("click",()=>{stackOn[i]=!stackOn[i];drawHierarchy();
+      const active=layers.filter((_,k)=>stackOn[k]);
+      ro36.innerHTML=stackOn[i]?("<strong>"+L.n+":</strong> "+L.msg):("Click each layer to add it to the stack and read what it contributes.");
+    });
+    txt(svg36,464,y+21,(on?"✓ ":"+ ")+L.n,on?C.gold:C.dim,{size:12});
+    if(on)count++;
+  });
+  // verdict
+  const grade=count>=4?"A+ POI":count>=2?"decent POI":count===1?"thin — size down":"no stack yet";
+  const gc=count>=4?C.bull:count>=2?C.gold:C.dim;
+  txt(svg36,452,310,"Confluence: "+count+"/5  →  "+grade,gc,{size:13,weight:700});
+  if(count>=4){star(svg36,690,305,C.gold,9);}
+}
+drawHierarchy();
+
+/* init */
+drawOB("bull",false);
+drawBreaker(0);
+drawBlk("ob");
+drawFVG("form");
+</script>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SMC Handbook · 0.1 — The Liquidity Sweep</title>
+<style>
+  :root{
+    --ink:#0a0e14; --panel:#111722; --panel-2:#161e2b; --line:#243044;
+    --bull:#22c55e; --bear:#ef4444; --zone:#3b82f6; --entry:#f97316;
+    --liq:#a855f7; --struct:#8a98ad; --text:#e6edf6; --dim:#8493a8; --gold:#e8b923;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{animation:none !important; transition-duration:.001ms !important}}
+  body{margin:0; background:radial-gradient(1200px 600px at 80% -10%, #16202e 0%, transparent 60%), var(--ink); color:var(--text); font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; line-height:1.5; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px; margin:0 auto; padding:48px 24px 96px}
+  .eyebrow{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; letter-spacing:.32em; text-transform:uppercase; color:var(--gold); margin:0 0 14px}
+  h1{font-size:clamp(32px,5.5vw,56px); line-height:1.04; margin:0 0 10px; font-weight:600; letter-spacing:-.01em}
+  .sub{color:var(--dim); font-size:18px; max-width:64ch; margin:0 0 8px}
+  .note{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--text); border-left:2px solid var(--gold); padding:8px 0 8px 14px; margin:18px 0 0; max-width:78ch}
+  .rule{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:28px 0 0}
+  section{margin-top:48px; background:linear-gradient(180deg,var(--panel),var(--panel-2)); border:1px solid var(--line); border-radius:16px; padding:28px 26px 30px; box-shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 24px 48px -32px rgba(0,0,0,.8)}
+  .tag{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink); background:var(--gold); display:inline-block; padding:4px 9px; border-radius:5px; font-weight:700}
+  h2{font-size:clamp(22px,3.2vw,28px); margin:14px 0 6px; font-weight:600; letter-spacing:-.01em}
+  .lede{color:var(--dim); margin:0 0 16px; font-size:15.5px; max-width:78ch}
+  figcaption{color:var(--dim); font-size:13px; margin-top:12px; font-family:ui-monospace,Menlo,monospace; max-width:78ch}
+  svg{width:100%; height:auto; display:block; background:#0c121c; border:1px solid var(--line); border-radius:12px}
+  .btnrow{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; align-items:center}
+  button.ctl{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--text); background:#0e1622; border:1px solid var(--line); padding:9px 14px; border-radius:9px; cursor:pointer}
+  button.ctl:hover{border-color:var(--gold); color:var(--gold)}
+  button.ctl.active{border-color:var(--gold); color:var(--gold)}
+  .readout{font-family:ui-monospace,Menlo,monospace; font-size:13px; color:var(--dim); margin-left:4px}
+  .legend{display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--dim)}
+  .legend span{display:inline-flex; align-items:center; gap:7px}
+  .legend i{width:13px; height:13px; border-radius:3px; display:inline-block}
+  .stepbox{margin-top:14px; padding:14px 16px; background:#0c121c; border:1px solid var(--line); border-radius:10px; font-family:ui-monospace,Menlo,monospace; font-size:13px; min-height:52px; transition:border-color .25s}
+  .stepbox b{color:var(--gold)}
+  .footnote{color:var(--dim); font-size:12.5px; margin-top:40px; font-family:ui-monospace,Menlo,monospace; text-align:center}
+  /* animation states driven by .playing on the svg */
+  .seg{opacity:0}
+  .playing .seg{animation:drawIn .5s ease forwards}
+  @keyframes drawIn{to{opacity:1}}
+  @keyframes pulse{0%,100%{r:6}50%{r:9}}
+  .pulse{animation:pulse 1.6s ease-in-out infinite}
+  .wickflash{animation:wickflash 1.8s ease-in-out infinite}
+  @keyframes wickflash{0%,100%{stroke-opacity:1}50%{stroke-opacity:.35}}
+  .hl{cursor:pointer; transition:filter .2s}
+  .hl:hover{filter:brightness(1.35)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">SMC Master Handbook · Module 0.1</p>
+  <h1>The Liquidity Sweep</h1>
+  <p class="sub">How retail becomes fuel. Price spikes below obvious support to trigger resting sell orders, institutions absorb them, then price reverses — the hunter waits for confirmation.</p>
+  <p class="note">Your stop loss is not protection — to an institution, it is an order. When your stop sits below an obvious low alongside thousands of others, that cluster is a pool of sell orders a large buyer can trigger and absorb.</p>
+  <div class="rule"></div>
+
+  <section id="sweep">
+    <span class="tag">0.1</span>
+    <h2>How Retail Becomes Fuel</h2>
+    <p class="lede">A stop hunt is mechanical, not conspiratorial. Long traders place stops below support; breakout traders place sell-stops below it. Both rest sell orders in the same zone. A large buyer pushes price down through the low, fills against those orders, then price snaps back. Press play to watch the sequence, or hover the candles to inspect each stage.</p>
+
+    <svg id="chart" viewBox="0 0 460 340" role="img" aria-label="Liquidity sweep candlestick diagram">
+      <!-- grid baseline -->
+      <line x1="20" y1="300" x2="440" y2="300" stroke="#243044" stroke-width="1"/>
+      <text x="24" y="320" fill="#8493a8" font-size="10" font-family="ui-monospace,Menlo,monospace">TIME →</text>
+
+      <!-- obvious support line -->
+      <g class="seg" style="animation-delay:.05s">
+        <line x1="20" y1="210" x2="440" y2="210" stroke="#a855f7" stroke-width="2" stroke-dasharray="6 4"/>
+        <text x="300" y="204" fill="#a855f7" font-size="11" font-family="ui-monospace,Menlo,monospace">Obvious Support</text>
+      </g>
+
+      <!-- retail stops zone -->
+      <g class="seg hl" style="animation-delay:.5s" data-step="stops">
+        <rect x="150" y="210" width="90" height="52" fill="#ef4444" opacity="0.16"/>
+        <text x="156" y="232" fill="#fca5a5" font-size="10" font-family="ui-monospace,Menlo,monospace">Retail stops</text>
+        <text x="156" y="246" fill="#fca5a5" font-size="10" font-family="ui-monospace,Menlo,monospace">= sell orders</text>
+      </g>
+
+      <!-- candles: built to mirror the handbook data, scaled into 0..300 view -->
+      <!-- down, down, up, down, SWEEP(long lower wick), up, up, up -->
+      <g class="seg hl" style="animation-delay:.85s" data-step="down">
+        <line x1="60" y1="150" x2="60" y2="185" stroke="#ef4444" stroke-width="1.5"/>
+        <rect x="53" y="150" width="14" height="30" fill="#ef4444" rx="1"/>
+      </g>
+      <g class="seg hl" style="animation-delay:1.05s" data-step="down">
+        <line x1="95" y1="160" x2="95" y2="195" stroke="#ef4444" stroke-width="1.5"/>
+        <rect x="88" y="160" width="14" height="22" fill="#ef4444" rx="1"/>
+      </g>
+      <g class="seg hl" style="animation-delay:1.25s" data-step="down">
+        <line x1="130" y1="158" x2="130" y2="190" stroke="#22c55e" stroke-width="1.5"/>
+        <rect x="123" y="162" width="14" height="14" fill="#22c55e" rx="1"/>
+      </g>
+      <g class="seg hl" style="animation-delay:1.45s" data-step="down">
+        <line x1="165" y1="164" x2="165" y2="196" stroke="#ef4444" stroke-width="1.5"/>
+        <rect x="158" y="166" width="14" height="18" fill="#ef4444" rx="1"/>
+      </g>
+
+      <!-- SWEEP candle: long lower wick spiking through support -->
+      <g class="seg" style="animation-delay:1.75s">
+        <line id="sweepWick" x1="200" y1="180" x2="200" y2="278" stroke="#f97316" stroke-width="2" class="wickflash"/>
+        <rect x="193" y="172" width="14" height="14" fill="#f97316" rx="1"/>
+        <text x="150" y="296" fill="#f97316" font-size="11" font-weight="bold" font-family="ui-monospace,Menlo,monospace">SWEEP</text>
+      </g>
+
+      <!-- reversal up candles -->
+      <g class="seg hl" style="animation-delay:2.05s" data-step="reversal">
+        <line x1="240" y1="120" x2="240" y2="170" stroke="#22c55e" stroke-width="1.5"/>
+        <rect x="233" y="124" width="14" height="34" fill="#22c55e" rx="1"/>
+      </g>
+      <g class="seg hl" style="animation-delay:2.25s" data-step="reversal">
+        <line x1="278" y1="92" x2="278" y2="135" stroke="#22c55e" stroke-width="1.5"/>
+        <rect x="271" y="96" width="14" height="30" fill="#22c55e" rx="1"/>
+      </g>
+      <g class="seg hl" style="animation-delay:2.45s" data-step="reversal">
+        <line x1="316" y1="66" x2="316" y2="105" stroke="#22c55e" stroke-width="1.5"/>
+        <rect x="309" y="70" width="14" height="26" fill="#22c55e" rx="1"/>
+      </g>
+
+      <!-- hunter entry marker -->
+      <g class="seg" style="animation-delay:2.7s" data-step="hunter">
+        <circle id="hunter" cx="240" cy="135" r="6" fill="#f97316" stroke="#fff" stroke-width="1.5" class="pulse"/>
+        <text x="252" y="126" fill="#fdba74" font-size="11" font-weight="bold" font-family="ui-monospace,Menlo,monospace">Hunter enters</text>
+        <text x="252" y="139" fill="#94a3b8" font-size="9" font-family="ui-monospace,Menlo,monospace">after sweep confirms</text>
+      </g>
+    </svg>
+
+    <div class="legend">
+      <span><i style="background:#ef4444"></i>Bearish / retail stops</span>
+      <span><i style="background:#22c55e"></i>Bullish reversal</span>
+      <span><i style="background:#f97316"></i>Sweep &amp; entry</span>
+      <span><i style="background:#a855f7"></i>Liquidity / support</span>
+    </div>
+
+    <div class="stepbox" id="stepbox">Hover any candle or zone to inspect it — or press <b>Play sequence</b> to watch the sweep unfold stage by stage.</div>
+
+    <div class="btnrow">
+      <button class="ctl" id="play">▶ Play sequence</button>
+      <button class="ctl" id="reset">Reset</button>
+      <span class="readout" id="status">idle</span>
+    </div>
+
+    <figcaption>Price spikes below obvious support to trigger resting sell orders (retail stops + breakout shorts), institutions absorb them, then price reverses. The hunter waits for the sweep to <em>complete</em> before entering in the revealed direction.</figcaption>
+  </section>
+
+  <p class="footnote">SMC Master Handbook · Module 0 · stop asking where price bounces — ask where the liquidity is and who needs it</p>
+</div>
+
+<script>
+"use strict";
+const chart=document.getElementById("chart");
+const stepbox=document.getElementById("stepbox");
+const status=document.getElementById("status");
+
+const STEP_TEXT={
+  stops:"<b>Retail stops = sell orders.</b> Longs park stops below support; breakout traders rest sell-stops there too. Two crowds, one cluster of resting sell orders.",
+  down:"<b>The approach.</b> Price drifts toward the obvious level, training retail to treat it as support and tempting late longs in.",
+  reversal:"<b>The snap-back.</b> The instant the pool is consumed, price reverses hard — what retail calls a fakeout was simply a fill.",
+  hunter:"<b>Hunter enters AFTER the sweep.</b> Confirmation that the pool was taken is the signal — entry in the direction the institution just revealed.",
+};
+
+// hover interactions
+chart.querySelectorAll('[data-step]').forEach(el=>{
+  el.addEventListener("mouseenter",()=>{
+    const k=el.getAttribute("data-step");
+    stepbox.innerHTML=STEP_TEXT[k];
+    stepbox.style.borderColor="var(--gold)";
+  });
+  el.addEventListener("mouseleave",()=>{ stepbox.style.borderColor=""; });
+});
+
+// play / reset
+const play=document.getElementById("play");
+const reset=document.getElementById("reset");
+function run(){
+  chart.classList.remove("playing");
+  void chart.offsetWidth; // reflow to restart CSS animations
+  chart.classList.add("playing");
+  play.classList.add("active");
+  status.textContent="playing…";
+  // narrate alongside the timeline
+  const cues=[
+    [500,"stops"],[850,"down"],[1750,null],[2050,"reversal"],[2700,"hunter"]
+  ];
+  cues.forEach(([t,k])=>setTimeout(()=>{
+    if(k){stepbox.innerHTML=STEP_TEXT[k];}
+    else{stepbox.innerHTML="<b>The sweep.</b> A spike below support triggers every resting sell order; institutions buy everything offered, leaving a long lower wick.";}
+  },t));
+  setTimeout(()=>{status.textContent="complete";play.classList.remove("active");},3100);
+}
+play.addEventListener("click",run);
+reset.addEventListener("click",()=>{
+  chart.classList.remove("playing");
+  play.classList.remove("active");
+  status.textContent="idle";
+  stepbox.innerHTML='Hover any candle or zone to inspect it — or press <b>Play sequence</b> to watch the sweep unfold stage by stage.';
+  stepbox.style.borderColor="";
+});
+
+// auto-play once on load (respecting reduced motion)
+if(!matchMedia("(prefers-reduced-motion: reduce)").matches){
+  setTimeout(run,400);
+}else{
+  chart.classList.add("playing"); // show everything immediately
+}
+</script>
+</body>
+</html>

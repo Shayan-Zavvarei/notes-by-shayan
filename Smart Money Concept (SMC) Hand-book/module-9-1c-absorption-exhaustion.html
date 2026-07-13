@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SMC Handbook · 9.1 — Absorption vs Exhaustion</title>
+<style>
+  :root{--ink:#0a0e14;--panel:#111722;--panel-2:#161e2b;--line:#243044;--bull:#22c55e;--bear:#ef4444;--zone:#3b82f6;--entry:#f97316;--liq:#a855f7;--struct:#8a98ad;--text:#e6edf6;--dim:#8493a8;--gold:#e8b923}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{animation:none !important;transition-duration:.001ms !important}}
+  body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#16202e 0%,transparent 60%),var(--ink);color:var(--text);font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:48px 24px 96px}
+  .eyebrow{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);margin:0 0 14px}
+  h1{font-size:clamp(32px,5.5vw,56px);line-height:1.04;margin:0 0 10px;font-weight:600;letter-spacing:-.01em}
+  .sub{color:var(--dim);font-size:18px;max-width:64ch;margin:0 0 8px}
+  .note{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--text);border-left:2px solid var(--gold);padding:8px 0 8px 14px;margin:18px 0 0;max-width:78ch}
+  .rule{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:28px 0 0}
+  section{margin-top:48px;background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:16px;padding:28px 26px 30px;box-shadow:0 1px 0 rgba(255,255,255,.02) inset,0 24px 48px -32px rgba(0,0,0,.8)}
+  .tag{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);background:var(--gold);display:inline-block;padding:4px 9px;border-radius:5px;font-weight:700}
+  h2{font-size:clamp(22px,3.2vw,28px);margin:14px 0 6px;font-weight:600;letter-spacing:-.01em}
+  .lede{color:var(--dim);margin:0 0 16px;font-size:15.5px;max-width:78ch}
+  figcaption{color:var(--dim);font-size:13px;margin-top:12px;font-family:ui-monospace,Menlo,monospace;max-width:78ch}
+  svg{width:100%;height:auto;display:block;background:#0c121c;border:1px solid var(--line);border-radius:12px}
+  .toggle-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  button.seg-btn{flex:1;min-width:130px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;text-transform:capitalize;color:var(--text);background:#0e1622;border:1px solid var(--line);padding:11px 14px;border-radius:9px;cursor:pointer;transition:border-color .2s,background .2s}
+  button.seg-btn:hover{border-color:var(--gold)}button.seg-btn.on{border-color:var(--gold);color:var(--gold);background:#101826}
+  .stepbox{margin-top:14px;padding:14px 16px;background:#0c121c;border:1px solid var(--line);border-radius:10px;font-family:ui-monospace,Menlo,monospace;font-size:13px;min-height:52px}
+  .footnote{color:var(--dim);font-size:12.5px;margin-top:40px;font-family:ui-monospace,Menlo,monospace;text-align:center}
+  .pane{animation:fade .4s ease}@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .vbar{transform:scaleY(0);transform-origin:center bottom;transform-box:fill-box;animation:grow .5s ease forwards}@keyframes grow{to{transform:scaleY(1)}}
+  .climax{animation:cl 1.8s ease-in-out infinite}@keyframes cl{0%,100%{stroke-opacity:1}50%{stroke-opacity:.5}}
+  .hold{animation:hold 2s ease-in-out infinite}@keyframes hold{0%,100%{opacity:1}50%{opacity:.55}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">SMC Master Handbook · Module 9.1</p>
+  <h1>Absorption vs Exhaustion</h1>
+  <p class="sub">Two order-flow signatures resolve what a candle alone cannot. Absorption is passive orders soaking up aggression without price moving; exhaustion is the aggressive side running out of fuel.</p>
+  <p class="note">Absorption says <em>someone is quietly filling here</em>; exhaustion says <em>the last of the crowd just got in, and there is no one left to push</em>. Both pair with delta divergence and the CHoCH that follows — they upgrade or veto a setup the structure already proposed.</p>
+  <div class="rule"></div>
+
+  <section>
+    <span class="tag">9.1</span>
+    <h2>The Texture of the Reaction at a Level</h2>
+    <p class="lede">Absorption <em>at an order block</em> means the institution is loading the position you want to join — wait for the displacement away from it. Exhaustion <em>at a liquidity pool</em> means the sweep is complete and the fuel is spent — the reversal is now the higher-probability path. Switch between the two.</p>
+
+    <div class="toggle-row">
+      <button class="seg-btn on" data-mode="absorption">absorption</button>
+      <button class="seg-btn" data-mode="exhaustion">exhaustion</button>
+    </div>
+
+    <svg id="chart" viewBox="0 0 320 300" role="img" aria-label="Absorption vs exhaustion chart"></svg>
+    <div class="stepbox" id="stepbox"></div>
+    <figcaption>Absorption: heavy volume on a small-range candle parked at the level, price held. Exhaustion: a climactic, oversized push on the highest volume of the leg, then a sharp reversal and shrinking follow-through.</figcaption>
+  </section>
+
+  <p class="footnote">SMC Master Handbook · Module 9 · read the texture, not just the close</p>
+</div>
+<script>
+"use strict";
+const chart=document.getElementById("chart"),stepbox=document.getElementById("stepbox"),btns=document.querySelectorAll(".seg-btn");
+const ABS=`
+  <g class="pane">
+    <line x1="20" y1="110" x2="300" y2="110" stroke="#3b82f6" stroke-width="2" stroke-dasharray="6 4"/>
+    <text x="225" y="104" fill="#60a5fa" font-size="10" font-family="ui-monospace,Menlo,monospace">Order Block</text>
+    <line class="hold" x1="160" y1="80" x2="160" y2="190" stroke="#22c55e" stroke-width="2"/>
+    <rect class="hold" x="146" y="120" width="28" height="22" fill="#22c55e" rx="1"/>
+    <text x="180" y="118" fill="#94a3b8" font-size="9" font-family="ui-monospace,Menlo,monospace">big volume,</text>
+    <text x="180" y="130" fill="#94a3b8" font-size="9" font-family="ui-monospace,Menlo,monospace">small body —</text>
+    <text x="180" y="142" fill="#94a3b8" font-size="9" font-family="ui-monospace,Menlo,monospace">price HELD</text>
+    <rect class="vbar" x="150" y="210" width="20" height="70" fill="#22c55e" opacity="0.85"/>
+    <text x="40" y="262" fill="#86efac" font-size="10" font-family="ui-monospace,Menlo,monospace">heavy vol, no move →</text>
+    <text x="40" y="278" fill="#64748b" font-size="9" font-family="ui-monospace,Menlo,monospace">institution filling: wait for displacement</text>
+  </g>`;
+function bars(){let s="";const d=[["150",60,"#22c55e"],["180",34,"#ef4444"],["210",20,"#ef4444"],["240",12,"#ef4444"],["270",8,"#ef4444"]];
+  d.forEach(([x,h,c],i)=>{s+=`<rect class="vbar" style="animation-delay:${i*.08}s" x="${x}" y="${280-h}" width="14" height="${h}" fill="${c}" opacity="0.85"/>`;});return s;}
+const EXH=`
+  <g class="pane">
+    <line x1="20" y1="70" x2="300" y2="70" stroke="#a855f7" stroke-width="2" stroke-dasharray="6 4"/>
+    <text x="205" y="64" fill="#a855f7" font-size="10" font-family="ui-monospace,Menlo,monospace">Liquidity pool</text>
+    <polyline points="40,150 70,140 100,120 130,95 160,72" fill="none" stroke="#22c55e" stroke-width="2"/>
+    <line class="climax" x1="160" y1="55" x2="160" y2="100" stroke="#22c55e" stroke-width="3"/>
+    <rect x="153" y="72" width="14" height="22" fill="#22c55e" rx="1"/>
+    <text x="120" y="48" fill="#86efac" font-size="9" font-weight="bold" font-family="ui-monospace,Menlo,monospace">climax</text>
+    <polyline points="160,86 190,120 220,150 250,165 275,172" fill="none" stroke="#ef4444" stroke-width="2"/>
+    <text x="196" y="135" fill="#fca5a5" font-size="9" font-family="ui-monospace,Menlo,monospace">sharp reversal</text>
+    ${bars()}
+    <text x="40" y="262" fill="#fca5a5" font-size="10" font-family="ui-monospace,Menlo,monospace">climactic vol then fading →</text>
+  </g>`;
+const TXT={absorption:"<strong style='color:#e8b923'>Absorption:</strong> heavy volume on a small candle parked at the OB. Price is being held while size fills — wait for the displacement away from the level.",
+exhaustion:"<strong style='color:#e8b923'>Exhaustion:</strong> a climactic high-volume push into the pool, then a sharp reversal on shrinking volume. The fuel is spent; the reversal is the higher-probability path."};
+function render(m){chart.innerHTML=m==="absorption"?ABS:EXH;stepbox.innerHTML=TXT[m];btns.forEach(b=>b.classList.toggle("on",b.dataset.mode===m));}
+btns.forEach(b=>b.addEventListener("click",()=>render(b.dataset.mode)));
+render("absorption");
+</script>
+</body>
+</html>

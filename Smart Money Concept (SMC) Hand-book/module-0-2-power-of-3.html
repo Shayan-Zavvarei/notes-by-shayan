@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SMC Handbook · 0.2 — Power of 3 (AMD)</title>
+<style>
+  :root{
+    --ink:#0a0e14; --panel:#111722; --panel-2:#161e2b; --line:#243044;
+    --bull:#22c55e; --bear:#ef4444; --zone:#3b82f6; --entry:#f97316;
+    --liq:#a855f7; --struct:#8a98ad; --text:#e6edf6; --dim:#8493a8; --gold:#e8b923;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{animation:none !important; transition-duration:.001ms !important}}
+  body{margin:0; background:radial-gradient(1200px 600px at 80% -10%, #16202e 0%, transparent 60%), var(--ink); color:var(--text); font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; line-height:1.5; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px; margin:0 auto; padding:48px 24px 96px}
+  .eyebrow{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; letter-spacing:.32em; text-transform:uppercase; color:var(--gold); margin:0 0 14px}
+  h1{font-size:clamp(32px,5.5vw,56px); line-height:1.04; margin:0 0 10px; font-weight:600; letter-spacing:-.01em}
+  .sub{color:var(--dim); font-size:18px; max-width:64ch; margin:0 0 8px}
+  .note{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--text); border-left:2px solid var(--gold); padding:8px 0 8px 14px; margin:18px 0 0; max-width:78ch}
+  .rule{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:28px 0 0}
+  section{margin-top:48px; background:linear-gradient(180deg,var(--panel),var(--panel-2)); border:1px solid var(--line); border-radius:16px; padding:28px 26px 30px; box-shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 24px 48px -32px rgba(0,0,0,.8)}
+  .tag{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink); background:var(--gold); display:inline-block; padding:4px 9px; border-radius:5px; font-weight:700}
+  h2{font-size:clamp(22px,3.2vw,28px); margin:14px 0 6px; font-weight:600; letter-spacing:-.01em}
+  .lede{color:var(--dim); margin:0 0 16px; font-size:15.5px; max-width:78ch}
+  figcaption{color:var(--dim); font-size:13px; margin-top:12px; font-family:ui-monospace,Menlo,monospace; max-width:78ch}
+  svg{width:100%; height:auto; display:block; background:#0c121c; border:1px solid var(--line); border-radius:12px}
+  .phases-row{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap}
+  button.ph{flex:1; min-width:130px; font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--text); background:#0e1622; border:1px solid var(--line); padding:11px 14px; border-radius:9px; cursor:pointer; text-align:left; transition:border-color .2s, background .2s}
+  button.ph:hover{border-color:var(--gold)}
+  button.ph .dot{display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:8px; vertical-align:middle}
+  button.ph.on{background:#101826}
+  button.ph.on.acc{border-color:#6b7280}
+  button.ph.on.man{border-color:var(--entry)}
+  button.ph.on.dis{border-color:var(--bull)}
+  .descbox{margin-top:14px; padding:14px 16px; background:#0c121c; border:1px solid var(--line); border-radius:10px; font-family:ui-monospace,Menlo,monospace; font-size:13px; min-height:54px; transition:border-color .25s}
+  .descbox strong{font-weight:700}
+  .btnrow{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; align-items:center}
+  button.ctl{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:var(--text); background:#0e1622; border:1px solid var(--line); padding:9px 14px; border-radius:9px; cursor:pointer}
+  button.ctl:hover{border-color:var(--gold); color:var(--gold)}
+  button.ctl.active{border-color:var(--gold); color:var(--gold)}
+  .readout{font-family:ui-monospace,Menlo,monospace; font-size:13px; color:var(--dim); margin-left:4px}
+  .footnote{color:var(--dim); font-size:12.5px; margin-top:40px; font-family:ui-monospace,Menlo,monospace; text-align:center}
+
+  .zone{cursor:pointer; transition:opacity .25s}
+  /* animated price path draw */
+  #pricePath{stroke-dasharray:1200; stroke-dashoffset:1200}
+  .playing #pricePath{animation:drawPath 3.4s ease forwards}
+  @keyframes drawPath{to{stroke-dashoffset:0}}
+  @keyframes pulse{0%,100%{r:6}50%{r:9}}
+  .pulse{animation:pulse 1.6s ease-in-out infinite}
+  .liqflash{animation:liqflash 2.2s ease-in-out infinite}
+  @keyframes liqflash{0%,100%{stroke-opacity:.9}50%{stroke-opacity:.3}}
+  .star{transform-box:fill-box; transform-origin:center; animation:twinkle 2s ease-in-out infinite}
+  @keyframes twinkle{0%,100%{opacity:.6; transform:scale(.9)}50%{opacity:1; transform:scale(1.15)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">SMC Master Handbook · Module 0.2</p>
+  <h1>Power of 3</h1>
+  <p class="sub">Accumulation → Manipulation → Distribution. Institutional campaigns follow a repeatable arc, visible across every timeframe — and they structurally need retail orders to fill size.</p>
+  <p class="note">To buy in size you need sellers. The only way to find enough sellers at a good price is to manufacture conditions where many people sell. Retail isn't a side-effect of institutional trading — it is the counterparty that makes institutional fills possible.</p>
+  <div class="rule"></div>
+
+  <section id="amd">
+    <span class="tag">0.2</span>
+    <h2>The Three Phases</h2>
+    <p class="lede">Hover or tap each zone — on the chart or the buttons below — to learn its role. Price chops in <em>accumulation</em>, spikes against the intended direction in <em>manipulation</em> to grab liquidity, then makes the real move in <em>distribution</em> toward the opposite pool. Press play to watch price travel the arc.</p>
+
+    <svg id="chart" viewBox="0 0 480 320" role="img" aria-label="Accumulation manipulation distribution diagram">
+      <!-- buy-side liquidity (target, top) -->
+      <line x1="20" y1="60" x2="460" y2="60" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="5 3" class="liqflash"/>
+      <text x="300" y="54" fill="#a855f7" font-size="10" font-family="ui-monospace,Menlo,monospace">Buy-side liquidity (target)</text>
+
+      <!-- sell-side liquidity (swept, bottom) -->
+      <line x1="20" y1="250" x2="460" y2="250" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="5 3" class="liqflash"/>
+      <text x="20" y="266" fill="#a855f7" font-size="10" font-family="ui-monospace,Menlo,monospace">Sell-side liquidity (swept)</text>
+
+      <!-- accumulation zone -->
+      <g class="zone" data-phase="acc">
+        <rect x="30" y="135" width="120" height="55" fill="#6b7280" opacity="0.30"/>
+        <text x="44" y="125" fill="#9ca3af" font-size="11" font-weight="bold" font-family="ui-monospace,Menlo,monospace">ACCUMULATION</text>
+      </g>
+
+      <!-- manipulation zone -->
+      <g class="zone" data-phase="man">
+        <rect x="150" y="165" width="62" height="85" fill="#f97316" opacity="0.22"/>
+        <text x="150" y="285" fill="#fdba74" font-size="11" font-weight="bold" font-family="ui-monospace,Menlo,monospace">MANIP.</text>
+      </g>
+
+      <!-- distribution zone -->
+      <g class="zone" data-phase="dis">
+        <rect x="212" y="55" width="248" height="185" fill="#22c55e" opacity="0.12"/>
+        <text x="310" y="100" fill="#86efac" font-size="11" font-weight="bold" font-family="ui-monospace,Menlo,monospace">DISTRIBUTION</text>
+      </g>
+
+      <!-- price path: chop in range, sweep down, markup to BSL -->
+      <polyline id="pricePath"
+        points="40,160 60,155 80,163 100,156 120,161 140,154 160,176 182,220 200,245 212,205 240,165 280,132 330,102 380,78 430,62"
+        fill="none" stroke="#e6edf6" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+
+      <!-- entry marker after manipulation -->
+      <circle id="entry" cx="212" cy="205" r="6" fill="#f97316" stroke="#fff" stroke-width="1.5" class="pulse"/>
+      <text x="150" y="200" fill="#fdba74" font-size="10" font-family="ui-monospace,Menlo,monospace">Entry</text>
+
+      <!-- TP star at buy-side liquidity -->
+      <text x="426" y="56" fill="#22c55e" font-size="18" class="star">★</text>
+      <text x="392" y="48" fill="#22c55e" font-size="9" font-family="ui-monospace,Menlo,monospace">TP</text>
+    </svg>
+
+    <div class="phases-row">
+      <button class="ph acc" data-phase="acc"><span class="dot" style="background:#9ca3af"></span>Accumulation</button>
+      <button class="ph man" data-phase="man"><span class="dot" style="background:#f97316"></span>Manipulation</button>
+      <button class="ph dis" data-phase="dis"><span class="dot" style="background:#22c55e"></span>Distribution</button>
+    </div>
+
+    <div class="descbox" id="descbox">Hover over each zone to learn its role.</div>
+
+    <div class="btnrow">
+      <button class="ctl" id="play">▶ Play the arc</button>
+      <button class="ctl" id="reset">Reset</button>
+      <span class="readout" id="status">idle</span>
+    </div>
+
+    <figcaption>The manipulation leg is the move that "makes no sense" afterward: a sharp drive against the intended direction, sweeping sell-side liquidity so institutions can load at a discount before marking price up into buy-side liquidity.</figcaption>
+  </section>
+
+  <p class="footnote">SMC Master Handbook · Module 0 · violent candle = market-order flow · stall &amp; chop = limit-order absorption</p>
+</div>
+
+<script>
+"use strict";
+const PHASES={
+  acc:{label:"Accumulation",color:"#9ca3af",desc:"Institutions build positions quietly in a range. Chop frustrates retail and trains them to expect more chop — setting up the next phase."},
+  man:{label:"Manipulation",color:"#f97316",desc:"A sharp sweep against the intended direction. Stops out early longs, induces breakout shorts, and lets institutions add at a discount."},
+  dis:{label:"Distribution",color:"#22c55e",desc:"The real directional move into the opposite liquidity pool, distributing into the retail orders chasing the move."}
+};
+const chart=document.getElementById("chart");
+const descbox=document.getElementById("descbox");
+const status=document.getElementById("status");
+const zones=chart.querySelectorAll(".zone");
+const btns=document.querySelectorAll("button.ph");
+
+function show(k){
+  descbox.innerHTML='<strong style="color:'+PHASES[k].color+'">'+PHASES[k].label+':</strong> '+PHASES[k].desc;
+  descbox.style.borderColor=PHASES[k].color;
+  zones.forEach(z=>z.style.opacity = z.getAttribute("data-phase")===k? "1":"0.35");
+  btns.forEach(b=>b.classList.toggle("on", b.getAttribute("data-phase")===k));
+}
+function clear(){
+  descbox.innerHTML="Hover over each zone to learn its role.";
+  descbox.style.borderColor="";
+  zones.forEach(z=>z.style.opacity="1");
+  btns.forEach(b=>b.classList.remove("on"));
+}
+
+// hover on svg zones
+zones.forEach(z=>{
+  const k=z.getAttribute("data-phase");
+  z.addEventListener("mouseenter",()=>show(k));
+  z.addEventListener("mouseleave",clear);
+  z.addEventListener("click",()=>show(k)); // tap-friendly
+});
+// click on buttons toggles a sticky highlight
+let locked=null;
+btns.forEach(b=>{
+  const k=b.getAttribute("data-phase");
+  b.addEventListener("mouseenter",()=>{ if(!locked) show(k); });
+  b.addEventListener("mouseleave",()=>{ if(!locked) clear(); });
+  b.addEventListener("click",()=>{
+    if(locked===k){locked=null;clear();}
+    else{locked=k;show(k);}
+  });
+});
+
+// play the arc
+const play=document.getElementById("play");
+const reset=document.getElementById("reset");
+function run(){
+  locked=null;clear();
+  chart.classList.remove("playing");
+  void chart.offsetWidth;
+  chart.classList.add("playing");
+  play.classList.add("active");
+  status.textContent="playing…";
+  const cues=[[100,"acc"],[1500,"man"],[2300,"dis"]];
+  cues.forEach(([t,k])=>setTimeout(()=>show(k),t));
+  setTimeout(()=>{status.textContent="complete";play.classList.remove("active");clear();},3600);
+}
+play.addEventListener("click",run);
+reset.addEventListener("click",()=>{
+  chart.classList.remove("playing");
+  play.classList.remove("active");
+  status.textContent="idle";
+  clear();
+});
+
+if(!matchMedia("(prefers-reduced-motion: reduce)").matches){
+  setTimeout(run,400);
+}else{
+  chart.classList.add("playing");
+}
+</script>
+</body>
+</html>
