@@ -1,6 +1,6 @@
-# TypeScript: From Beginner to Advanced
+# TypeScript: From Beginner to Professional
 
-A comprehensive guide to mastering TypeScript from foundational concepts to advanced patterns and real-world application development.
+A rigorous guide to TypeScript's type system, JavaScript runtime semantics, library and application architecture, tooling, testing, and production boundaries. The professional chapters target the TypeScript 7 generation while calling out compatibility-sensitive features.
 
 ## Table of Contents
 
@@ -20,6 +20,18 @@ A comprehensive guide to mastering TypeScript from foundational concepts to adva
 14. Migrating from JavaScript to TypeScript
 15. Best Practices and Configuration
 16. Capstone Project
+17. TypeScript's Soundness Boundaries and Structural Typing
+18. Control-Flow Analysis and Exhaustive Domain Models
+19. Professional Type-Level Programming
+20. ESM, Module Resolution, and Package Boundaries
+21. tsconfig Architecture, Project References, and Monorepos
+22. Runtime Validation, Serialization, and API Contracts
+23. Async Systems, Cancellation, Streams, and Errors
+24. Application Architecture and Domain Modeling
+25. Testing Runtime Behavior and Types
+26. Authoring and Publishing TypeScript Libraries
+27. Performance, Security, and Production Operations
+28. Professional Capstone: A Validated Task Platform
 
 ---
 
@@ -58,10 +70,10 @@ npm --version
 
 ### Installing TypeScript
 
-Install TypeScript globally:
+Prefer a project-local compiler so every contributor and CI job uses the version recorded by the lockfile:
 
 ```bash
-npm install -g typescript
+npm install --save-dev typescript
 ```
 
 Verify installation:
@@ -111,12 +123,16 @@ typescript-learning/
 ```json
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "commonjs",
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
-    "esModuleInterop": true,
+    "verbatimModuleSyntax": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "useUnknownInCatchVariables": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
@@ -1074,7 +1090,7 @@ type EventMap = {
   submit: { data: string };
 };
 
-class TypedEventEmitter<T extends Record<string, any>> {
+class TypedEventEmitter<T extends object> {
   private listeners: {
     [K in keyof T]?: Array<(payload: T[K]) => void>;
   } = {};
@@ -1238,9 +1254,8 @@ class Queue<T> {
     this.items.push(item);
   }
 
-  dequeue(): T | undefined {
-    return this.items.shift();
-  }
+  // For production queues use a head index or deque; Array.shift() is O(n).
+  dequeue(): T | undefined { return this.items.shift(); }
 
   peek(): T | undefined {
     return this.items[0];
@@ -1699,9 +1714,15 @@ export * from "./advanced";
 export class Calculator {
   private history: string[] = [];
 
-  calculate(expression: string): number {
+  calculate(left: number, operation: "+" | "-" | "*" | "/", right: number): number {
+    const expression = `${left} ${operation} ${right}`;
     this.history.push(expression);
-    return eval(expression);
+    switch (operation) {
+      case "+": return left + right;
+      case "-": return left - right;
+      case "*": return left * right;
+      case "/": if (right === 0) throw new Error("Division by zero"); return left / right;
+    }
   }
 
   getHistory(): string[] {
@@ -1815,7 +1836,7 @@ declare module "my-library" {
 
   export class Client {
     constructor(config: Config);
-    request(url: string): Promise<any>;
+    request(url: string): Promise<unknown>;
   }
 }
 ```
@@ -1900,13 +1921,15 @@ Update `tsconfig.json`:
 ```json
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "commonjs",
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true
+    "verbatimModuleSyntax": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true
   }
 }
 ```
@@ -2609,7 +2632,13 @@ describe("Math operations", () => {
 ```typescript
 export async function fetchUser(id: number): Promise<{ id: number; name: string }> {
   const response = await fetch(`https://api.example.com/users/${id}`);
-  return response.json();
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const body: unknown = await response.json();
+  if (typeof body !== "object" || body === null) throw new Error("Invalid user response");
+  const candidate = body as { id?: unknown; name?: unknown };
+  if (typeof candidate.id !== "number" || typeof candidate.name !== "string")
+    throw new Error("Invalid user response");
+  return { id: candidate.id, name: candidate.name };
 }
 ```
 
@@ -2907,9 +2936,10 @@ npx tsc --init
 ```json
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "commonjs",
-    "lib": ["ES2020"],
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2023"],
     "allowJs": true,
     "checkJs": false,
     "outDir": "./dist",
@@ -3198,16 +3228,16 @@ const config = {
 } as const;
 ```
 
-#### Prefer Interfaces for Object Types
+#### Choose Interfaces and Type Aliases Deliberately
 
 ```typescript
-// Good
+// Interfaces support declaration merging and are convenient for extendable object contracts.
 interface User {
   id: number;
   name: string;
 }
 
-// Use type for unions and intersections
+// Type aliases express unions, tuples, primitives, mapped/conditional types, and closed models.
 type ID = string | number;
 type EntityWithId = { id: ID } & { createdAt: Date };
 ```
@@ -3353,13 +3383,34 @@ export interface CreateUserDto {
 }
 
 // api-client.ts
+type Decoder<T> = (input: unknown) => T;
+
+function decodeUser(input: unknown): User {
+  if (typeof input !== "object" || input === null) throw new Error("Invalid user");
+  const value = input as Record<string, unknown>;
+  if (typeof value.id !== "number" || typeof value.username !== "string" ||
+      typeof value.email !== "string") throw new Error("Invalid user");
+  return { id: value.id, username: value.username, email: value.email };
+}
+
+function decodeResponse<T>(decodeData: Decoder<T>): Decoder<ApiResponse<T>> {
+  return input => {
+    if (typeof input !== "object" || input === null) throw new Error("Invalid response");
+    const value = input as Record<string, unknown>;
+    if (typeof value.status !== "number" || typeof value.message !== "string")
+      throw new Error("Invalid response envelope");
+    return { data: decodeData(value.data), status: value.status, message: value.message };
+  };
+}
+
 class ApiClient {
   constructor(private baseUrl: string) {}
 
   private async request<T>(
     endpoint: string,
+    decode: Decoder<T>,
     options?: RequestInit
-  ): Promise<ApiResponse<T>> {
+  ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const response = await fetch(url, options);
 
@@ -3367,31 +3418,33 @@ class ApiClient {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    return response.json();
+    const body: unknown = await response.json();
+    return decode(body);
   }
 
-  async get<T>(endpoint: string): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint);
+  async get<T>(endpoint: string, decode: Decoder<T>): Promise<T> {
+    return this.request(endpoint, decode);
   }
 
-  async post<T, U>(endpoint: string, body: U): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, {
+  async post<T, U>(endpoint: string, body: U, decode: Decoder<T>): Promise<T> {
+    return this.request(endpoint, decode, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
   }
 
-  async put<T, U>(endpoint: string, body: U): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, {
+  async put<T, U>(endpoint: string, body: U, decode: Decoder<T>): Promise<T> {
+    return this.request(endpoint, decode, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
   }
 
-  async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, { method: "DELETE" });
+  async delete(endpoint: string): Promise<void> {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, { method: "DELETE" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 }
 
@@ -3400,17 +3453,23 @@ class UserService {
   constructor(private client: ApiClient) {}
 
   async getUsers(): Promise<User[]> {
-    const response = await this.client.get<User[]>("/users");
+    const response = await this.client.get(
+      "/users",
+      decodeResponse(input => {
+        if (!Array.isArray(input)) throw new Error("Invalid users");
+        return input.map(decodeUser);
+      })
+    );
     return response.data;
   }
 
   async getUser(id: number): Promise<User> {
-    const response = await this.client.get<User>(`/users/${id}`);
+    const response = await this.client.get(`/users/${id}`, decodeResponse(decodeUser));
     return response.data;
   }
 
   async createUser(dto: CreateUserDto): Promise<User> {
-    const response = await this.client.post<User, CreateUserDto>("/users", dto);
+    const response = await this.client.post("/users", dto, decodeResponse(decodeUser));
     return response.data;
   }
 
@@ -3440,7 +3499,7 @@ async function main() {
 
 ## 16. Capstone Project
 
-Build a complete Task Management API with authentication, database integration, and comprehensive testing.
+Build a learning-scale Task Management API with authentication, an in-memory repository, and integration tests. Chapter 28 evolves it into a production architecture with validated contracts and persistent adapters.
 
 ### Project Setup
 
@@ -3448,7 +3507,7 @@ Build a complete Task Management API with authentication, database integration, 
 mkdir task-manager-api
 cd task-manager-api
 npm init -y
-npm install express bcrypt jsonwebtoken dotenv
+npm install express bcrypt jsonwebtoken dotenv zod
 npm install --save-dev typescript @types/express @types/node @types/bcrypt @types/jsonwebtoken ts-node nodemon jest @types/jest ts-jest supertest @types/supertest
 npx tsc --init
 ```
@@ -3487,9 +3546,11 @@ task-manager-api/
 
 ### Implementation
 
-`src/types/index.ts`:
+`src/types/index.ts` (the schemas validate untrusted runtime input; the inferred types prevent drift):
 
 ```typescript
+import { z } from "zod";
+
 export interface User {
   id: number;
   username: string;
@@ -3522,32 +3583,30 @@ export enum TaskPriority {
   HIGH = "HIGH"
 }
 
-export interface CreateUserDto {
-  username: string;
-  email: string;
-  password: string;
-}
+export const CreateUserSchema = z.object({
+  username: z.string().trim().min(3).max(50),
+  email: z.string().email(),
+  password: z.string().min(12).max(200)
+}).strict();
+export type CreateUserDto = z.infer<typeof CreateUserSchema>;
 
-export interface LoginDto {
-  email: string;
-  password: string;
-}
+export const LoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1).max(200)
+}).strict();
+export type LoginDto = z.infer<typeof LoginSchema>;
 
-export interface CreateTaskDto {
-  title: string;
-  description: string;
-  status?: TaskStatus;
-  priority?: TaskPriority;
-  dueDate?: Date;
-}
+export const CreateTaskSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  description: z.string().max(10_000),
+  status: z.nativeEnum(TaskStatus).optional(),
+  priority: z.nativeEnum(TaskPriority).optional(),
+  dueDate: z.coerce.date().optional()
+}).strict();
+export type CreateTaskDto = z.infer<typeof CreateTaskSchema>;
 
-export interface UpdateTaskDto {
-  title?: string;
-  description?: string;
-  status?: TaskStatus;
-  priority?: TaskPriority;
-  dueDate?: Date;
-}
+export const UpdateTaskSchema = CreateTaskSchema.partial();
+export type UpdateTaskDto = z.infer<typeof UpdateTaskSchema>;
 
 export interface AuthRequest extends Express.Request {
   user?: { id: number; email: string };
@@ -3642,9 +3701,15 @@ import { UserModel } from "../models/User";
 import { CreateUserDto, LoginDto } from "../types";
 
 export class AuthService {
-  private jwtSecret = process.env.JWT_SECRET || "secret";
+  private readonly jwtSecret: string;
 
-  constructor(private userModel: UserModel) {}
+  constructor(private userModel: UserModel) {
+    const secret = process.env.JWT_SECRET;
+    if (!secret || secret.length < 32) {
+      throw new Error("JWT_SECRET must be configured with at least 32 characters");
+    }
+    this.jwtSecret = secret;
+  }
 
   async register(dto: CreateUserDto): Promise<{ token: string }> {
     const existingUser = this.userModel.findByEmail(dto.email);
@@ -3779,7 +3844,7 @@ export function errorHandler(
   next: NextFunction
 ): void {
   console.error(err.stack);
-  res.status(500).json({ error: err.message || "Internal server error" });
+  res.status(500).json({ error: "Internal server error" });
 }
 ```
 
@@ -3788,28 +3853,28 @@ export function errorHandler(
 ```typescript
 import { Router, Request, Response } from "express";
 import { AuthService } from "../services/AuthService";
-import { CreateUserDto, LoginDto } from "../types";
+import { CreateUserSchema, LoginSchema } from "../types";
 
 export function createAuthRouter(authService: AuthService): Router {
   const router = Router();
 
   router.post("/register", async (req: Request, res: Response) => {
     try {
-      const dto: CreateUserDto = req.body;
+      const dto = CreateUserSchema.parse(req.body);
       const result = await authService.register(dto);
       res.status(201).json(result);
     } catch (error) {
-      res.status(400).json({ error: (error as Error).message });
+      res.status(400).json({ error: error instanceof Error ? error.message : "Invalid request" });
     }
   });
 
   router.post("/login", async (req: Request, res: Response) => {
     try {
-      const dto: LoginDto = req.body;
+      const dto = LoginSchema.parse(req.body);
       const result = await authService.login(dto);
       res.json(result);
     } catch (error) {
-      res.status(401).json({ error: (error as Error).message });
+      res.status(401).json({ error: error instanceof Error ? error.message : "Authentication failed" });
     }
   });
 
@@ -3822,7 +3887,7 @@ export function createAuthRouter(authService: AuthService): Router {
 ```typescript
 import { Router, Response } from "express";
 import { TaskService } from "../services/TaskService";
-import { AuthRequest, CreateTaskDto, UpdateTaskDto } from "../types";
+import { AuthRequest, CreateTaskSchema, UpdateTaskSchema } from "../types";
 
 export function createTaskRouter(taskService: TaskService): Router {
   const router = Router();
@@ -3832,7 +3897,7 @@ export function createTaskRouter(taskService: TaskService): Router {
       const tasks = taskService.getUserTasks(req.user!.id);
       res.json(tasks);
     } catch (error) {
-      res.status(500).json({ error: (error as Error).message });
+      res.status(500).json({ error: error instanceof Error ? error.message : "Internal error" });
     }
   });
 
@@ -3842,28 +3907,28 @@ export function createTaskRouter(taskService: TaskService): Router {
       const task = taskService.getTask(id, req.user!.id);
       res.json(task);
     } catch (error) {
-      res.status(404).json({ error: (error as Error).message });
+      res.status(404).json({ error: error instanceof Error ? error.message : "Task not found" });
     }
   });
 
   router.post("/", (req: AuthRequest, res: Response) => {
     try {
-      const dto: CreateTaskDto = req.body;
+      const dto = CreateTaskSchema.parse(req.body);
       const task = taskService.createTask(req.user!.id, dto);
       res.status(201).json(task);
     } catch (error) {
-      res.status(400).json({ error: (error as Error).message });
+      res.status(400).json({ error: error instanceof Error ? error.message : "Invalid task" });
     }
   });
 
   router.put("/:id", (req: AuthRequest, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const dto: UpdateTaskDto = req.body;
+      const dto = UpdateTaskSchema.parse(req.body);
       const task = taskService.updateTask(id, req.user!.id, dto);
       res.json(task);
     } catch (error) {
-      res.status(400).json({ error: (error as Error).message });
+      res.status(400).json({ error: error instanceof Error ? error.message : "Invalid update" });
     }
   });
 
@@ -3873,7 +3938,7 @@ export function createTaskRouter(taskService: TaskService): Router {
       taskService.deleteTask(id, req.user!.id);
       res.status(204).send();
     } catch (error) {
-      res.status(400).json({ error: (error as Error).message });
+      res.status(400).json({ error: error instanceof Error ? error.message : "Delete failed" });
     }
   });
 
@@ -4117,6 +4182,907 @@ curl http://localhost:3000/api/tasks   -H "Authorization: Bearer YOUR_TOKEN"
 
 ---
 
+## 17. TypeScript's Soundness Boundaries and Structural Typing
+
+TypeScript 7 is the current-generation compiler baseline for this section. TypeScript remains a static analyzer for JavaScript: types are erased, JavaScript values keep their runtime semantics, and the compiler intentionally permits several unsound operations for ecosystem usability. Follow the [official TypeScript announcements](https://devblogs.microsoft.com/typescript/) and migration guidance when pinning a concrete version.
+
+### Types Are Erased
+
+An annotation neither converts nor validates a value:
+
+```typescript
+type User = { id: string; name: string };
+
+const value: unknown = JSON.parse(input);
+// const user = value as User; // assertion: no runtime check
+const user = parseUser(value); // validation creates evidence
+```
+
+Treat file contents, environment variables, database rows, message queues, `fetch().json()`, and request bodies as `unknown` until validated.
+
+### Structural Compatibility
+
+Types are compatible by shape, not declaration name:
+
+```typescript
+type UserId = string;
+type OrderId = string;
+declare const orderId: OrderId;
+const userId: UserId = orderId; // allowed: both are string
+```
+
+Use a brand when mixing structurally identical identifiers is dangerous:
+
+```typescript
+declare const userIdBrand: unique symbol;
+type UserId = string & { readonly [userIdBrand]: true };
+
+function userId(raw: string): UserId {
+  if (!/^usr_[a-z0-9]+$/.test(raw)) throw new Error("invalid user id");
+  return raw as UserId; // assertion is localized behind validation
+}
+```
+
+Brands are compile-time distinctions, not runtime wrappers. Serialize them as their underlying value and validate again when reading.
+
+### Freshness and Excess Properties
+
+Fresh object literals receive excess-property checks, while assigned variables use ordinary structural compatibility:
+
+```typescript
+type Point = { x: number; y: number };
+// const p: Point = { x: 1, y: 2, colour: "red" }; // excess property
+const candidate = { x: 1, y: 2, colour: "red" };
+const p: Point = candidate; // compatible; extra fields exist at runtime
+```
+
+Do not interpret a type as an exact object schema. Use runtime `.strict()` validation where unknown keys must be rejected.
+
+### Variance and Mutable Arrays
+
+Function-parameter checking, callbacks, methods, and mutable containers have subtle variance rules. Prefer `readonly T[]` for inputs that are not modified:
+
+```typescript
+class Animal { kind = "animal"; }
+class Dog extends Animal { bark() {} }
+
+function countAnimals(values: readonly Animal[]): number {
+  return values.length;
+}
+```
+
+`readonly` prevents mutation through this reference; it does not deep-freeze the runtime array.
+
+### Professional Checklist
+
+- Keep `any` at audited interoperability shims; use `unknown` at boundaries.
+- Minimize non-null assertions and `as`; document the proof behind each.
+- Distinguish compile-time immutability from runtime freezing.
+- Turn on `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` deliberately.
+
+### Exercise: Boundary Audit
+
+Search a project for `as`, `any`, `!`, `JSON.parse`, `response.json()`, and `process.env`. Classify each occurrence as trusted internal construction or an unvalidated boundary, then replace one unsafe assertion with validation.
+
+---
+
+## 18. Control-Flow Analysis and Exhaustive Domain Models
+
+### Narrowing Tools
+
+TypeScript narrows through `typeof`, `instanceof`, equality, property checks, discriminants, truthiness, predicates, and assertion functions. Narrow the smallest value possible and avoid mutating discriminants after narrowing.
+
+```typescript
+function normalize(value: string | string[] | null): string[] {
+  if (value === null) return [];
+  return typeof value === "string" ? [value] : value;
+}
+```
+
+Truthiness is not always validity: `if (value)` drops `0`, `""`, and `false`. Test `value !== undefined` when absence—not falsiness—is the concern.
+
+### Predicates and Assertion Functions
+
+```typescript
+function isError(value: unknown): value is Error {
+  return value instanceof Error;
+}
+
+function assertDefined<T>(value: T, message = "missing value"):
+  asserts value is NonNullable<T> {
+  if (value === null || value === undefined) throw new Error(message);
+}
+```
+
+A predicate is a promise made by its implementation. Test it like a parser; a lying predicate creates unsoundness everywhere it is used.
+
+### Exhaustiveness with `never`
+
+```typescript
+type Command =
+  | { kind: "create"; title: string }
+  | { kind: "complete"; id: string }
+  | { kind: "delete"; id: string };
+
+function assertNever(value: never): never {
+  throw new Error(`Unhandled command: ${JSON.stringify(value)}`);
+}
+
+function handle(command: Command): void {
+  switch (command.kind) {
+    case "create": return create(command.title);
+    case "complete": return complete(command.id);
+    case "delete": return remove(command.id);
+    default: return assertNever(command);
+  }
+}
+```
+
+This turns addition of a union member into compile errors at every exhaustive consumer.
+
+### Model States, Not Flags
+
+```typescript
+type RequestState<T> =
+  | { status: "idle" }
+  | { status: "loading"; startedAt: number }
+  | { status: "success"; data: T; receivedAt: number }
+  | { status: "failure"; error: AppError; retryable: boolean };
+```
+
+This prevents impossible combinations such as `loading: true` with both `data` and `error` populated.
+
+### Exercise: Workflow State Machine
+
+Model a payment as `draft → authorized → captured` with explicit failed/cancelled states. Write exhaustive transition and rendering functions. Add a `refunded` state and confirm every required consumer fails to compile until updated.
+
+---
+
+## 19. Professional Type-Level Programming
+
+Advanced types should reduce invalid runtime states and duplication—not become a second programming language for its own sake.
+
+### `satisfies` and Literal Preservation
+
+```typescript
+type RouteName = "home" | "tasks";
+type Route = { path: `/${string}`; auth: boolean };
+
+const routes = {
+  home: { path: "/", auth: false },
+  tasks: { path: "/tasks", auth: true }
+} satisfies Record<RouteName, Route>;
+
+type TaskPath = typeof routes.tasks.path; // "/tasks", not string
+```
+
+An annotation changes the variable's apparent type; `satisfies` checks compatibility while preserving useful inference.
+
+### Const Type Parameters
+
+```typescript
+function tuple<const T extends readonly unknown[]>(...values: T): T {
+  return values;
+}
+const columns = tuple("id", "title", "status");
+// readonly ["id", "title", "status"]
+```
+
+### Conditional Types, Distribution, and `infer`
+
+```typescript
+type AwaitedValue<T> = T extends PromiseLike<infer U> ? AwaitedValue<U> : T;
+type ElementOf<T> = T extends readonly (infer U)[] ? U : never;
+
+type Distributed<T> = T extends unknown ? { value: T } : never;
+type NotDistributed<T> = [T] extends [unknown] ? { value: T } : never;
+```
+
+A conditional type distributes over a naked union type parameter. Bracketing both sides suppresses distribution.
+
+### Mapped Types and Key Remapping
+
+```typescript
+type Getters<T> = {
+  [K in keyof T as `get${Capitalize<string & K>}`]: () => T[K]
+};
+
+type MutableRequired<T> = {
+  -readonly [K in keyof T]-?: T[K]
+};
+```
+
+### Controlling Inference
+
+Use `NoInfer<T>` when one parameter must be checked against a type inferred elsewhere:
+
+```typescript
+function choose<C extends string>(choices: readonly C[], defaultValue: NoInfer<C>): C {
+  return choices.includes(defaultValue) ? defaultValue : choices[0]!;
+}
+choose(["red", "blue"] as const, "red");
+// choose(["red", "blue"] as const, "green"); // error
+```
+
+### Type Complexity Budget
+
+Deep recursive/distributive types can slow the compiler and produce unusable diagnostics. Name intermediate types, constrain unions, avoid computing types already expressible by code generation, and measure with `tsc --extendedDiagnostics` and a compiler trace when builds regress.
+
+### Modern Decorators
+
+Decorators are runtime functions with compile-time typing. Do not confuse the modern ECMAScript decorator model with the older `experimentalDecorators`/metadata ecosystem; frameworks may require one specific mode.
+
+```typescript
+function logged<This, Args extends unknown[], Return>(
+  original: (this: This, ...args: Args) => Return,
+  context: ClassMethodDecoratorContext<This, (this: This, ...args: Args) => Return>
+) {
+  return function (this: This, ...args: Args): Return {
+    console.debug({ method: String(context.name) }, "called");
+    return original.call(this, ...args);
+  };
+}
+
+class Worker {
+  @logged
+  run(jobId: string): number { return jobId.length; }
+}
+```
+
+Decorators can affect initialization order, identity, metadata, tree-shaking, and testing. Keep domain rules in ordinary code; use decorators for narrow cross-cutting integration when the runtime contract is understood.
+
+### Explicit Resource Management
+
+Objects implementing `Symbol.dispose` or `Symbol.asyncDispose` can be bound with `using`/`await using`, providing deterministic cleanup when the configured runtime supports the emitted protocol:
+
+```typescript
+await using transaction = await database.beginTransaction();
+await transaction.execute(command);
+await transaction.commit();
+// async disposal runs on success, failure, or early return
+```
+
+Disposal does not automatically mean rollback after commit; define idempotent lifecycle semantics and test suppressed/combined failures. Confirm runtime and downlevel-helper compatibility before publishing a library that exposes this syntax.
+
+### Exercise: Typed Event Protocol
+
+Create an event map whose keys become `onX` subscription methods through key remapping. Add compile-time tests for correct payloads and ensure unknown event names fail.
+
+---
+
+## 20. ESM, Module Resolution, and Package Boundaries
+
+TypeScript does not decide how a runtime loads modules; it must model Node.js, a bundler, or another host. The [official module reference](https://www.typescriptlang.org/docs/handbook/modules/reference) is the authority for compatibility-sensitive details.
+
+### Node Applications
+
+```json
+// package.json
+{ "type": "module" }
+```
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "verbatimModuleSyntax": true,
+    "strict": true
+  }
+}
+```
+
+Under Node ESM, relative imports use the runtime extension:
+
+```typescript
+import type { Task } from "./task.js";
+import { createTask } from "./service.js";
+```
+
+Use `.mts`/`.cts` only when a file must force ESM/CJS independently of the package default. Do not choose `module: esnext` for a Node application merely because output looks like ESM; `NodeNext` also models Node resolution and package conditions.
+
+### Bundled Applications
+
+For Vite/esbuild/Rollup/Webpack-style builds, `moduleResolution: "Bundler"`, `module: "ESNext"`, and `noEmit: true` commonly model the bundler while another tool emits JavaScript. Test that the bundler and TypeScript resolve identical files and aliases.
+
+### Type-Only Imports
+
+`import type` documents erasure and prevents an accidental runtime edge. With `verbatimModuleSyntax`, what you write has predictable emit behavior.
+
+### Package Exports
+
+```json
+{
+  "name": "@acme/tasks",
+  "type": "module",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./testing": { "types": "./dist/testing.d.ts", "import": "./dist/testing.js" }
+  },
+  "types": "./dist/index.d.ts"
+}
+```
+
+`exports` is an encapsulation boundary. Test a packed tarball from an external consumer rather than importing internal `src/` paths in a monorepo.
+
+### Exercise: ESM Diagnosis
+
+Create a Node ESM package, deliberately omit `.js` from a relative import, then use `tsc --traceResolution` to explain the failure. Add an exported subpath and verify it from a separate consumer.
+
+---
+
+## 21. tsconfig Architecture, Project References, and Monorepos
+
+### Strict Application Baseline
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "useUnknownInCatchVariables": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "sourceMap": true,
+    "declaration": true
+  }
+}
+```
+
+`skipLibCheck` can reduce time and tolerate duplicate ecosystem declarations, but it also suppresses errors inside `.d.ts` files. It does not make application code safer; document why it is enabled.
+
+### Project References
+
+Large repositories should encode build boundaries:
+
+```json
+// tsconfig.json
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/domain" },
+    { "path": "./packages/api" },
+    { "path": "./apps/web" }
+  ]
+}
+```
+
+Referenced packages enable `composite`, declarations, incremental metadata, and `tsc -b`. References are not a substitute for package exports; keep source and distribution boundaries aligned.
+
+### Separate Type-Check and Emit
+
+Many frontend systems use `tsc --noEmit` for analysis and a bundler for output. Libraries need declaration emit and should test emitted `.d.ts`. Node applications may emit with `tsc`, swc, esbuild, or a runtime loader—but only one tool should own each transformation responsibility.
+
+### Performance Diagnostics
+
+Use:
+
+```bash
+npx tsc -b --verbose
+npx tsc --extendedDiagnostics
+npx tsc --generateTrace .trace
+```
+
+Common problems include enormous unions, distributive recursive conditionals, duplicated library versions, one giant project, and including generated/test data unintentionally.
+
+### Exercise: Three-Package Workspace
+
+Build `domain → api → web` with project references. Prove that the domain cannot import infrastructure, and compare clean versus incremental build time.
+
+---
+
+## 22. Runtime Validation, Serialization, and API Contracts
+
+### Parse, Don't Cast
+
+```typescript
+import { z } from "zod";
+
+const TaskSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string().trim().min(1).max(200),
+  status: z.enum(["todo", "doing", "done"]),
+  dueAt: z.string().datetime().transform(value => new Date(value))
+}).strict();
+
+type Task = z.infer<typeof TaskSchema>;
+
+function parseTask(input: unknown): Task {
+  return TaskSchema.parse(input);
+}
+```
+
+Validation libraries differ in bundle size, inference, coercion, error format, JSON Schema support, and performance. The architectural rule is independent of library: one executable schema owns the runtime boundary and the static type is derived or checked against it.
+
+### Typed `fetch` Is Not Validated `fetch`
+
+```typescript
+async function getTask(id: string, signal?: AbortSignal): Promise<Task> {
+  const response = await fetch(`/api/tasks/${encodeURIComponent(id)}`, { signal });
+  if (!response.ok) throw new HttpError(response.status, await response.text());
+  const body: unknown = await response.json();
+  return TaskSchema.parse(body);
+}
+```
+
+`fetch<Task>()`, `response.json() as Task`, and Axios generics only describe an expectation. They do not prove the server obeyed it.
+
+### Serialization Is a Contract
+
+JSON loses `Date`, `Map`, `Set`, `bigint`, `undefined`, prototypes, and object identity. Define wire types separately from domain types and perform explicit conversion.
+
+```typescript
+type TaskWire = { id: string; dueAt: string | null };
+type TaskDomain = { id: TaskId; dueAt: Date | null };
+```
+
+Version durable events and stored records. Prefer additive evolution, reject unknown incompatible versions, and test old fixtures against new readers.
+
+### Environment Validation
+
+```typescript
+const EnvSchema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]),
+  DATABASE_URL: z.string().url(),
+  JWT_SECRET: z.string().min(32)
+});
+export const env = EnvSchema.parse(process.env);
+```
+
+Validate once at startup; do not scatter `process.env.X!` across the codebase.
+
+### Exercise: Contract Failure Matrix
+
+Test missing fields, unknown fields, wrong primitives, invalid dates, oversized text, malformed JSON, non-2xx responses, timeouts, and client cancellation. Confirm every failure becomes a stable application error rather than an unchecked cast.
+
+---
+
+## 23. Async Systems, Cancellation, Streams, and Errors
+
+### Promise Semantics
+
+An `async` function always returns a promise. `await` pauses that async continuation, not the JavaScript thread. Independent work should be started together; sequential `await` accidentally serializes it.
+
+```typescript
+const [user, tasks] = await Promise.all([
+  getUser(userId, signal),
+  getTasks(userId, signal)
+]);
+```
+
+`Promise.all` fails fast but does not cancel other operations. Use a shared `AbortSignal` and make every participating operation honor it.
+
+### Structured Cancellation and Deadlines
+
+```typescript
+async function withTimeout<T>(
+  milliseconds: number,
+  operation: (signal: AbortSignal) => Promise<T>
+): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(new Error("deadline exceeded")), milliseconds);
+  try {
+    return await operation(controller.signal);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+```
+
+Propagate a caller's signal as well as internal deadlines in production. Clean up listeners and timers in `finally` blocks.
+
+### Concurrency Limits and Backpressure
+
+Starting a promise for every item can exhaust sockets or memory. Process bounded batches or use a concurrency limiter. Streams communicate backpressure so producers do not outrun consumers.
+
+```typescript
+import { pipeline } from "node:stream/promises";
+import { createReadStream, createWriteStream } from "node:fs";
+import { createGzip } from "node:zlib";
+
+await pipeline(
+  createReadStream("events.ndjson"),
+  createGzip(),
+  createWriteStream("events.ndjson.gz"),
+  { signal }
+);
+```
+
+### Error Taxonomy
+
+```typescript
+type AppError =
+  | { kind: "validation"; issues: readonly string[] }
+  | { kind: "not-found"; resource: string; id: string }
+  | { kind: "conflict"; code: string }
+  | { kind: "dependency"; service: string; retryable: boolean; cause: unknown };
+```
+
+Throwing is convenient within imperative layers; explicit `Result<T,E>` is useful when failure is an expected branch callers must handle. Preserve `cause`, never assume a caught value is `Error`, and translate internal failures at process/API boundaries without leaking secrets.
+
+### Retries and Idempotency
+
+Retry only transient failures, with capped exponential backoff and jitter. A timeout does not prove the server did nothing; unsafe retries can duplicate writes. Use idempotency keys or naturally idempotent operations and set a total deadline.
+
+### Exercise: Resilient Batch Client
+
+Implement a client with a concurrency limit, deadline, caller cancellation, retry classification, jitter, and an idempotency key. Test it with fake timers and a deterministic failing transport.
+
+---
+
+## 24. Application Architecture and Domain Modeling
+
+### Keep Dependencies Pointing Inward
+
+```text
+HTTP/CLI/worker → application use cases → domain
+database/message broker ────────────────┘ (through ports)
+```
+
+The domain should not import Express, an ORM, React, or environment variables. Framework adapters validate external data and translate it into domain commands.
+
+### Domain Values and Invariants
+
+```typescript
+declare const taskIdSymbol: unique symbol;
+type TaskId = string & { readonly [taskIdSymbol]: true };
+
+class Task {
+  private constructor(
+    readonly id: TaskId,
+    private title: string,
+    private status: "todo" | "done"
+  ) {}
+
+  static create(id: TaskId, title: string): Task {
+    const normalized = title.trim();
+    if (!normalized) throw new DomainError("task.title.empty");
+    return new Task(id, normalized, "todo");
+  }
+
+  complete(): void {
+    if (this.status === "done") return; // idempotent transition
+    this.status = "done";
+  }
+}
+```
+
+Do not create setters for invariants. Expose operations named in the domain and make invalid transitions impossible or explicit failures.
+
+### Ports and Adapters
+
+```typescript
+interface TaskRepository {
+  findById(id: TaskId): Promise<Task | null>;
+  save(task: Task): Promise<void>;
+}
+
+class CompleteTask {
+  constructor(private readonly tasks: TaskRepository) {}
+  async execute(id: TaskId): Promise<void> {
+    const task = await this.tasks.findById(id);
+    if (!task) throw new NotFoundError("task", id);
+    task.complete();
+    await this.tasks.save(task);
+  }
+}
+```
+
+Dependency injection can be plain constructor injection. A container is optional; hidden service locators and global singletons make tests and lifetimes harder.
+
+### Transactions and Concurrency
+
+Static types cannot prevent lost updates. Use database constraints, transactions, optimistic versions, idempotency, and outbox/inbox patterns where consistency crosses process boundaries. Model these failures in application contracts.
+
+### Frontend Boundaries
+
+Keep server wire schemas separate from UI state. Model remote state with discriminated unions, isolate query/cache libraries behind hooks, and never share secret-bearing server modules with browser bundles merely because TypeScript allows the import.
+
+### Exercise: Replace the In-Memory Model
+
+Define repository ports for the original capstone and implement both in-memory and SQL adapters. Run the same contract test suite against each. Add an optimistic version and test conflicting updates.
+
+---
+
+## 25. Testing Runtime Behavior and Types
+
+### A Testing Portfolio
+
+- Unit tests exercise pure domain behavior.
+- Contract tests verify every adapter implements a port consistently.
+- Integration tests cover databases, HTTP serialization, and migrations.
+- End-to-end tests cover a few critical user journeys.
+- Property-based tests explore invariants over generated inputs.
+- Type tests lock public inference and rejected usages.
+
+Test behavior, not private implementation calls. Excessive mocking produces tests that agree with mocks rather than production.
+
+### Property-Based Testing
+
+```typescript
+import fc from "fast-check";
+
+test("decode(encode(x)) preserves values", () => {
+  fc.assert(fc.property(taskArbitrary, task => {
+    expect(decodeTask(encodeTask(task))).toEqual(task);
+  }));
+});
+```
+
+Properties are powerful for parsers, serializers, state machines, sort/order logic, and algebraic utilities. Shrinking turns a large failure into a small counterexample.
+
+### Type-Level Tests
+
+Use `tsd`, `expect-type`, or checked fixture projects. For local negative tests, `@ts-expect-error` must include a reason and should fail when the expected error disappears.
+
+```typescript
+import { expectTypeOf } from "expect-type";
+
+expectTypeOf(routes.tasks.path).toEqualTypeOf<"/tasks">();
+// @ts-expect-error -- user ids cannot be passed where task ids are required
+completeTask(userId);
+```
+
+Avoid `@ts-ignore`: it remains silent when the underlying issue is fixed.
+
+### Testing Time and Concurrency
+
+Inject clocks and ID generators. Use fake timers for scheduling logic, but keep integration coverage with real timers and abort signals. Assert that cancellation releases resources and that rejected promises are observed.
+
+### Coverage and Mutation
+
+Line coverage does not prove useful assertions. Track branch coverage for state machines and validation failures; mutation testing can reveal tests that execute code without detecting incorrect behavior.
+
+### Exercise: Testing Pyramid
+
+Add unit, property, repository-contract, HTTP integration, and type tests for one task workflow. Deliberately break validation, persistence, and inference to confirm each layer detects the appropriate regression.
+
+---
+
+## 26. Authoring and Publishing TypeScript Libraries
+
+### Design the Public Surface First
+
+Export the smallest stable API. Do not expose internal conditional types, dependency-specific classes, or source paths accidentally. Use an explicit `index.ts` and package `exports`; avoid a barrel that causes cycles or makes every internal module public.
+
+### Declaration Emit
+
+```json
+{
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "stripInternal": true,
+    "composite": true
+  }
+}
+```
+
+Inspect generated `.d.ts` files as deliverables. A library can run correctly while emitting unusable or non-portable declarations.
+
+### Declaration Authoring Patterns
+
+Understand global, UMD, CommonJS, ESM, module augmentation, callable objects, and generic classes before hand-writing `.d.ts`. Never declare a dependency more precisely than its runtime behavior. Use `unknown` when the contract is unknown.
+
+```typescript
+declare module "legacy-parser" {
+  export interface Options { strict?: boolean }
+  export function parse(input: string, options?: Options): unknown;
+}
+```
+
+Module augmentation adds declarations but cannot create runtime members. Pair augmentation with the code that actually installs the behavior.
+
+### Compatibility and SemVer
+
+Type changes can be breaking even without JavaScript changes: narrowing accepted input, widening output, changing generic defaults, modifying overload order, or altering inference may break consumers. Test against supported TypeScript versions and representative consumer fixtures.
+
+### Dual-Package Hazards
+
+Publishing both CJS and ESM can create two copies of stateful modules and complex declaration routing. Prefer one format when possible. If dual publishing is required, test `import` and `require` consumers, conditional exports, singleton behavior, and Node/bundler resolution separately.
+
+### Release Verification
+
+```bash
+npm pack --dry-run
+npm pack
+# install the tarball into clean ESM and bundler fixtures
+```
+
+Check files, source maps, license, exports, types, side-effects metadata, provenance, and minimum runtime before publishing.
+
+### Exercise: Publishable Validation Package
+
+Extract task schemas and domain IDs into a small ESM package. Generate declarations, expose one testing subpath, pack it, and compile clean external consumers without workspace path aliases.
+
+---
+
+## 27. Performance, Security, and Production Operations
+
+### Compiler Performance
+
+Prefer named types and simple public signatures over enormous inferred declarations. Split project references by stable ownership, deduplicate dependencies, avoid unconstrained distributive conditionals, and establish a type-check time budget in CI. TypeScript 7's native compiler improves throughput, but pathological type design still affects diagnostics and editor usability.
+
+### Runtime Performance
+
+Types disappear, so optimize JavaScript behavior: algorithmic complexity, allocation, object shapes, serialization, I/O, database queries, and event-loop blocking. Benchmark production builds with representative data. Do not rewrite readable code based on assumptions about erased types.
+
+### Security Boundaries
+
+- Validate and size-limit all external input.
+- Use parameterized queries and database constraints.
+- Never use `eval` for calculators, templates, or configuration.
+- Fail startup when secrets are missing; do not ship fallback secrets.
+- Hash passwords with a current password-hashing algorithm and an explicit cost policy.
+- Verify JWT algorithm, issuer, audience, expiry, rotation, and revocation requirements.
+- Apply authorization to the resource, not merely authentication to the route.
+- Prevent prototype-pollution paths when merging untrusted objects.
+- Pin/lock dependencies, audit releases, and minimize install scripts.
+
+### Observability
+
+Use structured logs with request/job correlation IDs and redaction. Emit metrics for latency, throughput, error classes, saturation, queue depth, and dependency health. Trace work across service boundaries. Keep PII and credentials out of logs and error responses.
+
+```typescript
+type LogContext = {
+  requestId: string;
+  userId?: string;
+  operation: string;
+};
+logger.info({ ...context, durationMs }, "task completed");
+```
+
+### Graceful Shutdown
+
+Stop accepting work, signal cancellation, drain with a deadline, close servers/queues/pools, flush telemetry, and exit non-zero when shutdown fails. Test SIGTERM behavior; container orchestration assumes it works.
+
+### Migrations and Deployment
+
+Use backward-compatible expand/migrate/contract database and event-schema changes. A rolling deployment runs old and new versions simultaneously. Type checking one revision cannot prove cross-version compatibility.
+
+### Exercise: Production Readiness Review
+
+Threat-model the task API. Add environment validation, body limits, authorization tests, structured redacted logs, health/readiness endpoints, graceful shutdown, and a dependency/database failure drill.
+
+---
+
+## 28. Professional Capstone: A Validated Task Platform
+
+The original capstone demonstrates routing, services, authentication, and tests. This professional version removes its production gaps: unvalidated bodies, fallback secrets, in-memory-only persistence, domain/framework coupling, unchecked token assertions, and missing package/build boundaries.
+
+### Repository Shape
+
+```text
+task-platform/
+├── package.json
+├── tsconfig.json
+├── packages/
+│   ├── contracts/       # executable wire schemas, no server secrets
+│   ├── domain/          # Task aggregate and repository ports
+│   ├── application/     # use cases, errors, clock/id ports
+│   ├── persistence/     # SQL repository, migrations, transaction adapter
+│   └── observability/   # logging/tracing interfaces
+├── apps/
+│   ├── api/             # HTTP adapter and composition root
+│   ├── worker/          # outbox consumer and retries
+│   └── web/             # React client consuming contracts
+├── tests/
+│   ├── contracts/
+│   ├── integration/
+│   └── e2e/
+└── tooling/             # shared tsconfig, lint, CI scripts
+```
+
+### Contract Package
+
+```typescript
+import { z } from "zod";
+
+export const TaskIdSchema = z.string().uuid().brand<"TaskId">();
+export const CreateTaskSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  description: z.string().max(10_000).default("")
+}).strict();
+
+export const TaskResponseSchema = z.object({
+  id: TaskIdSchema,
+  title: z.string(),
+  status: z.enum(["todo", "done"]),
+  version: z.number().int().nonnegative(),
+  createdAt: z.string().datetime()
+});
+
+export type CreateTaskInput = z.infer<typeof CreateTaskSchema>;
+export type TaskResponse = z.infer<typeof TaskResponseSchema>;
+```
+
+### HTTP Adapter
+
+```typescript
+app.post("/tasks", authenticate, async (req, res, next) => {
+  try {
+    const input = CreateTaskSchema.parse(req.body);
+    const output = await createTask.execute({
+      actorId: req.auth.userId,
+      input,
+      idempotencyKey: req.get("Idempotency-Key") ?? undefined
+    });
+    res.status(201).json(TaskResponseSchema.parse(output));
+  } catch (error: unknown) {
+    next(error);
+  }
+});
+```
+
+The route validates input and output. The use case owns authorization and idempotency policy. The error middleware maps a closed application-error union to stable public responses and logs the original cause privately.
+
+### Persistence Contract
+
+```typescript
+interface UnitOfWork {
+  tasks: TaskRepository;
+  outbox: Outbox;
+  commit(): Promise<void>;
+  rollback(): Promise<void>;
+}
+
+interface TaskRepository {
+  get(id: TaskId): Promise<Task | null>;
+  insert(task: Task): Promise<void>;
+  save(task: Task, expectedVersion: number): Promise<"saved" | "conflict">;
+}
+```
+
+Creating a task and writing its integration event occur in one transaction. A worker later publishes the outbox record with retries and deduplication.
+
+### Required Test Matrix
+
+- Domain unit and state-machine property tests.
+- Schema fixtures for valid, invalid, oversized, and backward-compatible payloads.
+- Repository contract tests against memory and real database adapters.
+- HTTP integration tests for validation, authn, authz, idempotency, conflict, and redaction.
+- Type tests for branded IDs and public package inference.
+- Worker tests for retry, poison messages, cancellation, and duplicate delivery.
+- Packed-package consumer builds under supported TypeScript versions.
+- Load test with p95/p99 latency, event-loop delay, database saturation, and error budget.
+
+### CI and Definition of Done
+
+```text
+install --frozen lockfile
+→ format/lint
+→ tsc -b
+→ type tests
+→ unit/property tests
+→ integration tests with ephemeral database
+→ build + npm pack + consumer fixtures
+→ dependency/security scan
+→ container smoke test + graceful-shutdown test
+```
+
+The capstone is complete when a clean checkout can build, test, package, migrate, start, serve a documented workflow, shut down safely, and reproduce the results using committed commands. “It type-checks” is only one gate.
+
+### Final Challenges
+
+1. Add cursor pagination whose opaque cursor is runtime validated and versioned.
+2. Add optimistic concurrency with `If-Match` and prove conflicts do not lose updates.
+3. Generate OpenAPI from the executable schemas and contract-test a client.
+4. Add an outbox worker with bounded concurrency, cancellation, retries, and metrics.
+5. Publish the contracts package and consume its packed tarball from both Node ESM and Vite.
+6. Migrate one package to TypeScript 7, recording compiler-time and compatibility differences.
+
+---
+
 ## Conclusion
 
 You have now completed a comprehensive journey through TypeScript, from basic types to advanced patterns and real-world application development. This guide covered:
@@ -4128,6 +5094,11 @@ You have now completed a comprehensive journey through TypeScript, from basic ty
 - Testing strategies with Jest
 - Migration patterns from JavaScript
 - Best practices and strict configuration
-- A complete capstone project demonstrating production-ready patterns
+- Structural typing, soundness boundaries, narrowing, and exhaustive models
+- ESM/NodeNext resolution, package exports, declarations, and monorepo builds
+- Runtime schemas, async cancellation, architecture, and error contracts
+- Runtime, integration, property-based, and type-level testing
+- Library publishing, performance diagnostics, security, and operations
+- A professional capstone with persistence ports, outbox processing, CI, and release criteria
 
 Continue practicing by building more projects, exploring TypeScript documentation, and contributing to open-source TypeScript projects. TypeScript is continuously evolving, so stay updated with new features and community best practices.

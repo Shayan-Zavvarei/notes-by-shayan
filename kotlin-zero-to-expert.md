@@ -58,7 +58,7 @@ The 36 chapters form five parts. You can read straight through, or use this as a
 **Part 5 — Mastery (Ch. 26–36).** The expert layer: Flow in depth, advanced concurrency, operator conventions, reflection, metaprogramming (KSP & compiler plugins), serialization internals, performance & memory, architecture & dependency injection, Kotlin Multiplatform in depth, designing public libraries, and advanced testing.
 *After this part you can design frameworks, optimise hot paths, architect large systems, and reason about Kotlin the way its own library authors do.*
 
-> **Note on versions.** All examples target **Kotlin 2.0** (the K2 compiler) and the library versions named in each setup section. Kotlin is strongly backward-compatible, so the language material applies to later versions too.
+> **Version baseline (July 2026).** Language and build examples target **Kotlin 2.4.0** and the K2 compiler. The production chapters use Ktor 3.x and current stable releases named in their setup sections. Experimental or preview APIs are labelled at the point of use; unlabelled language features are stable in Kotlin 2.4. Dependency versions are examples, not timeless constants: before starting a new project, check the official compatibility tables and update patch versions together.
 
 ## Table of Contents
 
@@ -133,6 +133,7 @@ The 36 chapters form five parts. You can read straight through, or use this as a
 - Set up a working Kotlin environment (or write your first program with *zero* install).
 - Create and run a Kotlin program, and explain what "run" actually does.
 - Read the anatomy of `fun main()` and print output with `println`.
+- Organize source files with packages and imports.
 
 **In this chapter**
 
@@ -141,6 +142,7 @@ The 36 chapters form five parts. You can read straight through, or use this as a
 - [1.3 Your first program](#13-your-first-program)
 - [1.4 What "running" actually does](#14-what-running-actually-does)
 - [1.5 `println`, `print`, and the console](#15-println-print-and-the-console)
+- [1.6 Files, packages, and imports](#16-files-packages-and-imports)
 - Summary · Self-check quiz · Exercises · [Chapter project](#chapter-project-task-manager-v0) · Glossary · What's next
 
 ---
@@ -151,7 +153,7 @@ The 36 chapters form five parts. You can read straight through, or use this as a
 
 Two words in that description carry a lot of weight:
 
-- **Statically-typed** means every value has a type the compiler knows *before* the program runs. If you try to add a number to a piece of text, the compiler stops you at build time instead of letting the program crash later. Types are a safety net.
+- **Statically-typed** means every value has a type the compiler knows *before* the program runs. If you try to subtract text from a number or call a string-only operation on an integer, the compiler stops you at build time instead of letting the program crash later. Types are a safety net. (String concatenation with `+` is deliberately supported, so `"tasks: " + 3` is valid.)
 - **Modern** means Kotlin learned from decades of pain in older languages. It is concise (little boilerplate), safe (null safety, immutability by default), and pragmatic (it runs on the same platform as Java and works seamlessly with the enormous Java ecosystem).
 
 The single most important fact about Kotlin's origins: it runs primarily on the **Java Virtual Machine (JVM)** — the same runtime as Java. This is why Kotlin could arrive with a mature ecosystem on day one: every Java library ever written is available to you. You get a nicer language *and* keep the tools.
@@ -197,7 +199,7 @@ Hello, Kotlin!
 That is a complete, valid Kotlin program. Let's read it token by token, because every part will recur thousands of times:
 
 - **`fun`** — the keyword that begins a *function*, a named block of code you can run. (Functions get a full chapter of their own, Chapter 5.)
-- **`main`** — the function's name. `main` is special: it is the **entry point**, the function the system calls to start your program. Every runnable program has exactly one.
+- **`main`** — the function's name. `main` is special: it is an **entry point**, a function the launcher can call to start your program. A small application normally has one, but a project may contain several `main` functions; an IDE run configuration or Gradle's `mainClass` chooses which one to launch.
 - **`()`** — the parameter list. Here it's empty: `main` takes no inputs.
 - **`{ … }`** — the function *body*: the code that runs when the function is called.
 - **`println("Hello, Kotlin!")`** — a call to the built-in `println` function, asking it to print the text `"Hello, Kotlin!"`. Text wrapped in double quotes is a **string** (Chapter 2).
@@ -266,6 +268,55 @@ Notice how the two `print` calls and the first `println` all landed on one line,
 > `println("A")` prints `A` and a newline. `print("B")` and `print("C")` add `B` then `C` with no breaks. `println("D")` adds `D` and ends the line. So line one is `A`, line two is `BCD`.
 > </details>
 
+### 1.6 Files, packages, and imports
+
+Real programs do not stay in one `Main.kt`. A **package** gives declarations a stable, globally unique name and an **import** lets another file use that declaration without spelling its full name.
+
+```kotlin
+// src/main/kotlin/com/example/tasks/model/Task.kt
+package com.example.tasks.model
+
+data class Task(val title: String)
+```
+
+```kotlin
+// src/main/kotlin/com/example/tasks/app/Main.kt
+package com.example.tasks.app
+
+import com.example.tasks.model.Task
+
+fun main() {
+    println(Task("Learn packages"))
+}
+```
+
+The fully qualified name is `com.example.tasks.model.Task`. Package names conventionally use a reversed domain and lowercase segments. Kotlin does not require the directory to match the package, but matching them makes navigation and build configuration predictable.
+
+Imports can name more than classes:
+
+```kotlin
+import com.example.tasks.model.Task
+import com.example.tasks.format.summary       // top-level function
+import com.example.tasks.Priority.HIGH         // enum entry
+import java.time.LocalDate as JavaDate          // resolve a name collision
+```
+
+Kotlin automatically imports common packages such as `kotlin.*`, `kotlin.collections.*`, and—on the JVM—`java.lang.*`. An explicit import is therefore unnecessary for `String`, `List`, or `println`.
+
+> 💡 **Idiom** — Prefer explicit imports in production code. A star import such as `import com.example.tasks.*` is legal, but it hides where names came from and makes collisions easier during large refactors. IDEs can manage imports automatically.
+
+> ⚙️ **Under the hood** — A package is a naming boundary, not an object and not necessarily a folder. Top-level declarations compile into generated file classes on the JVM, while their package becomes part of their bytecode name. This is why moving a public declaration to another package is an API-breaking change.
+
+> 📝 **Micro-exercise** — Two libraries both declare `Clock`. Import one normally and alias the other to `TestClock`.
+>
+> <details><summary>Show answer</summary>
+>
+> ```kotlin
+> import com.example.time.Clock
+> import com.example.testing.Clock as TestClock
+> ```
+> </details>
+
 ---
 
 ### Summary
@@ -276,6 +327,7 @@ Notice how the two `print` calls and the first `println` all landed on one line,
 - The entry point is a top-level **`fun main()`** — no class, no `static`, no boilerplate.
 - "Running" means **compile to JVM bytecode, then execute**. The compiler generates a class (`MainKt`) to hold your top-level `main`, because the JVM requires everything to live in a class.
 - **`println`** prints with a trailing newline; **`print`** prints without one.
+- A source file may declare a **package**; **imports** make declarations from other packages available, and `as` aliases resolve name collisions.
 
 ### Self-check quiz
 
@@ -284,7 +336,7 @@ Notice how the two `print` calls and the first `println` all landed on one line,
 2. What does "statically typed" buy you?
    <details><summary>Answer</summary>The compiler knows every value's type before the program runs and rejects type-mismatched code at build time, catching many bugs early.</details>
 3. What is special about the `main` function?
-   <details><summary>Answer</summary>It's the program's entry point — the function the runtime calls to start execution. A runnable program has exactly one.</details>
+   <details><summary>Answer</summary>It is a valid program entry point. A project may contain several; the launcher or Gradle configuration chooses the one to run.</details>
 4. Your top-level `fun main()` has no class. What does the compiler do about the JVM's requirement that code live in a class?
    <details><summary>Answer</summary>It generates a class named after the file with `Kt` appended (e.g. `MainKt`) containing a static `main` method.</details>
 
@@ -371,6 +423,8 @@ You have 3 tasks.
 | **JDK (Java Development Kit)** | The toolchain (compiler + runtime + libraries) needed to build and run JVM code. |
 | **Entry point** | The function the runtime calls to start a program — Kotlin's top-level `main`. |
 | **`println` / `print`** | Console output, with / without a trailing newline. |
+| **Package / import** | A namespace for declarations / a directive that brings a declaration into a file by its short name. |
+| **Fully qualified name** | A declaration's complete package plus name, such as `com.example.tasks.model.Task`. |
 
 ### What's next
 
@@ -391,6 +445,8 @@ You can run a program and print output — now let's give it something to work w
 - Use Kotlin's basic types and their literals confidently.
 - Convert between numeric types, and explain why Kotlin refuses to do it for you.
 - Build strings with templates, and use multiline strings cleanly.
+- Explain Kotlin's root and bottom types, and choose between generic and primitive arrays.
+- Use unsigned integers only when their domain semantics justify them.
 - Avoid the classic beginner traps: integer division, silent overflow, and "immutable that isn't."
 
 **In this chapter**
@@ -401,6 +457,9 @@ You can run a program and print output — now let's give it something to work w
 - [2.4 Number literals](#24-number-literals)
 - [2.5 Type conversions](#25-type-conversions)
 - [2.6 Strings, templates, and multiline text](#26-strings-templates-and-multiline-text)
+- [2.7 `Any`, `Unit`, and `Nothing`](#27-any-unit-and-nothing)
+- [2.8 Arrays and primitive arrays](#28-arrays-and-primitive-arrays)
+- [2.9 Unsigned integers](#29-unsigned-integers)
 - Summary · Self-check quiz · Exercises · [Chapter project](#chapter-project-modelling-a-task) · Glossary · What's next
 
 ---
@@ -585,6 +644,67 @@ Status: active
 
 > 💡 **Idiom** — Prefer templates (`"Total: $count"`) over `+` concatenation (`"Total: " + count`). They read better and are less error-prone (no forgotten spaces, no accidental type surprises).
 
+### 2.7 `Any`, `Unit`, and `Nothing`
+
+Three types explain the edges of Kotlin's type system:
+
+- **`Any`** is the root of every non-null Kotlin type. It exposes `equals`, `hashCode`, and `toString`.
+- **`Unit`** is the meaningful "no result" value. A function that only performs an effect returns the single value `Unit`; the annotation is normally omitted.
+- **`Nothing`** has no values. A function returning `Nothing` never completes normally—it throws or loops forever. Because no `Nothing` value can exist, `Nothing` is a subtype of every type.
+
+```kotlin
+fun log(message: String): Unit {
+    println(message)
+}
+
+fun fail(message: String): Nothing = throw IllegalStateException(message)
+
+fun titleOrFail(title: String?): String = title ?: fail("missing title")
+```
+
+The Elvis expression type-checks because the left branch produces `String` and the right branch never produces a competing value. `return`, `throw`, and `continue` fit naturally inside expressions for the same reason.
+
+> ⚠️ **Gotcha** — `Any` excludes `null`; `Any?` includes every Kotlin value including `null`. `Nothing?` has exactly one possible value: `null`.
+
+### 2.8 Arrays and primitive arrays
+
+An `Array<T>` has fixed size and mutable elements. Use lists for most application data; use arrays at platform boundaries, for indexed mutable buffers, or after measurement shows they matter.
+
+```kotlin
+val names: Array<String> = arrayOf("Ada", "Linus")
+names[1] = "Grace"
+println(names.contentToString())          // [Ada, Grace]
+
+val squares = Array(5) { index -> index * index }
+println(squares.contentToString())        // [0, 1, 4, 9, 16]
+```
+
+Primitive-specialized arrays avoid boxing on the JVM:
+
+```kotlin
+val ids: IntArray = intArrayOf(10, 20, 30)
+val bytes: ByteArray = "OK".encodeToByteArray()
+val flags: BooleanArray = BooleanArray(1_000)
+```
+
+`Array<Int>` and `IntArray` are different, unrelated types. Convert deliberately with `toIntArray()` or `toTypedArray()`.
+
+> ⚠️ **Gotcha — equality and printing.** Arrays inherit reference equality. Use `contentEquals`, `contentDeepEquals`, `contentToString`, and `contentHashCode` for their elements. `arrayOf(1) == arrayOf(1)` is `false` because they are different array objects.
+
+### 2.9 Unsigned integers
+
+`UByte`, `UShort`, `UInt`, and `ULong` represent non-negative bit patterns. Their literals use `u`/`uL`:
+
+```kotlin
+val permissions: UInt = 0b1010u
+val maxPacketSize: UShort = 65_535u
+val mask = permissions and 0b0010u
+```
+
+They are useful for binary formats, cryptography, protocol fields, and native APIs whose domain is genuinely unsigned. They are usually the wrong model for ordinary quantities: subtracting two counts can still underflow and wrap, and many Java/database APIs expect signed numbers.
+
+> 💡 **Idiom** — "Cannot be negative" is not by itself a reason to use `UInt`. For a task count, use `Int` plus validation (`require(count >= 0)`). Choose unsigned types when interoperability or bit-level semantics require their exact range and operations.
+
 ---
 
 ### Summary
@@ -595,6 +715,8 @@ Status: active
 - Literals can use `_` for grouping, `0x`/`0b` prefixes, and `L`/`f` suffixes.
 - Kotlin **never converts numbers implicitly** — call `.toLong()`, `.toDouble()`, etc. Beware **integer division** (`7/2 == 3`) and **silent overflow** (use `Long` for big values).
 - **String templates** (`$x`, `${expr}`) and **triple-quoted** multiline strings (`""" … """.trimIndent()`) are the idiomatic way to build text.
+- **`Any`** is the non-null root type, **`Unit`** is the single no-result value, and **`Nothing`** marks code that cannot return.
+- Arrays are fixed-size mutable buffers; primitive arrays such as **`IntArray`** avoid boxing. Unsigned types are specialized tools for unsigned protocols and bit patterns.
 
 ### Self-check quiz
 
@@ -751,7 +873,7 @@ You can name and compute values — but real programs make *decisions* and *repe
 
 - [3.1 Expressions vs statements](#31-expressions-vs-statements)
 - [3.2 Arithmetic operators](#32-arithmetic-operators)
-- [3.3 Comparison and equality: `==` vs `===`](#33-comparison-and-equality--vs-)
+- [3.3 Comparison and equality: `==` vs `===`](#33-comparison-and-equality--vs)
 - [3.4 Logical operators and short-circuiting](#34-logical-operators-and-short-circuiting)
 - [3.5 Increment and decrement](#35-increment-and-decrement)
 - [3.6 Operators are functions](#36-operators-are-functions)
@@ -2190,9 +2312,9 @@ That's Part 1 complete — you can write correct, null-safe Kotlin that computes
 - [7.2 Nullable vs non-nullable types](#72-nullable-vs-non-nullable-types)
 - [7.3 The compiler forces you to handle null](#73-the-compiler-forces-you-to-handle-null)
 - [7.4 Smart casts: proving non-null with a check](#74-smart-casts-proving-non-null-with-a-check)
-- [7.5 The safe-call operator `?.`](#75-the-safe-call-operator-)
-- [7.6 The Elvis operator `?:`](#76-the-elvis-operator-)
-- [7.7 The not-null assertion `!!`](#77-the-not-null-assertion-)
+- [7.5 The safe-call operator `?.`](#75-the-safe-call-operator)
+- [7.6 The Elvis operator `?:`](#76-the-elvis-operator)
+- [7.7 The not-null assertion `!!`](#77-the-not-null-assertion)
 - [7.8 Safe casts with `as?`](#78-safe-casts-with-as)
 - [7.9 Nullable collections and stdlib helpers](#79-nullable-collections-and-stdlib-helpers)
 - [7.10 `lateinit` and `by lazy`](#710-lateinit-and-by-lazy)
@@ -3337,6 +3459,7 @@ Tasks are real objects now, but they're all identical in kind, and `TaskManager`
 - Define and implement interfaces, including default methods and properties.
 - Resolve conflicts when implementing multiple interfaces.
 - Program to abstractions (interfaces) rather than concrete classes.
+- Replace forwarding boilerplate with interface delegation and model single-method contracts with `fun interface`.
 
 **In this chapter**
 
@@ -3345,6 +3468,8 @@ Tasks are real objects now, but they're all identical in kind, and `TaskManager`
 - [9.3 Interfaces](#93-interfaces)
 - [9.4 Multiple interfaces and `super` resolution](#94-multiple-interfaces-and-super-resolution)
 - [9.5 Polymorphism: programming to abstractions](#95-polymorphism-programming-to-abstractions)
+- [9.6 Interface delegation with `by`](#96-interface-delegation-with-by)
+- [9.7 Functional interfaces and SAM conversion](#97-functional-interfaces-and-sam-conversion)
 - Summary · Self-check quiz · Exercises · [Chapter project](#chapter-project-a-repository-abstraction) · Glossary · What's next
 
 ---
@@ -3504,6 +3629,57 @@ fun main() {
 
 > 💡 **Idiom** — "**Program to an interface, not an implementation.**" Accept and return the most abstract type that does the job (`List` not `ArrayList`; `Shape` not `Circle`; a `Repository` interface not a concrete database class). Your code then depends on *what* a thing can do, not *how* it does it — which is exactly what this chapter's project exploits.
 
+### 9.6 Interface delegation with `by`
+
+Composition is often safer than inheritance: wrap an implementation, forward most operations, and override only the behavior you own. Kotlin generates the forwarding methods with `by`:
+
+```kotlin
+interface TaskStore {
+    fun add(title: String)
+    fun all(): List<String>
+}
+
+class LoggingTaskStore(
+    private val delegate: TaskStore,
+    private val log: (String) -> Unit
+) : TaskStore by delegate {
+    override fun add(title: String) {
+        log("adding: $title")
+        delegate.add(title)
+    }
+}
+```
+
+`LoggingTaskStore` still satisfies `TaskStore`. The compiler forwards `all()` to `delegate`; the explicit `add` overrides the generated forwarding method. This is the **decorator pattern** without a page of boilerplate.
+
+> ⚠️ **Gotcha** — Calls made *inside the delegate* stay on the delegate. Delegation is forwarding, not a virtual self-rebinding mechanism. If `delegate.add()` internally calls its own `all()`, it does not jump to an override in the wrapper.
+
+### 9.7 Functional interfaces and SAM conversion
+
+A **functional interface** has one abstract method and represents a named behavior contract:
+
+```kotlin
+fun interface TaskValidator {
+    fun validate(title: String): String?
+
+    fun isValid(title: String): Boolean = validate(title) == null
+}
+
+val nonBlank = TaskValidator { title ->
+    if (title.isBlank()) "title must not be blank" else null
+}
+```
+
+The lambda becomes an implementation through **SAM conversion** (Single Abstract Method). Kotlin also converts lambdas to compatible Java SAM interfaces such as `Runnable`.
+
+Choose deliberately:
+
+- Use a function type such as `(String) -> String?` for a local, structural callback.
+- Use `typealias Validator = (String) -> String?` only to give that same function type a readable alias; it does not create a new type.
+- Use `fun interface` when the contract deserves a distinct type, default methods, documentation, Java-friendly API, or future non-abstract members.
+
+> ⚙️ **Under the hood** — On the JVM, non-capturing SAM lambdas can be created through `invokedynamic` and reused. A capturing lambda must retain its captured values. Treat allocation claims as implementation details and measure hot paths rather than guessing.
+
 ---
 
 ### Summary
@@ -3513,6 +3689,7 @@ fun main() {
 - **Interfaces** describe capabilities; a type can implement many. They allow abstract members and **default methods**, but interface properties have **no backing field**.
 - Clashing interface defaults must be resolved by overriding and calling **`super<Interface>.method()`**.
 - **Polymorphism** lets code written against a base type/interface work with any implementation — program to abstractions for extensible design.
+- **Interface delegation** (`: Interface by delegate`) generates forwarding methods and makes decorators cheap; a **`fun interface`** gives a single-method behavior a real named type and supports SAM conversion.
 
 ### Self-check quiz
 
@@ -4406,6 +4583,7 @@ Your types now have expressive vocabularies. **[Ch.12 — Generics](#chapter-12-
 - Constrain type parameters with upper bounds.
 - Use variance (`out`/`in`) to make generic types substitutable safely.
 - Recover runtime type info with `reified`, and explain why erasure makes it necessary.
+- Use star projections and use-site projections without falling back to unsafe casts.
 
 **In this chapter**
 
@@ -4414,6 +4592,7 @@ Your types now have expressive vocabularies. **[Ch.12 — Generics](#chapter-12-
 - [12.3 Type constraints (upper bounds)](#123-type-constraints-upper-bounds)
 - [12.4 Variance: `out` and `in`](#124-variance-out-and-in)
 - [12.5 Type erasure and `reified`](#125-type-erasure-and-reified)
+- [12.6 Star projections and use-site variance](#126-star-projections-and-use-site-variance)
 - Summary · Self-check quiz · Exercises · [Chapter project](#chapter-project-a-generic-repository) · Glossary · What's next
 
 ---
@@ -4544,6 +4723,32 @@ fun main() {
 
 > ⚠️ **Gotcha** — Because of erasure you can't, in ordinary code, do `T()` (construct a `T`), make an `Array<T>` directly, or check `x is T`. Work around it with a factory lambda (`create: () -> T`), `reified`, or by passing a `KClass<T>`.
 
+### 12.6 Star projections and use-site variance
+
+Sometimes you know a value is a `Box` or `List` but intentionally do not know its element type. Use a **star projection**, not `Any`:
+
+```kotlin
+fun describe(values: List<*>) {
+    val first: Any? = values.firstOrNull() // safe to read as Any?
+    println("size=${values.size}, first=$first")
+    // values.add("x")                     // impossible: element type is unknown
+}
+```
+
+`List<*>` means "a list of some specific but unknown type." `List<Any?>` means "a list whose declared element type is `Any?`." Those are not interchangeable. For an invariant `MutableList<*>`, reads are safe as `Any?`, but writes other than `null` cannot be proven safe.
+
+Use-site projections constrain one particular use of an invariant generic:
+
+```kotlin
+fun copyNumbers(from: Array<out Number>, to: Array<in Number>) {
+    for (index in from.indices) to[index] = from[index]
+}
+```
+
+`from` is projected as a producer, so you cannot write to it; `to` is projected as a consumer, so reading gives only `Any?`. This is Kotlin's local equivalent of Java wildcards.
+
+> 💡 **Idiom** — Avoid unchecked casts such as `value as List<String>`. Validate elements (`all { it is String }`), transform with `filterIsInstance<String>()`, or preserve the type parameter through your API. `@Suppress("UNCHECKED_CAST")` belongs only at a small, audited boundary whose invariant you can explain.
+
 ---
 
 ### Summary
@@ -4552,6 +4757,7 @@ fun main() {
 - **Upper bounds** (`<T : Comparable<T>>`, or multiple via `where`) let you call a supertype's members on `T`.
 - **Variance** controls safe substitution: **`out`** (covariant, T only produced — like read-only `List`), **`in`** (contravariant, T only consumed). Mnemonic: **PECS**. Kotlin declares variance at the **class** (declaration-site), unlike Java's per-use wildcards.
 - Generic types are **erased** at runtime, so you can't do `is T`, `T()`, or `Array<T>` normally. **`reified`** (only in **`inline`** functions) restores the type at the call site, enabling `is T`/`T::class`.
+- **`List<*>`** preserves an unknown element type safely; **use-site projections** (`out`/`in`) restrict an invariant type to producing or consuming at a particular call boundary.
 
 ### Self-check quiz
 
@@ -5392,7 +5598,7 @@ Add the coroutines library to `build.gradle.kts` (Chapter 19 covers Gradle):
 
 ```kotlin
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
 }
 ```
 
@@ -6727,6 +6933,8 @@ You can bridge to the whole JVM ecosystem. But to *build* and manage real projec
 - Declare dependencies and understand `implementation` vs `api` vs `testImplementation`.
 - Configure the JVM toolchain and the `application` plugin.
 - Structure a multi-module project and use a version catalog.
+- Make builds reproducible with the wrapper, verification, locking, toolchains, and CI-friendly tasks.
+- Move shared build logic into convention plugins and keep configuration-cache compatibility.
 
 **In this chapter**
 
@@ -6735,6 +6943,9 @@ You can bridge to the whole JVM ecosystem. But to *build* and manage real projec
 - [19.3 Dependency configurations](#193-dependency-configurations)
 - [19.4 Multi-module projects](#194-multi-module-projects)
 - [19.5 Version catalogs and custom tasks](#195-version-catalogs-and-custom-tasks)
+- [19.6 The wrapper and reproducible dependencies](#196-the-wrapper-and-reproducible-dependencies)
+- [19.7 Convention plugins and lazy tasks](#197-convention-plugins-and-lazy-tasks)
+- [19.8 The build as a quality gate](#198-the-build-as-a-quality-gate)
 - Summary · Self-check quiz · Exercises · [Chapter project](#chapter-project-a-build-for-the-task-manager) · Glossary · What's next
 
 ---
@@ -6753,7 +6964,7 @@ Here's a complete `build.gradle.kts` for a runnable Kotlin JVM application, anno
 
 ```kotlin
 plugins {
-    kotlin("jvm") version "2.0.0"       // the Kotlin JVM plugin
+    kotlin("jvm") version "2.4.0"       // the Kotlin JVM plugin
     application                          // adds `run` and packaging tasks
 }
 
@@ -6765,7 +6976,7 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
     testImplementation(kotlin("test"))   // test-only dependency
 }
 
@@ -6778,13 +6989,13 @@ application {
 }
 
 tasks.test {
-    useJUnitPlatform()                    // run tests with JUnit 5
+    useJUnitPlatform()                    // run Jupiter tests on the JUnit Platform
 }
 ```
 
 Every block is a DSL scope: `plugins { }` chooses plugins (each plugin adds tasks and conventions), `repositories { }` says where to fetch from, `dependencies { }` lists libraries, and `kotlin { }`/`application { }` configure those plugins. With this file, `./gradlew run` builds and runs the app, and `./gradlew test` runs the tests.
 
-> ⚠️ **Gotcha** — For JUnit 5, you **must** call `useJUnitPlatform()` in `tasks.test { }`, or your tests silently won't run. It's the most common "my tests don't execute" cause (Chapter 24).
+> ⚠️ **Gotcha** — For modern JUnit Jupiter, call `useJUnitPlatform()` in `tasks.test { }`, or Jupiter tests may not be discovered. This is a common cause of "my tests don't execute" (Chapter 24).
 
 ### 19.3 Dependency configurations
 
@@ -6798,8 +7009,8 @@ Every block is a DSL scope: `plugins { }` chooses plugins (each plugin adds task
 ```kotlin
 dependencies {
     api("com.example:core-model:1.0")            // leaks to consumers (part of your API)
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")  // internal detail
-    testImplementation("io.mockk:mockk:1.13.11")  // tests only
+    implementation("com.squareup.okhttp3:okhttp:5.4.0")  // internal detail
+    testImplementation("io.mockk:mockk:1.14.11")  // tests only
 }
 ```
 
@@ -6840,7 +7051,7 @@ Hard-coding version strings across many modules invites drift. A **version catal
 ```toml
 # gradle/libs.versions.toml
 [versions]
-coroutines = "1.8.1"
+coroutines = "1.11.0"
 
 [libraries]
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -6868,23 +7079,123 @@ Run it with `./gradlew hello`.
 
 > ☕ **Coming from Java** — Compared to Maven's XML (`pom.xml`), the Kotlin DSL is code: type-safe, IDE-completable, and programmable (loops, conditionals, functions). Compared to Groovy Gradle, the Kotlin DSL catches typos at edit time instead of at build time. It's a strict upgrade in tooling support.
 
+### 19.6 The wrapper and reproducible dependencies
+
+Commit the **Gradle Wrapper** (`gradlew`, `gradlew.bat`, and `gradle/wrapper/*`). It pins the Gradle distribution so developers and CI run the same build tool:
+
+```bash
+./gradlew --version
+./gradlew clean check
+```
+
+Do not require a globally installed Gradle. Upgrade the wrapper deliberately and review its generated URL and checksum. Pin a JVM toolchain as shown earlier; the wrapper pins Gradle, while the toolchain pins the compiler/runtime used by tasks.
+
+Dynamic dependency versions (`1.+`, `latest.release`) make yesterday's commit produce a different graph today. Prefer exact versions through the catalog, then enable locking for applications:
+
+```kotlin
+// build.gradle.kts
+dependencyLocking {
+    lockAllConfigurations()
+}
+```
+
+Generate and commit lock state with:
+
+```bash
+./gradlew dependencies --write-locks
+```
+
+For stronger supply-chain protection, Gradle dependency verification records checksums/signatures in `gradle/verification-metadata.xml`. Update that file only while intentionally changing dependencies, and review the diff as carefully as source code.
+
+> ⚠️ **Gotcha** — A version catalog centralizes requested versions; it does not by itself freeze the complete transitive graph. Locking and verification solve different problems: reproducibility and artifact integrity.
+
+### 19.7 Convention plugins and lazy tasks
+
+Copying the same `plugins`, compiler options, and test setup into every module creates configuration drift. Put shared rules in a **convention plugin**, commonly in an included `build-logic` build:
+
+```text
+build-logic/
+├── settings.gradle.kts
+└── src/main/kotlin/taskmanager.kotlin-library.gradle.kts
+```
+
+```kotlin
+// taskmanager.kotlin-library.gradle.kts (precompiled script plugin)
+plugins {
+    kotlin("jvm")
+}
+
+kotlin { jvmToolchain(21) }
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+}
+```
+
+A module then declares intent instead of repeating mechanics:
+
+```kotlin
+plugins { id("taskmanager.kotlin-library") }
+```
+
+Use Gradle's lazy APIs. `tasks.register` creates a task only if needed; `tasks.named` configures an existing task without eagerly realizing the whole graph. Model inputs and outputs so Gradle can skip unchanged work:
+
+```kotlin
+abstract class GenerateBuildInfo : DefaultTask() {
+    @get:Input abstract val versionText: Property<String>
+    @get:OutputFile abstract val outputFile: RegularFileProperty
+
+    @TaskAction fun generate() {
+        outputFile.get().asFile.writeText("version=${versionText.get()}\n")
+    }
+}
+
+tasks.register<GenerateBuildInfo>("generateBuildInfo") {
+    versionText.set(project.version.toString())
+    outputFile.set(layout.buildDirectory.file("generated/build-info.txt"))
+}
+```
+
+> ⚠️ **Gotcha — configuration cache.** A task action should not reach back into `Project`, capture script objects, read arbitrary environment variables, or perform network calls. Declare values as `Property` inputs during configuration. Test with `./gradlew check --configuration-cache`; fixing reported problems makes large builds dramatically faster.
+
+### 19.8 The build as a quality gate
+
+A production build should have one local/CI entry point that compiles, tests, and verifies style and static analysis:
+
+```bash
+./gradlew check
+```
+
+Wire tools into `check` rather than inventing undocumented CI-only commands. Typical gates include:
+
+- compiler warnings promoted selectively (`allWarningsAsErrors`) after the baseline is clean;
+- formatting (ktlint) and static analysis (Detekt);
+- unit and integration test suites separated by task when their cost differs;
+- API/binary compatibility validation for published libraries (Chapter 35);
+- coverage reports used as diagnostic information, not a target to game.
+
+CI should start from a clean checkout, use the wrapper, cache Gradle's user home by lockfile keys, and publish test reports even on failure. A green build must mean the same thing locally and remotely.
+
+> 💡 **Idiom** — Keep build scripts declarative. A build is executable code, but unbounded I/O and clever control flow make it nondeterministic and difficult to cache. Prefer plugins, typed properties, providers, and explicit task dependencies.
+
 ---
 
 ### Summary
 
 - **Gradle** builds Kotlin projects; the **Kotlin DSL** (`build.gradle.kts`) is a type-safe DSL — your build script is real Kotlin code.
-- A build script has `plugins { }`, `repositories { }`, `dependencies { }`, and plugin-config blocks (`kotlin { jvmToolchain(...) }`, `application { mainClass.set(...) }`); enable JUnit 5 with `useJUnitPlatform()`.
+- A build script has `plugins { }`, `repositories { }`, `dependencies { }`, and plugin-config blocks (`kotlin { jvmToolchain(...) }`, `application { mainClass.set(...) }`); enable JUnit Jupiter with `useJUnitPlatform()`.
 - Dependency scope matters: **`implementation`** (internal, preferred), **`api`** (exposed to consumers), **`testImplementation`** (tests only).
 - **Multi-module** projects declare modules in `settings.gradle.kts` and depend via `project(":name")` — faster builds, enforced boundaries.
 - **Version catalogs** (`libs.versions.toml`) centralize versions; you can register **custom tasks**.
 - Gradle runs in a **configuration** phase (build the task model) then an **execution** phase (run tasks).
+- The **wrapper**, toolchains, exact versions, dependency locking, and verification make builds reproducible. **Convention plugins** centralize policy; lazy, input/output-aware tasks unlock incremental builds and the configuration cache.
 
 ### Self-check quiz
 
 1. Why prefer `implementation` over `api` for most dependencies?
    <details><summary>Answer</summary>`implementation` keeps the dependency internal, so it doesn't leak to modules that depend on yours — smaller compile classpaths, fewer forced rebuilds. Use `api` only when the dependency's types are part of your public API.</details>
 2. What happens if you forget `useJUnitPlatform()`?
-   <details><summary>Answer</summary>JUnit 5 tests won't be discovered/run — the test task reports success while executing nothing.</details>
+   <details><summary>Answer</summary>JUnit Jupiter tests may not be discovered/run — the test task can report success while executing nothing.</details>
 3. How does one module depend on another?
    <details><summary>Answer</summary>Declare both in `settings.gradle.kts` via `include(...)`, then in the consumer's `build.gradle.kts` add `implementation(project(":other"))`.</details>
 4. What's the difference between Gradle's configuration and execution phases?
@@ -6892,13 +7203,13 @@ Run it with `./gradlew hello`.
 
 ### Exercises
 
-**Exercise 19.1 — Add a dependency (guided).** Write the `dependencies { }` block to add Ktor server core (`io.ktor:ktor-server-core:2.3.12`) as a normal dependency and `kotlin("test")` for tests.
+**Exercise 19.1 — Add a dependency (guided).** Write the `dependencies { }` block to add Ktor server core (`io.ktor:ktor-server-core:3.5.0`) as a normal dependency and `kotlin("test")` for tests.
 
 <details><summary>Show solution</summary>
 
 ```kotlin
 dependencies {
-    implementation("io.ktor:ktor-server-core:2.3.12")
+    implementation("io.ktor:ktor-server-core:3.5.0")
     testImplementation(kotlin("test"))
 }
 ```
@@ -6932,7 +7243,7 @@ tasks.register("greet") {
 **Requirements.**
 1. `settings.gradle.kts` including `core` and `app`.
 2. `:core` with coroutines; `:app` depending on `:core`, with the `application` plugin.
-3. JVM toolchain 17 and JUnit 5 for tests.
+3. JVM toolchain 17 and JUnit Platform/Jupiter for tests.
 
 <details><summary>Show reference solution + commentary</summary>
 
@@ -6945,13 +7256,13 @@ include("core", "app")
 ```kotlin
 // core/build.gradle.kts
 plugins {
-    kotlin("jvm") version "2.0.0"
+    kotlin("jvm") version "2.4.0"
 }
 
 repositories { mavenCentral() }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
     testImplementation(kotlin("test"))
 }
 
@@ -6963,7 +7274,7 @@ tasks.test { useJUnitPlatform() }
 ```kotlin
 // app/build.gradle.kts
 plugins {
-    kotlin("jvm") version "2.0.0"
+    kotlin("jvm") version "2.4.0"
     application
 }
 
@@ -6984,6 +7295,8 @@ Resulting layout:
 
 ```text
 task-manager/
+├── gradlew / gradlew.bat              ← generated Gradle Wrapper launchers
+├── gradle/wrapper/                    ← generated wrapper properties + JAR
 ├── settings.gradle.kts
 ├── core/
 │   ├── build.gradle.kts
@@ -7014,6 +7327,10 @@ task-manager/
 | **Module** | A separately-compiled sub-project (declared in `settings.gradle.kts`). |
 | **Version catalog** | `libs.versions.toml` — centralized dependency versions. |
 | **Configuration / execution phase** | Building the task model / running tasks. |
+| **Gradle Wrapper** | Committed launcher/configuration that pins the Gradle distribution. |
+| **Dependency locking / verification** | Freezing the resolved graph / checking artifact integrity. |
+| **Convention plugin** | Reusable build policy shared by modules. |
+| **Configuration cache** | Reuses Gradle's configured task graph when declared inputs are compatible. |
 
 ### What's next
 
@@ -7034,6 +7351,7 @@ With a real build in place, you can pull in frameworks and ship applications. **
 - Define routes for GET/POST/PUT/DELETE with path and query parameters.
 - Send and receive JSON with `kotlinx.serialization`.
 - Return proper HTTP status codes.
+- Design DTO/domain boundaries, validate requests, centralize failures, authenticate callers, and expose operational health.
 
 **In this chapter**
 
@@ -7041,6 +7359,9 @@ With a real build in place, you can pull in frameworks and ship applications. **
 - [20.2 A minimal server](#202-a-minimal-server)
 - [20.3 JSON with content negotiation](#203-json-with-content-negotiation)
 - [20.4 Parameters and status codes](#204-parameters-and-status-codes)
+- [20.5 DTOs, validation, and stable errors](#205-dtos-validation-and-stable-errors)
+- [20.6 StatusPages and authentication](#206-statuspages-and-authentication)
+- [20.7 Configuration, observability, and shutdown](#207-configuration-observability-and-shutdown)
 - Summary · Self-check quiz · Exercises · [Chapter project](#chapter-project-a-rest-api-for-the-task-manager) · Glossary · What's next
 
 ---
@@ -7055,14 +7376,17 @@ Dependencies (`build.gradle.kts`):
 
 ```kotlin
 plugins {
-    kotlin("jvm") version "2.0.0"
-    kotlin("plugin.serialization") version "2.0.0"   // for @Serializable
+    kotlin("jvm") version "2.4.0"
+    kotlin("plugin.serialization") version "2.4.0"   // for @Serializable
 }
 dependencies {
-    implementation("io.ktor:ktor-server-core:2.3.12")
-    implementation("io.ktor:ktor-server-netty:2.3.12")
-    implementation("io.ktor:ktor-server-content-negotiation:2.3.12")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.12")
+    implementation("io.ktor:ktor-server-core:3.5.0")
+    implementation("io.ktor:ktor-server-netty:3.5.0")
+    implementation("io.ktor:ktor-server-content-negotiation:3.5.0")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.5.0")
+    implementation("io.ktor:ktor-server-status-pages:3.5.0")
+    implementation("io.ktor:ktor-server-auth-jwt:3.5.0")
+    implementation("io.ktor:ktor-server-call-logging:3.5.0")
 }
 ```
 
@@ -7153,6 +7477,119 @@ Note the null-safety chain: `call.parameters["id"]` is a `String?`, `?.toIntOrNu
 
 > ⚠️ **Gotcha** — Don't do *blocking* work in a handler (a blocking JDBC call, `Thread.sleep`, heavy CPU) directly — it ties up a Ktor thread. Wrap blocking calls in `withContext(Dispatchers.IO)` (Chapter 15). And always set explicit status codes; silently returning 200 for a failed operation misleads clients.
 
+### 20.5 DTOs, validation, and stable errors
+
+Do not deserialize clients directly into your domain/entity type. A request DTO contains only fields the caller may choose; the server owns ids, audit timestamps, and authorization decisions:
+
+```kotlin
+@Serializable
+data class CreateTaskRequest(val title: String, val priority: String = "NORMAL")
+
+@Serializable
+data class TaskResponse(val id: Long, val title: String, val priority: String)
+
+@Serializable
+data class ApiError(
+    val code: String,
+    val message: String,
+    val fieldErrors: Map<String, String> = emptyMap(),
+    val requestId: String? = null,
+)
+```
+
+Parse transport syntax first, then validate domain meaning:
+
+```kotlin
+fun CreateTaskRequest.toCommand(): Result<CreateTask> = runCatching {
+    val clean = title.trim()
+    require(clean.length in 1..200) { "title must contain 1..200 characters" }
+    val parsedPriority = Priority.entries.find { it.name == priority.uppercase() }
+        ?: throw IllegalArgumentException("unknown priority")
+    CreateTask(clean, parsedPriority)
+}
+```
+
+Return a stable machine-readable `code`; clients should not parse human prose. Treat malformed JSON, invalid fields, missing resources, conflicts, authentication failures, and unexpected server failures as different categories.
+
+> ⚠️ **Gotcha — mass assignment.** Accepting `Task(id, ownerId, isAdmin, ...)` from JSON and saving it wholesale lets a client set server-owned fields. Explicit request DTOs are a security boundary, not cosmetic duplication.
+
+For list endpoints, bound work and make ordering deterministic:
+
+```kotlin
+val limit = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceIn(1, 100) ?: 20
+val after = call.request.queryParameters["after"]?.toLongOrNull()
+call.respond(service.list(afterId = after, limit = limit))
+```
+
+Cursor pagination usually scales more predictably than large offsets, provided the cursor column and tie-breaker form a stable indexed order.
+
+### 20.6 StatusPages and authentication
+
+Centralize exception-to-HTTP mapping with `StatusPages`; route bodies then express the happy path rather than repeating `try/catch`:
+
+```kotlin
+install(StatusPages) {
+    exception<ContentTransformationException> { call, _ ->
+        call.respond(HttpStatusCode.BadRequest, ApiError("INVALID_JSON", "Malformed JSON body"))
+    }
+    exception<ValidationException> { call, cause ->
+        call.respond(HttpStatusCode.UnprocessableEntity, ApiError("VALIDATION", cause.message ?: "Invalid input"))
+    }
+    exception<Throwable> { call, cause ->
+        environment.log.error("Unhandled request failure", cause) // full details stay server-side
+        call.respond(HttpStatusCode.InternalServerError, ApiError("INTERNAL", "Unexpected server error"))
+    }
+}
+```
+
+Never return stack traces, SQL messages, secrets, or internal class names to clients. Log the exception with a request/correlation id and return a controlled envelope.
+
+Authentication establishes **who** the caller is; authorization decides **what that identity may do**. For bearer/JWT authentication:
+
+```kotlin
+install(Authentication) {
+    jwt("auth-jwt") {
+        realm = "task-manager"
+        verifier(jwtVerifierFromTrustedConfiguration())
+        validate { credential ->
+            credential.payload.subject?.let(::UserPrincipal)
+        }
+        challenge { _, _ ->
+            call.respond(HttpStatusCode.Unauthorized, ApiError("UNAUTHENTICATED", "Valid token required"))
+        }
+    }
+}
+
+routing {
+    authenticate("auth-jwt") {
+        delete("/tasks/{id}") {
+            val user = call.principal<UserPrincipal>()!!
+            service.deleteOwnedTask(user.id, call.requireTaskId())
+            call.respond(HttpStatusCode.NoContent)
+        }
+    }
+}
+```
+
+The verifier must check signature, issuer, audience, expiry, and allowed algorithms. Authorization belongs in a use case/policy, not merely in whether a route is nested under `authenticate`.
+
+### 20.7 Configuration, observability, and shutdown
+
+Configuration differs by environment; source code should not. Read ports, database URLs, and issuer/audience settings from Ktor configuration or environment-backed providers. Inject a typed configuration object and fail at startup if a required value is absent. Never commit production secrets.
+
+Operational endpoints have distinct meanings:
+
+- **liveness**: the process/event loop is alive; failure should trigger restart;
+- **readiness**: the instance can serve traffic (database/migrations ready); failure should remove it from load balancing;
+- **metrics**: request rate, latency, status distribution, pool saturation, and domain signals;
+- **structured logs/traces**: request id, route, status, duration, and trace context—without credentials or sensitive payloads.
+
+Install call logging with an explicit filter and MDC fields, put a reverse proxy in front for TLS when appropriate, and configure forwarded headers only for trusted proxies. Apply request/body limits, timeouts, and rate limits according to the threat model.
+
+Graceful shutdown stops accepting new requests, allows in-flight work a bounded time to finish, closes database pools and clients, and then exits. Test the shutdown path; cleanup code that only runs in production is otherwise where leaks hide.
+
+> 💡 **Production boundary rule** — Every external input is untrusted and bounded; every external call has a timeout; every failure has a stable public representation and a detailed private record; every resource has an owner that closes it.
+
 ---
 
 ### Summary
@@ -7162,6 +7599,7 @@ Note the null-safety chain: `call.parameters["id"]` is a `String?`, `?.toIntOrNu
 - Install **`ContentNegotiation { json() }`** and mark data classes **`@Serializable`** to send/receive JSON automatically (`call.respond`, `call.receive<T>()`).
 - Read path params from **`call.parameters`**; return correct **`HttpStatusCode`** values (201/404/…).
 - Don't block handlers (use `withContext(Dispatchers.IO)`); always install content negotiation.
+- Separate request/response DTOs from domain objects, bound pagination, centralize error mapping with **StatusPages**, authenticate and authorize independently, and expose liveness/readiness plus structured telemetry.
 
 ### Self-check quiz
 
@@ -7320,6 +7758,10 @@ $ curl -X DELETE localhost:8080/tasks/1
 | **`@Serializable`** | Marks a class for `kotlinx.serialization`. |
 | **`call.respond` / `call.receive`** | Send a response / parse the request body. |
 | **`HttpStatusCode`** | HTTP status codes (200/201/204/404/…). |
+| **DTO** | A transport-specific request/response shape separated from the domain model. |
+| **StatusPages** | Ktor plugin mapping failures to controlled HTTP responses. |
+| **Authentication / authorization** | Establishing identity / deciding permitted actions. |
+| **Liveness / readiness** | Process-alive signal / ability-to-serve-traffic signal. |
 
 ### What's next
 
@@ -7340,12 +7782,16 @@ Your API stores tasks in memory — restart the server and they're gone. **[Ch.2
 - Use transactions correctly.
 - Recognise the Room persistence library for Android.
 - Back a `Repository` interface with a real database.
+- Evolve schemas safely, design indexes/relations, and choose transaction boundaries under concurrency.
 
 **In this chapter**
 
 - [21.1 Exposed: typed SQL for the JVM](#211-exposed-typed-sql-for-the-jvm)
 - [21.2 Transactions and CRUD](#212-transactions-and-crud)
 - [21.3 Room (Android)](#213-room-android)
+- [21.4 Migrations: schema history is source code](#214-migrations-schema-history-is-source-code)
+- [21.5 Relations, indexes, pools, and query plans](#215-relations-indexes-pools-and-query-plans)
+- [21.6 Transaction boundaries and concurrency](#216-transaction-boundaries-and-concurrency)
 - Summary · Self-check quiz · Exercises · [Chapter project](#chapter-project-a-database-backed-repository) · Glossary · What's next
 
 ---
@@ -7358,16 +7804,16 @@ Dependencies:
 
 ```kotlin
 dependencies {
-    implementation("org.jetbrains.exposed:exposed-core:0.50.1")
-    implementation("org.jetbrains.exposed:exposed-jdbc:0.50.1")
-    implementation("com.h2database:h2:2.2.224")
+    implementation("org.jetbrains.exposed:exposed-core:1.3.1")
+    implementation("org.jetbrains.exposed:exposed-jdbc:1.3.1")
+    implementation("com.h2database:h2:2.4.240")
 }
 ```
 
 You describe a table as a Kotlin `object` extending `Table`, declaring each column as a typed property:
 
 ```kotlin
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.v1.core.*
 
 object Tasks : Table("tasks") {
     val id = integer("id").autoIncrement()
@@ -7386,8 +7832,9 @@ Each column property (`Tasks.id`, `Tasks.title`) is a typed handle you use to bu
 Every database operation in Exposed runs inside a **`transaction { }`** block, which opens a connection, commits on success, and rolls back on an exception. Here's full CRUD against H2, runnable as-is:
 
 ```kotlin
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.core.*
+import org.jetbrains.exposed.v1.jdbc.*
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 object Tasks : Table("tasks") {
     val id = integer("id").autoIncrement()
@@ -7481,6 +7928,100 @@ An `@Entity` maps to a table, a `@Dao` interface declares queries (Room generate
 
 > ☕ **Coming from Java** — Exposed and Room are Kotlin's take on persistence, contrasted with raw **JDBC** (verbose, stringly-typed) and **JPA/Hibernate** (powerful but heavy, reflection-driven). Exposed's DSL is code-first and type-checked; Room generates code at compile time (no runtime reflection), which is fast and catches query errors early.
 
+### 21.4 Migrations: schema history is source code
+
+`SchemaUtils.create` is convenient for a tutorial or disposable test database. It is not a production migration strategy. Once users have data, schema changes must be ordered, reviewable, repeatable, and applied exactly once.
+
+A SQL migration tool such as Flyway stores numbered scripts:
+
+```text
+src/main/resources/db/migration/
+├── V001__create_tasks.sql
+├── V002__add_task_priority.sql
+└── V003__index_pending_tasks.sql
+```
+
+```sql
+-- V001__create_tasks.sql
+CREATE TABLE tasks (
+    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    done BOOLEAN NOT NULL DEFAULT FALSE,
+    version BIGINT NOT NULL DEFAULT 0
+);
+```
+
+Migration scripts already applied to a shared environment are **immutable**: create a new migration to correct them. CI should start an empty real database, apply every migration, run integration tests, and optionally test upgrading from a representative older snapshot.
+
+For zero/low-downtime changes, use **expand and contract**:
+
+1. Add a nullable/defaulted new column or table that old code tolerates.
+2. Deploy code that writes both shapes and backfill existing rows in bounded batches.
+3. Switch reads to the new shape and verify.
+4. In a later deployment, remove the old column/constraint.
+
+> ⚠️ **Gotcha** — Renaming or making a large column `NOT NULL` can lock/rewrite a table. A syntactically valid migration is not automatically operationally safe. Inspect the database-specific plan, duration, lock level, rollback strategy, and backup/restore path.
+
+Exposed's migration modules can generate/inspect schema differences, but generated SQL still requires review. A library cannot know your rollout constraints or data-backfill semantics.
+
+### 21.5 Relations, indexes, pools, and query plans
+
+Model relationships with foreign keys and explicit delete behavior:
+
+```kotlin
+object Projects : Table("projects") {
+    val id = long("id").autoIncrement()
+    val name = varchar("name", 120)
+    override val primaryKey = PrimaryKey(id)
+}
+
+object Tasks : Table("tasks") {
+    val id = long("id").autoIncrement()
+    val projectId = long("project_id").references(Projects.id, onDelete = ReferenceOption.CASCADE)
+    val title = varchar("title", 200)
+    val done = bool("done").default(false)
+    val createdAt = long("created_at_epoch_ms")
+    init {
+        index(false, projectId, done, createdAt)
+    }
+    override val primaryKey = PrimaryKey(id)
+}
+```
+
+An index accelerates a **particular access pattern** and costs storage plus write work. Put equality-filter columns first, then ordering/range columns, and verify using `EXPLAIN (ANALYZE, BUFFERS)` on production-like data. Do not add an index for every field.
+
+Avoid N+1 by joining or loading related rows in one bounded query:
+
+```kotlin
+val rows = (Tasks innerJoin Projects)
+    .select(Tasks.id, Tasks.title, Projects.name)
+    .where { Tasks.done eq false }
+    .orderBy(Tasks.createdAt to SortOrder.DESC)
+    .limit(100)
+```
+
+Production JDBC uses a bounded **connection pool** such as HikariCP. Set the pool based on database capacity, number of application instances, and measured query latency—not on request count. Always configure connection/statement timeouts and observe pool wait time. A pool that is too large merely moves overload into the database.
+
+### 21.6 Transaction boundaries and concurrency
+
+A transaction protects a business invariant, not merely one repository method. "Create task and increment project count" must succeed or fail as one unit; two independent repository transactions can leave half a change committed.
+
+Keep transactions short: do not make HTTP calls, wait for user input, or perform slow unrelated computation while holding a database connection/locks. For blocking JDBC in a coroutine server, isolate it on `Dispatchers.IO` or a dedicated bounded dispatcher. Exposed 1.x also offers JDBC `suspendTransaction`; it does not make the JDBC driver non-blocking. Use Exposed R2DBC with a reactive driver when end-to-end non-blocking database I/O is a requirement.
+
+Concurrent updates need an explicit strategy. **Optimistic locking** is appropriate when conflicts are rare:
+
+```sql
+UPDATE tasks
+SET title = ?, version = version + 1
+WHERE id = ? AND version = ?;
+```
+
+If the affected-row count is zero, another transaction changed the row; return a conflict or retry the complete operation from fresh state. Use `SELECT ... FOR UPDATE`/pessimistic locking only when contention and invariant requirements justify the reduced concurrency, and always acquire locks in a consistent order to reduce deadlocks.
+
+Isolation levels trade anomalies for concurrency. Know whether an operation tolerates non-repeatable reads, phantoms, or write skew; choose database constraints as the final authority. A unique constraint is stronger than "check then insert" in application code because concurrent requests cannot race around it.
+
+> 💡 **Idiom — transactional outbox.** A database commit and message-broker publish cannot be made atomic by hope. Write the domain change and an outbox row in one database transaction; a separate idempotent publisher sends and marks outbox records. Consumers should also be idempotent because delivery is commonly at least once.
+
 ---
 
 ### Summary
@@ -7490,6 +8031,7 @@ An `@Entity` maps to a table, a `@Dao` interface declares queries (Room generate
 - The modern filter API is **`selectAll().where { }`** (the old `select { }` is deprecated).
 - **Room** is Android's persistence library: `@Entity`, `@Dao` (with `suspend` queries), `@Database`; it generates code at compile time.
 - Both are Kotlin-idiomatic alternatives to JDBC/JPA.
+- Production schemas evolve through reviewed **migrations**; indexes follow measured query patterns; pools are bounded; business invariants define transaction boundaries; constraints and explicit locking strategies handle concurrency.
 
 ### Self-check quiz
 
@@ -7509,8 +8051,9 @@ An `@Entity` maps to a table, a `@Dao` interface declares queries (Room generate
 <details><summary>Show solution</summary>
 
 ```kotlin
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.core.*
+import org.jetbrains.exposed.v1.jdbc.*
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 object Categories : Table("categories") {
     val id = integer("id").autoIncrement()
@@ -7565,8 +8108,9 @@ val pendingCount = Tasks.selectAll().where { Tasks.done eq false }.count()
 <details><summary>Show reference solution + commentary</summary>
 
 ```kotlin
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.core.*
+import org.jetbrains.exposed.v1.jdbc.*
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 data class Task(val id: Int, val title: String, val done: Boolean = false)
 
@@ -7650,6 +8194,10 @@ Find #1: Task(id=1, title=Persist with Exposed, done=true)
 | **N+1 queries** | The anti-pattern of one query per row in a loop. |
 | **Room** | Android's annotation-driven persistence library over SQLite. |
 | **`@Entity` / `@Dao` / `@Database`** | Room's table / query-interface / database pieces. |
+| **Migration** | An ordered, immutable database schema/data change. |
+| **Index / query plan** | Auxiliary lookup structure / database strategy for executing a query. |
+| **Connection pool** | A bounded set of reusable database connections. |
+| **Optimistic locking** | Detecting concurrent modification with a version predicate. |
 
 ### What's next
 
@@ -7670,6 +8218,7 @@ Your data now survives restarts. **[Ch.22 — Android Development with Kotlin](#
 - Model UI as immutable state with unidirectional data flow.
 - Write a basic Jetpack Compose screen that observes state.
 - Reuse a shared domain/`:core` module in an Android app.
+- Collect state lifecycle-safely, hoist UI state, model one-off effects, and design an offline-capable data flow.
 
 > Android is a huge topic; this chapter teaches the *Kotlin* patterns that define modern Android (they also apply to Compose Multiplatform desktop/web). The code is illustrative — it runs in an Android project, not a plain `main`.
 
@@ -7678,6 +8227,8 @@ Your data now survives restarts. **[Ch.22 — Android Development with Kotlin](#
 - [22.1 The modern Android architecture](#221-the-modern-android-architecture)
 - [22.2 ViewModel and StateFlow](#222-viewmodel-and-stateflow)
 - [22.3 Jetpack Compose](#223-jetpack-compose)
+- [22.4 Lifecycle-aware collection and state hoisting](#224-lifecycle-aware-collection-and-state-hoisting)
+- [22.5 Effects, navigation, and offline-first data](#225-effects-navigation-and-offline-first-data)
 - Summary · Self-check quiz · Exercises · [Chapter project](#chapter-project-the-task-manager-on-screen) · Glossary · What's next
 
 ---
@@ -7741,7 +8292,7 @@ Every state change makes a **new** `TaskUiState` via `copy` — the state is nev
 
 ### 22.3 Jetpack Compose
 
-**Jetpack Compose** is a declarative UI toolkit: you write `@Composable` functions that describe the UI for the *current* state, and Compose re-invokes them (*recomposition*) when the state they read changes. `collectAsState()` bridges a `StateFlow` into Compose so the screen re-renders on every emission.
+**Jetpack Compose** is a declarative UI toolkit: you write `@Composable` functions that describe the UI for the *current* state, and Compose re-invokes them (*recomposition*) when the state they read changes. On Android, `collectAsStateWithLifecycle()` bridges a `StateFlow` into Compose and stops collection while the UI is not active.
 
 ```kotlin
 import androidx.compose.foundation.layout.*
@@ -7749,10 +8300,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun TaskScreen(viewModel: TaskViewModel) {
-    val state by viewModel.uiState.collectAsState()   // observe the StateFlow
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.padding(16.dp)) {
         Text("Tasks (${state.tasks.size})", style = MaterialTheme.typography.headlineSmall)
@@ -7778,11 +8330,82 @@ fun TaskScreen(viewModel: TaskViewModel) {
 }
 ```
 
-Trace the unidirectional flow: `TaskScreen` *reads* `state` (down) and renders it; tapping a checkbox calls `viewModel.toggle(id)` (an event, up); the ViewModel updates `_uiState`; `collectAsState` sees the new state and Compose *recomposes* only the parts that changed. You never manually "update the checkbox" — you change the state, and the UI follows.
+Trace the unidirectional flow: `TaskScreen` *reads* `state` (down) and renders it; tapping a checkbox calls `viewModel.toggle(id)` (an event, up); the ViewModel updates `_uiState`; lifecycle-aware collection sees the new state and Compose *recomposes* only the parts that changed. You never manually "update the checkbox" — you change the state, and the UI follows.
 
-> ⚙️ **Under the hood** — Compose tracks which `@Composable`s read which state via a snapshot system. When a `State` (including one from `collectAsState`) changes, Compose schedules **recomposition** of just the composables that read it — not the whole screen. Immutable state makes this efficient and correct: comparing old vs new is cheap, and there's no risk of a composable seeing a half-mutated object. This is why the whole stack insists on immutability.
+> ⚙️ **Under the hood** — Compose tracks which `@Composable`s read which state via a snapshot system. When a `State` (including one produced by lifecycle-aware collection) changes, Compose schedules **recomposition** of composables that read it. It may skip unaffected work; it does not promise a simplistic "one changed widget only" execution model. Composables must therefore be side-effect free and safe to run again.
 
 > ☕ **Coming from Java / old Android** — This replaces XML layouts, `findViewById`, manual view updates, and `AsyncTask`/callbacks. Instead of imperatively poking widgets ("set this text, hide that spinner"), you declare the UI as a function of state and let Compose reconcile it — far less error-prone.
+
+### 22.4 Lifecycle-aware collection and state hoisting
+
+Add `androidx.lifecycle:lifecycle-runtime-compose` and use `collectAsStateWithLifecycle()` in Android UI. Plain `collectAsState()` remains useful in platform-agnostic Compose code, but an Android screen should not keep expensive upstream flows active while stopped.
+
+Separate the route that obtains a ViewModel from a stateless, previewable screen:
+
+```kotlin
+sealed interface TaskAction {
+    data class TitleChanged(val value: String) : TaskAction
+    data class Toggled(val id: Long) : TaskAction
+    data object Submitted : TaskAction
+    data object Retried : TaskAction
+}
+
+@Composable
+fun TaskRoute(viewModel: TaskViewModel) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    TaskScreen(state = state, onAction = viewModel::onAction)
+}
+
+@Composable
+fun TaskScreen(state: TaskUiState, onAction: (TaskAction) -> Unit) {
+    // pure rendering: easy to preview and screenshot-test
+}
+```
+
+This is **state hoisting**: the reusable composable receives state plus events and owns no business state. Keep ephemeral widget state locally only when no other component needs it (`rememberSaveable` for restorable UI state). Keys in `LazyColumn` preserve item identity:
+
+```kotlin
+LazyColumn {
+    items(state.tasks, key = TaskItem::id) { task ->
+        TaskRow(task, onToggle = { onAction(TaskAction.Toggled(task.id)) })
+    }
+}
+```
+
+> ⚠️ **Gotcha — unstable work during recomposition.** A composable may run many times. Do not start network calls, mutate repositories, or create expensive objects directly in its body. Events call the ViewModel; Compose effects (`LaunchedEffect`, `DisposableEffect`) are for UI-lifecycle synchronization and must use correct stable keys.
+
+### 22.5 Effects, navigation, and offline-first data
+
+Durable screen facts belong in `uiState`: a validation message that must survive rotation is state. One-time commands such as "navigate after save" or "show this snackbar once" are **effects**. Model them separately and ensure their delivery semantics are intentional:
+
+```kotlin
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
+
+sealed interface TaskEffect {
+    data class ShowSnackbar(val message: String) : TaskEffect
+    data class OpenDetails(val id: Long) : TaskEffect
+}
+
+private val _effects = Channel<TaskEffect>(capacity = Channel.BUFFERED)
+val effects = _effects.receiveAsFlow()
+```
+
+Collect effects in `LaunchedEffect` and call UI-owned navigators/snackbar hosts. Do not put `NavController`, `Context`, or composables in the ViewModel. For events that must not be lost while the UI is absent, model an acknowledged state/process instead of assuming a channel is durable.
+
+For an offline-first screen, the database is the observable source of truth:
+
+```text
+Compose ← StateFlow ← ViewModel ← observeTasks() ← Room
+                                      ↑
+                         sync writes remote results
+                                      ↑
+                                  Ktor client
+```
+
+Writes update local state transactionally and enqueue sync work. A background worker retries with exponential backoff under network/battery constraints. Server ids, local pending state, conflict policy, and idempotency keys are domain decisions—not details to hide in a generic repository.
+
+Test at layers: use-case/ViewModel tests with `runTest`, Compose semantics tests for behavior/accessibility, Room migration tests, and a small number of device end-to-end journeys. Check content descriptions, touch targets, font scaling, screen readers, dark theme, and process recreation before calling a screen shippable.
 
 ---
 
@@ -7791,7 +8414,8 @@ Trace the unidirectional flow: `TaskScreen` *reads* `state` (down) and renders i
 - Modern Android = **`ViewModel`** (holds state + coroutines, survives rotation) + **`StateFlow`** (immutable UI-state) + **Compose** (declarative UI), with **unidirectional data flow**: state down, events up.
 - UI state is one **immutable `data class`**, updated only via **`copy`** and `_uiState.update { }` — never mutated in place, or `StateFlow`/Compose won't detect the change.
 - Launch coroutines in **`viewModelScope`** so they're cancelled with the screen.
-- A **`@Composable`** describes the UI for the current state; **`collectAsState()`** feeds a `StateFlow` in; Compose **recomposes** the affected parts when state changes.
+- A **`@Composable`** describes the UI for the current state; **`collectAsStateWithLifecycle()`** is the recommended Android bridge from `Flow`; a stateless screen receives state/actions while a route owns the ViewModel.
+- Effects, navigation, persistence/sync, accessibility, and process restoration need explicit designs; an offline-first app commonly observes Room as its source of truth.
 - The same reactive-state pattern spans backend and Android; the shared domain/`:core` module is reused as-is.
 
 ### Self-check quiz
@@ -7803,7 +8427,7 @@ Trace the unidirectional flow: `TaskScreen` *reads* `state` (down) and renders i
 3. What is unidirectional data flow?
    <details><summary>Answer</summary>State flows down (ViewModel → UI) and events flow up (UI → ViewModel); the ViewModel updates state, which re-renders the UI. No two-way binding.</details>
 4. How does a Compose screen react to `StateFlow` changes?
-   <details><summary>Answer</summary>`collectAsState()` turns the flow into Compose `State`; when it changes, Compose recomposes the composables that read it.</details>
+   <details><summary>Answer</summary>`collectAsStateWithLifecycle()` turns the flow into Compose `State` while the lifecycle is active; when it changes, Compose recomposes readers and stops unnecessary collection while the screen is inactive.</details>
 
 ### Exercises
 
@@ -7864,6 +8488,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -7905,7 +8530,7 @@ class TaskViewModel(private val repo: TaskRepository) : ViewModel() {
 
 @Composable
 fun TaskScreen(viewModel: TaskViewModel) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.padding(16.dp)) {
         Text("My Tasks (${state.tasks.size})", style = MaterialTheme.typography.headlineSmall)
@@ -7930,7 +8555,7 @@ fun TaskScreen(viewModel: TaskViewModel) {
 **Commentary.**
 - `TaskViewModel` reuses the **same `TaskRepository`** from Chapters 9/21 — the in-memory one for a demo, the Exposed one for production, injected in (Chapter 33). The UI knows nothing about storage.
 - `TaskUiState` bundles *everything the screen needs* — tasks, the text-field input, a loading flag — into one immutable object. Every handler produces a new state via `copy`; nothing is mutated in place.
-- `viewModel::updateInput` and `viewModel::add` are **function references** (Chapter 5) wired straight to Compose callbacks — event flowing up. `collectAsState()` brings state down. That loop *is* unidirectional data flow.
+- `viewModel::updateInput` and `viewModel::add` are **function references** (Chapter 5) wired straight to Compose callbacks — event flowing up. `collectAsStateWithLifecycle()` brings state down while the screen is active. That loop *is* unidirectional data flow.
 - The domain we started building in Chapter 1 is now reachable from a CLI (Ch.4), a REST API (Ch.20), and a mobile screen (here) — all sharing one `:core`. In [Ch.34](#chapter-34--kotlin-multiplatform-in-depth) that core becomes truly multiplatform (Android + iOS).
 
 </details>
@@ -7946,7 +8571,10 @@ fun TaskScreen(viewModel: TaskViewModel) {
 | **Jetpack Compose** | Kotlin's declarative UI toolkit. |
 | **`@Composable`** | A function describing UI for the current state. |
 | **Recomposition** | Compose re-running composables whose state changed. |
-| **`collectAsState()`** | Bridges a `StateFlow` into Compose `State`. |
+| **`collectAsStateWithLifecycle()`** | Android's lifecycle-aware bridge from a `Flow` into Compose `State`. |
+| **State hoisting** | Moving state ownership upward so a composable receives state and events. |
+| **Effect** | A one-off UI command kept separate from durable screen state. |
+| **Offline-first** | Architecture that observes local durable data and synchronizes remotely. |
 
 ### What's next
 
@@ -7971,7 +8599,7 @@ You can ship the Task Manager as a backend and an app. **[Ch.23 — Best Practic
 
 - [23.1 Prefer immutability](#231-prefer-immutability)
 - [23.2 Expressions over statements](#232-expressions-over-statements)
-- [23.3 Null safety without `!!`](#233-null-safety-without-)
+- [23.3 Null safety without `!!`](#233-null-safety-without)
 - [23.4 Small, focused, functional](#234-small-focused-functional)
 - [23.5 API design and formatting](#235-api-design-and-formatting)
 - Summary · Self-check quiz · Exercises · [Chapter project](#chapter-project-an-idiomatic-refactor) · Glossary · What's next
@@ -8196,7 +8824,7 @@ Same behaviour, a fraction of the code, and every anti-pattern removed. This is 
 
 ### What's next
 
-Idiomatic code deserves a safety net. **[Ch.24 — Testing in Kotlin](#chapter-24--testing-in-kotlin)** covers JUnit 5, MockK, and coroutine testing, and builds a real test suite for the Task Manager — proving the refactors above didn't change behaviour.
+Idiomatic code deserves a safety net. **[Ch.24 — Testing in Kotlin](#chapter-24--testing-in-kotlin)** covers JUnit Platform/Jupiter, MockK, and coroutine testing, and builds a real test suite for the Task Manager — proving the refactors above didn't change behaviour.
 
 [↑ back to top](#chapter-23--best-practices--idioms)
 
@@ -8209,7 +8837,7 @@ Idiomatic code deserves a safety net. **[Ch.24 — Testing in Kotlin](#chapter-2
 
 **Learning objectives** — after this chapter you will be able to:
 
-- Write unit tests with JUnit 5 and Kotlin's assertions.
+- Write unit tests with JUnit Jupiter and Kotlin's assertions.
 - Test for exceptions and use readable test names.
 - Isolate code under test with MockK.
 - Test `suspend` functions with `runTest`.
@@ -8226,14 +8854,14 @@ Idiomatic code deserves a safety net. **[Ch.24 — Testing in Kotlin](#chapter-2
 
 ### 24.1 Setup and your first test
 
-Tests prove your code does what you claim — and, crucially, keep proving it as you change things (like the Chapter 23 refactor). The standard stack is **JUnit 5** as the test runner plus Kotlin's **`kotlin.test`** assertions.
+Tests prove your code does what you claim — and, crucially, keep proving it as you change things. The current JVM stack is the **JUnit Platform** with the **Jupiter** engine plus Kotlin's **`kotlin.test`** assertions. JUnit 6 keeps the Jupiter API/package names; Kotlin's adapter is still named `kotlin-test-junit5` for compatibility.
 
 ```kotlin
 dependencies {
-    testImplementation(kotlin("test"))
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+    testImplementation(kotlin("test-junit5"))
+    testImplementation("org.junit.jupiter:junit-jupiter:6.0.1")
 }
-tasks.test { useJUnitPlatform() }   // required for JUnit 5 (Chapter 19)
+tasks.test { useJUnitPlatform() }
 ```
 
 A test is a function annotated **`@Test`**. Kotlin lets you use **backtick names** with spaces, so tests read as sentences:
@@ -8346,7 +8974,7 @@ Testing `suspend` code with real `delay`s would be slow. The **`runTest`** build
 
 ```kotlin
 dependencies {
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
 }
 ```
 
@@ -8379,7 +9007,7 @@ The test finishes in milliseconds, not a second, because `runTest` fast-forwards
 
 ### Summary
 
-- Tests use **JUnit 5** + **`kotlin.test`**; a **`@Test`** function follows **Arrange–Act–Assert**, and **backtick names** describe behaviour.
+- Tests use **JUnit Platform/Jupiter** + **`kotlin.test`**; a **`@Test`** function follows **Arrange–Act–Assert**, and **backtick names** describe behaviour.
 - Assert with `assertEquals`/`assertTrue`/`assertNull`/…; assert throwing with **`assertFailsWith<T> { }`** (which returns the exception).
 - **MockK** replaces dependencies with test doubles: `mockk`, `every { } returns`, `verify { }` (and `coEvery`/`coVerify` for `suspend`). It handles `final` classes and coroutines natively.
 - Test `suspend` code with **`runTest`**, which uses **virtual time** to skip delays instantly.
@@ -8527,7 +9155,7 @@ class TaskServiceTest {
 
 | Term | Meaning |
 |------|---------|
-| **JUnit 5** | The standard test runner (`@Test`, `useJUnitPlatform()`). |
+| **JUnit Platform / Jupiter** | The JVM test launcher/engine (`@Test`, `useJUnitPlatform()`); current major is JUnit 6. |
 | **`kotlin.test`** | Kotlin's assertion library (`assertEquals`, `assertFailsWith`, …). |
 | **Arrange–Act–Assert** | The three-part structure of a good test. |
 | **`assertFailsWith<T>`** | Asserts a block throws `T` (returns the exception). |
@@ -8555,6 +9183,7 @@ Your code is idiomatic and tested. **[Ch.25 — Advanced Topics & Next Steps](#c
 - Understand contracts and how they help the compiler.
 - Use reflection basics (`::class`, member references).
 - Grasp Kotlin Multiplatform's `expect`/`actual` and share a core module.
+- Apply Kotlin 2.4 language features—context parameters, guards, explicit backing fields, and multi-dollar interpolation—where they improve design.
 
 > This chapter *introduces* topics that Part 5 explores in depth: `inline` (here) → performance ([Ch.32](#chapter-32--performance--memory)); reflection (here) → [Ch.29](#chapter-29--reflection--annotations); KSP (mentioned) → [Ch.30](#chapter-30--metaprogramming-ksp--compiler-plugins); Kotlin Multiplatform (here) → [Ch.34](#chapter-34--kotlin-multiplatform-in-depth).
 
@@ -8564,6 +9193,7 @@ Your code is idiomatic and tested. **[Ch.25 — Advanced Topics & Next Steps](#c
 - [25.2 Contracts](#252-contracts)
 - [25.3 Reflection basics](#253-reflection-basics)
 - [25.4 Kotlin Multiplatform](#254-kotlin-multiplatform)
+- [25.5 Kotlin 2.4 language evolution](#255-kotlin-24-language-evolution)
 - Summary · Self-check quiz · Exercises · [Chapter project](#chapter-project-a-shareable-core)· Glossary · What's next
 
 ---
@@ -8670,6 +9300,69 @@ Shared `commonMain` code can use the multiplatform `kotlinx` libraries (coroutin
 
 > ⚙️ **Under the hood** — There's no runtime bridge or shared VM. Each target *compiles* `commonMain` + its own `actual`s to that platform's native format: JVM bytecode for Android/backend, a native binary (via LLVM) for iOS, JavaScript for the web. The sharing happens at the *source* level, resolved at compile time — which is why KMP has no per-call overhead. ([Ch.34](#chapter-34--kotlin-multiplatform-in-depth) goes deep, including Compose Multiplatform.)
 
+### 25.5 Kotlin 2.4 language evolution
+
+Kotlin 2.4 stabilizes several features that older guides either omit or label experimental.
+
+**Context parameters** make a required ambient capability part of a signature without threading it through every call:
+
+```kotlin
+interface AuditLog { fun record(message: String) }
+
+context(log: AuditLog)
+fun Task.complete(): Task {
+    log.record("completed task $id")
+    return copy(done = true)
+}
+
+fun demo(task: Task, audit: AuditLog) {
+    context(audit) {
+        task.complete()
+    }
+}
+```
+
+The dependency is still statically required and visible in the declaration. Use context parameters for truly scoped capabilities (transactions, tracing, DSL contexts), not to hide an application's entire dependency graph. Prefer ordinary constructor/function parameters when ownership and data flow should be explicit. Older **context receiver** syntax is superseded by named context parameters.
+
+**Guard conditions** flatten conditional branches in `when`:
+
+```kotlin
+fun nextAction(task: Task) = when (task) {
+    is TimedTask if task.isOverdue -> "escalate"
+    is TimedTask -> "wait"
+    is ChecklistTask if task.items.all { it.done } -> "complete"
+    else -> "review"
+}
+```
+
+**Explicit backing fields** make a property's storage contract visible when its public and stored types differ:
+
+```kotlin
+class TaskBasket {
+    val tasks: List<Task>
+        field: MutableList<Task> = mutableListOf()
+
+    fun add(task: Task) {
+        tasks.add(task) // smart-cast to the private backing-field type in this class
+    }
+}
+```
+
+Outside `TaskBasket`, callers see only `List<Task>`; inside its private scope, the compiler knows the backing field is `MutableList<Task>`. The property must be a non-open `val` without a custom getter or delegation, and the backing-field type must be a private subtype of the public property type.
+
+**Multi-dollar interpolation** makes templates containing literal dollar signs readable. The number of leading dollars sets how many start interpolation:
+
+```kotlin
+val name = "task"
+val jsonTemplate = $$"""
+    { "shell": "$HOME", "kotlin": "$$name" }
+""".trimIndent()
+```
+
+With `$$`, a single `$` is literal and `$$name` interpolates. This is especially useful for JSON schemas, shell snippets, and templating languages.
+
+Kotlin 2.4 also includes stable/common UUID APIs (except generation variants that remain opt-in), better annotation use-site defaults, and newer collection helpers. Read release notes during upgrades: language compatibility, compiler, Gradle, Native/Swift export, and stdlib evolve independently.
+
 ---
 
 ### Summary
@@ -8678,6 +9371,7 @@ Shared `commonMain` code can use the multiplatform `kotlinx` libraries (coroutin
 - **Contracts** tell the compiler facts it can't infer (e.g. "returns false ⇒ non-null"), enabling smart-casts across function calls; you mostly *use* them (via `require`/`isNullOrEmpty`) rather than write them (they're experimental).
 - **Reflection** (`::class` → `KClass`, member references) inspects types at runtime; powerful but comparatively costly.
 - **Kotlin Multiplatform** shares a `commonMain` core across JVM/native/JS/Wasm via **`expect`/`actual`**; each target compiles the common code plus its actuals natively — no runtime bridge.
+- Kotlin 2.4 stabilizes **context parameters**, guard conditions, explicit backing fields, and multi-dollar interpolation; use them to clarify contracts, not merely because they are new.
 
 ### Self-check quiz
 
@@ -8766,10 +9460,8 @@ class TaskManager {
 
 // A shared inline utility, available on every platform:
 inline fun <T> timed(label: String, block: () -> T): T {
-    val start = System.nanoTime()                    // (nanoTime shown for JVM; commonMain would use kotlin.time)
-    return block().also {
-        println("$label: ${(System.nanoTime() - start) / 1_000_000}ms")
-    }
+    val mark = kotlin.time.TimeSource.Monotonic.markNow()
+    return block().also { println("$label: ${mark.elapsedNow()}") }
 }
 
 // ---------- jvmMain ----------  (JVM-specific storage)
@@ -8790,7 +9482,7 @@ actual object TaskStorage {
 **Commentary.**
 - The **`commonMain`** `TaskManager` and `Task` are pure Kotlin — no JVM, no Android, no iOS APIs — so they compile to *every* target. This is the domain we've grown since Chapter 1, now platform-neutral.
 - **`expect object TaskStorage`** declares the storage *capability* the core needs; **`jvmMain`** provides the JVM `actual` using `java.io.File`. An iOS target would supply its own `actual` (using `NSUserDefaults` or a file), and none of the shared code changes — the same dependency-inversion idea from Chapter 9, now spanning *platforms*.
-- The `inline fun timed` is a shared utility; because it's `inline`, it adds no overhead wherever it's used. (In true `commonMain` you'd use `kotlin.time.measureTime` rather than JVM `nanoTime` — noted for honesty; the shape is what matters here.)
+- The `inline fun timed` uses the common `kotlin.time` monotonic clock, so the shown code really belongs in `commonMain`; no JVM-only `System.nanoTime()` leaks into the shared source set.
 - This is the seed of the full KMP treatment in [Ch.34](#chapter-34--kotlin-multiplatform-in-depth), where we add an iOS `actual`, a Compose Multiplatform UI, and shared serialization/networking.
 
 </details>
@@ -8805,6 +9497,9 @@ actual object TaskStorage {
 | **Reflection** | Inspecting types at runtime (`::class` → `KClass`, member references). |
 | **Kotlin Multiplatform (KMP)** | Sharing a `commonMain` core across JVM/native/JS/Wasm. |
 | **`expect` / `actual`** | Common declaration / per-platform implementation. |
+| **Context parameter** | A statically required capability supplied by the surrounding context. |
+| **Explicit backing field** | A property's private storage with a more specific subtype than its public type. |
+| **Multi-dollar interpolation** | Raw-string syntax choosing how many `$` characters trigger interpolation. |
 
 ### What's next
 
@@ -10010,8 +10705,9 @@ Reflection reads types at runtime — powerful but costly. **[Ch.30 — Metaprog
 - Understand the shape of a symbol processor that generates code.
 - Recognise what the major compiler plugins do.
 - Choose between codegen and reflection.
+- Build, validate, test, and incrementally generate source with a real KSP2 processor module.
 
-> This chapter is *conceptual* — KSP processors run inside the build, not in a `main`. The code shows the shape of a processor and the code it generates.
+> KSP processors run inside the build, not in a `main`. Sections 30.1–30.4 build the mental model; §30.5 supplies the module setup, validation, incremental metadata, and testing requirements needed to turn the example into a real processor.
 
 **In this chapter**
 
@@ -10019,6 +10715,7 @@ Reflection reads types at runtime — powerful but costly. **[Ch.30 — Metaprog
 - [30.2 KSP vs kapt](#302-ksp-vs-kapt)
 - [30.3 A minimal symbol processor](#303-a-minimal-symbol-processor)
 - [30.4 Compiler plugins](#304-compiler-plugins)
+- [30.5 Production KSP: correctness, incrementality, and tests](#305-production-ksp-correctness-incrementality-and-tests)
 - Summary · Self-check quiz · Exercises · [Chapter project](#chapter-project-an-automap-processor)· Glossary · What's next
 
 ---
@@ -10074,8 +10771,10 @@ class AutoMapProcessor(
             }
 
             // 3. Write it into the build
-            codeGenerator.createNewFile(Dependencies(false), packageName, "${className}Map")
-                .write(code.toByteArray())
+            val source = requireNotNull(cls.containingFile)
+            codeGenerator.createNewFile(Dependencies(false, source), packageName, "${className}Map")
+                .bufferedWriter()
+                .use { writer -> writer.write(code) }
         }
         return emptyList()   // no symbols deferred to a later round
     }
@@ -10122,6 +10821,93 @@ You'll rarely *write* a compiler plugin (the API is low-level and less stable), 
 
 > 💡 **Idiom** — Decision order for adding cross-cutting behaviour: **(1)** plain functions/extensions if it's simple; **(2)** a **KSP** processor if you need to generate boilerplate from annotations (fast, safe, Kotlin-aware); **(3)** **reflection** (Chapter 29) if the shape isn't known until runtime; **(4)** a compiler plugin only for deep transformations no other tool can do. Most needs stop at (1) or (2).
 
+### 30.5 Production KSP: correctness, incrementality, and tests
+
+Use KSP2 (the default in current KSP) and keep three concerns separate:
+
+```text
+:annotations   tiny runtime/API module containing @AutoMap
+:processor     depends on symbol-processing-api; generates source
+:app           depends on :annotations; applies KSP and ksp(project(":processor"))
+```
+
+```kotlin
+// root build.gradle.kts
+plugins {
+    kotlin("jvm") version "2.4.0" apply false
+    id("com.google.devtools.ksp") version "2.3.9" apply false
+}
+
+// processor/build.gradle.kts
+plugins { kotlin("jvm") }
+dependencies {
+    implementation(project(":annotations"))
+    implementation("com.google.devtools.ksp:symbol-processing-api:2.3.9")
+    testImplementation(kotlin("test"))
+}
+
+// app/build.gradle.kts
+plugins {
+    kotlin("jvm")
+    id("com.google.devtools.ksp")
+}
+dependencies {
+    implementation(project(":annotations"))
+    ksp(project(":processor"))
+}
+```
+
+A real processor validates symbols and defers unresolved ones to a later round:
+
+```kotlin
+override fun process(resolver: Resolver): List<KSAnnotated> {
+    val (valid, deferred) = resolver
+        .getSymbolsWithAnnotation(AUTO_MAP_FQ_NAME)
+        .partition { it.validate() }
+
+    valid.filterIsInstance<KSClassDeclaration>().forEach(::generateMapper)
+    return deferred
+}
+
+private fun generateMapper(type: KSClassDeclaration) {
+    val source = requireNotNull(type.containingFile)
+    val packageName = type.packageName.asString()
+    val className = type.simpleName.asString()
+
+    codeGenerator.createNewFile(
+        dependencies = Dependencies(false, source),
+        packageName = packageName,
+        fileName = "${className}AutoMap",
+    ).bufferedWriter().use { writer ->
+        writer.appendLine("package $packageName")
+        writer.appendLine("fun $className.toMap(): Map<String, Any?> = mapOf(")
+        type.getAllProperties().forEach { property ->
+            val name = property.simpleName.asString()
+            writer.appendLine("    \"${name.asKotlinStringLiteral()}\" to this.`$name`,")
+        }
+        writer.appendLine(")")
+    }
+}
+
+private fun String.asKotlinStringLiteral(): String =
+    replace("\\", "\\\\").replace("\"", "\\\"")
+```
+
+`Dependencies(false, source)` declares an **isolating** output: this generated file depends on one source. An aggregating processor (for example, one registry containing every annotated type) declares `aggregating = true` and all relevant source files. Incorrect dependency metadata produces stale generated code or needless full rebuilds.
+
+Production generators also must:
+
+- reject unsupported declarations with `logger.error(message, symbol)` so the IDE points at the source;
+- handle keywords, escaped identifiers, nested/generic types, visibility, inheritance, duplicate simple names, and empty/default packages;
+- avoid generating the same file twice across rounds;
+- close output streams, use deterministic ordering, and never embed absolute paths/timestamps;
+- use KotlinPoet or an equivalent structured writer when types/imports become nontrivial;
+- keep runtime annotations separate so consumers do not depend on KSP APIs.
+
+Test by compiling source snippets and asserting both diagnostics and generated behavior. Cover one happy case plus invalid targets, keywords, nested classes, incremental changes, and two classes with the same simple name in different packages. A text snapshot catches accidental output changes; executing the compiled generated function proves it is valid Kotlin.
+
+> ⚠️ **Gotcha** — `getAllProperties()` may include inherited properties and its order should not be treated as a serialization contract. Define whether inherited/private/computed properties participate, sort deterministically if order matters, and document schema compatibility.
+
 ---
 
 ### Summary
@@ -10131,6 +10917,7 @@ You'll rarely *write* a compiler plugin (the API is low-level and less stable), 
 - A **`SymbolProcessor`** queries a `Resolver` for annotated symbols and emits `.kt` files via a `CodeGenerator`; a `SymbolProcessorProvider` registers it.
 - **Compiler plugins** *transform* existing code (serialization, Compose, all-open, Parcelize) — more powerful, rarely hand-written.
 - Choose: plain code → **KSP** → reflection → compiler plugin, in that order of preference.
+- A production KSP processor validates/defer symbols, declares isolating or aggregating dependencies accurately, emits deterministic escaped source, reports source-attached errors, and is tested by compiling representative snippets.
 
 ### Self-check quiz
 
@@ -10237,6 +11024,9 @@ val map = Task(1, "Learn KSP", false).toMap()
 | **`Resolver` / `CodeGenerator`** | KSP's model of the code / its file emitter. |
 | **Compiler plugin** | A deeper hook that transforms existing code during compilation. |
 | **all-open / no-arg / Parcelize** | Common compiler plugins. |
+| **KSP2** | The current KSP implementation and default processing engine. |
+| **Isolating / aggregating output** | Generated code depending on one source / a collection of sources. |
+| **Incremental processing** | Regenerating only outputs affected by changed source dependencies. |
 
 ### What's next
 
@@ -10277,10 +11067,10 @@ Setup:
 
 ```kotlin
 plugins {
-    kotlin("plugin.serialization") version "2.0.0"
+    kotlin("plugin.serialization") version "2.4.0"
 }
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 }
 ```
 
@@ -10584,6 +11374,7 @@ Your data serializes efficiently. **[Ch.32 — Performance & Memory](#chapter-32
 - Choose primitive arrays and value classes to avoid overhead.
 - Know when `Sequence`/`inline` help and when they don't.
 - Measure performance properly with JMH instead of guessing.
+- Profile whole applications, reason about coroutine/service latency, and distinguish JVM from Native memory behavior.
 
 **In this chapter**
 
@@ -10591,6 +11382,8 @@ Your data serializes efficiently. **[Ch.32 — Performance & Memory](#chapter-32
 - [32.2 Primitive arrays and value classes](#322-primitive-arrays-and-value-classes)
 - [32.3 Sequences, inline, and strings](#323-sequences-inline-and-strings)
 - [32.4 Measuring with JMH](#324-measuring-with-jmh)
+- [32.5 Profiling applications and reading allocation evidence](#325-profiling-applications-and-reading-allocation-evidence)
+- [32.6 Coroutines, latency, and Kotlin/Native memory](#326-coroutines-latency-and-kotlinnative-memory)
 - Summary · Self-check quiz · Exercises · [Chapter project](#chapter-project-optimising-a-hot-path)· Glossary · What's next
 
 ---
@@ -10672,6 +11465,38 @@ Run it, and JMH reports throughput (ops/sec) for each with statistical rigor. Ty
 
 > ⚙️ **Under the hood** — The JVM runs bytecode interpreted at first, then the **JIT** compiles hot methods to optimized native code (with inlining, escape analysis, loop optimizations). This means the first runs are slow and unrepresentative — hence JMH's **warmup** phase. It also inserts "blackholes" so the JIT can't delete a benchmark whose result you don't use. Measuring without these safeguards produces numbers that are often *wrong by an order of magnitude*.
 
+### 32.5 Profiling applications and reading allocation evidence
+
+A microbenchmark answers "which implementation is faster under this synthetic workload?" It does not tell you which code matters in the application. Start with production-like **profiling**:
+
+1. Define a user-visible objective (p95/p99 latency, startup time, throughput, memory ceiling).
+2. Reproduce with representative data, concurrency, JVM flags, and warmup.
+3. Record CPU samples, allocation samples, GC pauses, locks, thread states, and I/O waits.
+4. Optimize the dominant contributor, verify behavior, then repeat the same measurement.
+
+On the JVM, Java Flight Recorder/JDK Mission Control provide low-overhead recordings; async-profiler produces CPU, wall-clock, allocation, and lock flame graphs. Heap histograms show which classes occupy memory; a heap dump plus dominator tree shows **why objects remain reachable**. A high allocation rate is not itself a leak—a leak is retained, unwanted reachability over time.
+
+Interpret flame graphs carefully: width is sampled cost, not call count; an off-CPU/wall profile reveals blocking that a CPU profile cannot. Compare before/after distributions and confidence intervals, not one best run. Watch for coordinated omission in load generators and always report percentiles, not only averages.
+
+> ⚠️ **Gotcha — benchmark environment.** Debug builds, profilers with heavy instrumentation, laptop power saving, thermal throttling, noisy neighbors, tiny datasets, and an un-warmed JIT can dominate the code being measured. Record the environment and keep benchmark inputs/results versioned.
+
+### 32.6 Coroutines, latency, and Kotlin/Native memory
+
+Coroutines are lightweight, not free. A suspended coroutine retains a continuation and whatever locals remain live across suspension. Millions of queued coroutines, unbounded channels, or `shareIn` scopes that never end can retain substantial graphs.
+
+Performance rules for concurrent services:
+
+- bound queues and concurrency (`Semaphore`, fixed worker count, connection pool);
+- avoid `async` when work is sequential or immediately awaited;
+- never use `Dispatchers.IO` to hide unbounded blocking—the dispatcher can expand, while downstream capacity remains finite;
+- use timeouts at external boundaries and propagate cancellation;
+- inspect coroutine dumps/debug probes during stalls, but do not ship expensive debug instrumentation blindly;
+- measure end-to-end latency; reducing a 50 ns lambda allocation cannot fix a 50 ms database query.
+
+Kotlin/Native has a shared heap and tracing garbage collector integrated with platform interop; it is not the old "freeze every shared object" model. Its collector/allocator and Swift/Objective-C ARC interaction differ from the JVM. Retain cycles that cross Kotlin and Swift ownership, stable references, pinned objects, and large global graphs deserve specific testing with Xcode Instruments and Native GC metrics. Kotlin 2.4 enables concurrent marking by default, improving pause behavior but not removing the need to measure allocation and retention.
+
+For JS/Wasm, browser performance tools, bundle analysis, source maps, and DOM/layout costs matter more than JVM boxing. Performance advice is target-specific; keep shared algorithms clear, then profile the binary that users actually run.
+
 ---
 
 ### Summary
@@ -10681,6 +11506,7 @@ Run it, and JMH reports throughput (ops/sec) for each with statistical rigor. Ty
 - **`Sequence`** helps big multi-step pipelines but hurts small ones; **`inline`** removes lambda cost for small hot functions but bloats large ones; build strings with **`buildString`/`StringBuilder`**, not `+` in loops.
 - **Don't optimize prematurely** — write clear code, profile, then fix proven hot spots.
 - **Measure with JMH** (not naive timing): the JIT's warmup and dead-code elimination make hand-rolled microbenchmarks misleading.
+- Use application profilers before microbenchmarks, distinguish allocation rate from retained leaks, bound coroutine concurrency/queues, and profile JVM, Native, JS, and Wasm with target-appropriate tools.
 
 ### Self-check quiz
 
@@ -10805,6 +11631,9 @@ PriorityBenchmark.unboxed   thrpt   ...  ~1600    ops/s   (several× faster)
 | **JIT** | Just-In-Time compiler turning hot bytecode into optimized native code. |
 | **JMH** | Java Microbenchmark Harness — rigorous benchmarking (warmup, blackholes). |
 | **Premature optimization** | Optimizing before profiling proves it's needed. |
+| **Profiler / flame graph** | Runtime sampler / visualization of sampled call-stack cost. |
+| **Allocation rate / retention** | How quickly objects are created / which objects remain reachable. |
+| **Tail latency** | Slow-end request latency, commonly reported as p95/p99. |
 
 ### What's next
 
@@ -11128,6 +11957,7 @@ Your architecture is clean and its core is pure. **[Ch.34 — Kotlin Multiplatfo
 - Use `expect`/`actual` for functions, classes, and type aliases.
 - Share domain, coroutines, and serialization across platforms.
 - Understand iOS interop and Compose Multiplatform.
+- Design exported APIs for Swift/Objective-C and JavaScript, test every target, and publish compatible variants.
 
 > KMP is inherently multi-file/multi-module; this chapter is largely structural. The code shows source-set layout and `expect`/`actual`, not a single runnable `main`.
 
@@ -11137,6 +11967,8 @@ Your architecture is clean and its core is pure. **[Ch.34 — Kotlin Multiplatfo
 - [34.2 `expect`/`actual` in depth](#342-expectactual-in-depth)
 - [34.3 Sharing real code](#343-sharing-real-code)
 - [34.4 iOS interop and Compose Multiplatform](#344-ios-interop-and-compose-multiplatform)
+- [34.5 Swift, Objective-C, C, and JavaScript boundaries](#345-swift-objective-c-c-and-javascript-boundaries)
+- [34.6 Multiplatform testing, publication, and CI](#346-multiplatform-testing-publication-and-ci)
 - Summary · Self-check quiz · Exercises · [Chapter project](#chapter-project-a-multiplatform-core)· Glossary · What's next
 
 ---
@@ -11169,8 +12001,8 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
-            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
         }
     }
 }
@@ -11247,6 +12079,40 @@ fun TaskList(tasks: List<Task>) {
 
 > ⚙️ **Under the hood** — There is no shared runtime. Each target *compiles* `commonMain` + its `actual`s to that platform's native artifact: JVM bytecode (Android/backend), a native binary via LLVM (iOS/desktop), or JavaScript/Wasm (web). Sharing is resolved entirely at **compile time**, so shared code runs at full native speed on each platform with no bridge or interpreter — the opposite of "write once, run slow everywhere."
 
+### 34.5 Swift, Objective-C, C, and JavaScript boundaries
+
+An API that is elegant in Kotlin may be awkward or impossible to export. Design the public boundary for its consumer language:
+
+- avoid exposing deeply generic, inline/reified, or Kotlin-specific implementation types;
+- prefer stable DTOs, simple sealed outcomes, explicit names, and small facades;
+- translate exceptions to documented error/result behavior;
+- keep coroutine scopes owned and cancellable rather than exporting fire-and-forget work;
+- map nullability intentionally and test generated Swift/Objective-C/TypeScript signatures.
+
+Kotlin 2.4's **Swift export** is Alpha and can map `suspend` to Swift `async` and Flow to `AsyncSequence`, which improves ergonomics but still requires version/feature-status review. Treat Alpha export configuration as an integration surface protected by Swift-side compile tests.
+
+For C libraries, `cinterop` consumes headers/`.def` configuration and produces Kotlin bindings. Native pointers, pinning, allocation ownership, callbacks, and thread rules remain the underlying C contract; Kotlin syntax does not make unsafe ownership safe. Wrap raw bindings in a narrow `nativeMain` adapter and expose domain types to `commonMain`.
+
+For JS/TypeScript, `@JsExport` exposes supported declarations and generated `.d.ts` files become part of your API. Use `external` declarations to model JavaScript libraries, prefer npm/typed wrappers over scattered `js()` strings, and test both module system and browser/Node runtime you publish for. Wasm and JS are distinct targets with different interoperability and deployment trade-offs.
+
+> ⚠️ **Gotcha — ABI is per target.** A harmless-looking Kotlin change can alter a JVM signature, Objective-C header, Swift export, TypeScript declaration, Native symbol, or serialized schema differently. Compatibility checks must inspect every artifact consumers compile/link against.
+
+### 34.6 Multiplatform testing, publication, and CI
+
+Put pure domain tests in `commonTest`; they compile and execute on each configured target, catching target-specific runtime differences. Put platform integration tests in `jvmTest`, `androidInstrumentedTest`, `iosSimulatorArm64Test`, `jsTest`, and so on. A test merely compiling for a target is not the same as running there.
+
+CI should:
+
+1. run common/JVM/JS/Wasm tests on ordinary workers;
+2. run Apple compilation, simulator tests, framework/Swift-consumer tests on macOS;
+3. build Android variants and instrumentation/device tests where needed;
+4. verify generated metadata, source artifacts, POMs, signatures, and API dumps;
+5. publish only from an immutable tag after all target jobs succeed.
+
+A multiplatform library publishes a root metadata artifact plus target variants. Consumers select the appropriate variant through Gradle metadata. Configure group, artifact, version, licenses, sources, documentation, repository credentials, and signing once; never place credentials in the build script. Test publication first against `mavenLocal()` or a temporary repository with a separate consumer project.
+
+Choose the minimum supported versions—Kotlin, Gradle, Android API, iOS/macOS, JavaScript environment—as an explicit product contract. Adding a target increases build time, CI infrastructure, compatibility surface, and support burden; add one because a real consumer needs it, not to fill a target checklist.
+
 ---
 
 ### Summary
@@ -11256,6 +12122,7 @@ fun TaskList(tasks: List<Task>) {
 - The multiplatform **`kotlinx`** libraries let you share whole layers — domain, coroutines, serialization, networking — writing them once in `commonMain`.
 - **iOS** consumes a Kotlin/Native framework from Swift; **Compose Multiplatform** shares UI across Android/iOS/desktop/web.
 - Sharing is **compile-time** — each target compiles to its native format, so shared code runs at full speed with no runtime bridge.
+- Exported Swift/C/JS APIs are separate compatibility surfaces. Run common and platform integration tests on real target environments and verify every published variant before release.
 
 ### Self-check quiz
 
@@ -11358,7 +12225,7 @@ actual object TaskStore {
 ```
 
 **Commentary.**
-- **Everything meaningful is shared.** `Task`, `TaskRepository`, `TaskService`, and the JSON encode/decode helpers live in `commonMain` and compile — byte-for-byte the same logic — for Android, iOS, and a backend. This is the domain we've grown since Chapter 1, now truly write-once.
+- **Everything meaningful is shared.** `Task`, `TaskRepository`, `TaskService`, and the JSON encode/decode helpers live in `commonMain`; the same source and business semantics compile into target-specific binaries for Android, iOS, and a backend.
 - The **only** platform seam is `expect object TaskStore` — "give me somewhere to persist a JSON string." The JVM `actual` uses a `File`; the iOS `actual` (sketched) uses `NSUserDefaults`. The shared code doesn't care which — the Chapter 33 dependency rule, now spanning *operating systems*.
 - `@Serializable` works across targets because kotlinx.serialization is multiplatform and compile-time (Chapters 30–31) — no per-platform serializer code.
 - With **Compose Multiplatform** you'd add a shared `@Composable TaskScreen` (Chapter 22's UI, now cross-platform), leaving only tiny platform entry points. The Task Manager — one core, many faces — is complete: CLI, backend, Android, iOS, from a single shared heart.
@@ -11376,6 +12243,8 @@ actual object TaskStore {
 | **`expect` / `actual`** | Common declaration / per-platform implementation. |
 | **`actual typealias`** | Satisfying an `expect class` by aliasing a platform type. |
 | **Compose Multiplatform** | Compose UI shared across Android/iOS/desktop/web. |
+| **Swift export / `@JsExport`** | Exporting Kotlin APIs to Swift / JavaScript-TypeScript consumers. |
+| **Publication variant** | The target-specific artifact selected from a multiplatform publication. |
 
 ### What's next
 
@@ -11396,6 +12265,7 @@ You can share a core across every platform. **[Ch.35 — Designing Libraries & P
 - Control your public surface with visibility and explicit API mode.
 - Preserve binary compatibility and deprecate gracefully.
 - Document with KDoc and mark experimental APIs.
+- Generate documentation, validate API/ABI, sign artifacts, and test a release as a real consumer.
 
 **In this chapter**
 
@@ -11403,6 +12273,8 @@ You can share a core across every platform. **[Ch.35 — Designing Libraries & P
 - [35.2 Controlling the public surface](#352-controlling-the-public-surface)
 - [35.3 Binary compatibility](#353-binary-compatibility)
 - [35.4 Deprecation, opt-in, and KDoc](#354-deprecation-opt-in-and-kdoc)
+- [35.5 Documentation, publication, and artifact integrity](#355-documentation-publication-and-artifact-integrity)
+- [35.6 Compatibility is more than a method signature](#356-compatibility-is-more-than-a-method-signature)
 - Summary · Self-check quiz · Exercises · [Chapter project](#chapter-project-a-clean-public-api)· Glossary · What's next
 
 ---
@@ -11425,7 +12297,11 @@ By default, everything is `public`. For a library, be deliberate. Use **`interna
 class TaskParser {
     fun parse(text: String): List<Task> = internalParse(text)   // public API
 
-    internal fun internalParse(text: String): List<Task> = TODO()   // module-only helper
+    internal fun internalParse(text: String): List<Task> =
+        text.lineSequence()
+            .filter { it.isNotBlank() }
+            .mapIndexed { index, title -> Task(index + 1, title.trim(), done = false) }
+            .toList()
 }
 ```
 
@@ -11493,17 +12369,78 @@ fun useIt() = batchImport("...")
 Finally, **document with KDoc** (Kotlin's `/** */` doc comments, rendered by Dokka):
 
 ```kotlin
-/**
- * Adds a task to the book.
- *
- * @param title the task's title; must not be blank.
- * @return the created [Task].
- * @throws IllegalArgumentException if [title] is blank.
- */
-fun addTask(title: String): Task = TODO()
+class TaskBook {
+    private var nextId = 1
+
+    /**
+     * Adds a task to the book.
+     *
+     * @param title the task's title; must not be blank.
+     * @return the created [Task].
+     * @throws IllegalArgumentException if [title] is blank.
+     */
+    fun addTask(title: String): Task {
+        require(title.isNotBlank()) { "title must not be blank" }
+        return Task(nextId++, title.trim(), done = false)
+    }
+}
 ```
 
 > 💡 **Idiom** — Document the *contract*, not the obvious. `@param`, `@return`, `@throws`, and links (`[Task]`) tell users what they can rely on and what can go wrong — the things they *can't* infer from the signature. Skip comments that just restate the code.
+
+### 35.5 Documentation, publication, and artifact integrity
+
+Use **Dokka** to generate HTML/Javadoc-style API documentation from KDoc, and publish source/documentation artifacts beside binaries. A useful library release also contains:
+
+- coordinates (`group:artifact:version`) that remain stable;
+- module metadata/POM with accurate dependencies and licenses;
+- signed artifacts and checksums where the repository requires them;
+- release notes and a migration guide for behavioral changes;
+- an API dump reviewed in pull requests;
+- reproducible CI that publishes only immutable tags.
+
+Representative Gradle shape:
+
+```kotlin
+plugins {
+    `maven-publish`
+    signing
+    id("org.jetbrains.dokka")
+}
+
+publishing {
+    publications.withType<MavenPublication>().configureEach {
+        pom {
+            name.set("Task Format")
+            description.set("Stable task interchange types and codecs")
+            licenses { license { name.set("Apache-2.0") } }
+            scm { url.set("https://example.com/task-format") }
+        }
+    }
+}
+
+signing { sign(publishing.publications) }
+```
+
+Credentials and private signing material come from environment variables/Gradle credentials providers and CI secrets, never version control. Test publication into a temporary repository, then compile/run a **separate consumer fixture** against the produced artifact. That catches missing runtime dependencies, bad metadata, wrong visibility, absent service files, and code that worked only because the library's own build leaked a dependency.
+
+> ⚠️ **Gotcha** — `mavenLocal()` is stateful and can hide publication mistakes through stale artifacts. Use a unique version, clear evidence of which repository resolved it, and prefer an isolated temporary Maven directory in automated tests.
+
+### 35.6 Compatibility is more than a method signature
+
+Track several contracts independently:
+
+- **source compatibility**: old source still compiles;
+- **binary/ABI compatibility**: old binaries still link;
+- **behavioral compatibility**: semantics, ordering, exceptions, performance bounds, and thread safety remain within contract;
+- **serialization/wire compatibility**: old persisted/network data still decodes and mixed versions interoperate;
+- **platform compatibility**: supported Java/Android/iOS/JS/Kotlin/Gradle ranges remain true.
+
+Automate what tools can prove: public API dumps, JVM binary validation, generated Swift/TypeScript surface snapshots, serialized golden files, cross-version tests, and dependency convergence. Human review still decides semantic changes.
+
+Kotlin-specific hazards include public `inline` functions embedding implementation into consumer binaries, `const val` values copied at compile time, default-argument synthetic methods, sealed hierarchy exhaustiveness, data-class generated members, changed variance/nullability, and compiler/plugin metadata requirements. A type being `public` accidentally can be more expensive than its implementation.
+
+Use semantic versioning as communication, not permission to break carelessly. A major release still needs deprecation runway where possible, a precise migration guide, coexistence strategy for multi-module ecosystems, and tested downgrade/rollback implications.
 
 ---
 
@@ -11513,6 +12450,7 @@ fun addTask(title: String): Task = TODO()
 - Control the surface with **`internal`** (module-only) and **`explicitApi()`** (require explicit visibility + return types); use **`@PublishedApi internal`** for `inline`-accessible internals.
 - Respect **source** *and* **binary** compatibility; adding even a defaulted parameter breaks binary compat. Communicate with **semantic versioning**; validate with tooling.
 - Evolve with **`@Deprecated`** (+ `ReplaceWith`, escalating `DeprecationLevel`); gate unstable APIs with **`@RequiresOptIn`**/`@OptIn`; document contracts with **KDoc**.
+- Generate docs with **Dokka**, verify API/ABI and wire formats, sign/publish from CI, and test the exact artifact in a clean consumer. Compatibility includes behavior, data, tooling, and every target—not just source signatures.
 
 ### Self-check quiz
 
@@ -11668,6 +12606,9 @@ Output:
 | **`@Deprecated` / `ReplaceWith`** | Marks an API obsolete / provides auto-migration. |
 | **`@RequiresOptIn` / `@OptIn`** | Marks/acknowledges an unstable experimental API. |
 | **KDoc** | Kotlin's documentation comments (`/** */`, rendered by Dokka). |
+| **Dokka** | Documentation generator for Kotlin source and multiplatform APIs. |
+| **ABI** | The binary-level surface against which compiled consumers link. |
+| **Consumer fixture** | A separate project that verifies the published artifact as users receive it. |
 
 ### What's next
 
@@ -11688,6 +12629,7 @@ Your library is well-designed — now prove it works. **[Ch.36 — Advanced Test
 - Test flows deterministically with Turbine.
 - Write integration tests for Ktor and databases.
 - Judge test *value* and avoid flaky, low-value tests.
+- Add contract, mutation, concurrency, migration, and release-artifact tests to a CI strategy.
 
 **In this chapter**
 
@@ -11695,6 +12637,7 @@ Your library is well-designed — now prove it works. **[Ch.36 — Advanced Test
 - [36.2 Testing flows with Turbine](#362-testing-flows-with-turbine)
 - [36.3 Integration testing](#363-integration-testing)
 - [36.4 Test quality and trust](#364-test-quality-and-trust)
+- [36.5 Contract, mutation, concurrency, and CI](#365-contract-mutation-concurrency-and-ci)
 - Summary · Self-check quiz · Exercises · [Chapter project](#chapter-project-a-full-test-suite)· Glossary · What's next
 
 ---
@@ -11783,17 +12726,34 @@ For databases, **Testcontainers** spins up a *real* database in a Docker contain
 ```kotlin
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.*
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.*
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import kotlin.test.*
 
 @Testcontainers
 class RepositoryIntegrationTest {
     companion object {
         @Container
-        val postgres = PostgreSQLContainer("postgres:16")
+        val postgres = PostgreSQLContainer<Nothing>("postgres:16")
     }
 
     @Test
     fun `saves and loads a task`() {
-        // connect Exposed to postgres.jdbcUrl / .username / .password, then test real CRUD
+        val db = Database.connect(
+            url = postgres.jdbcUrl,
+            driver = "org.postgresql.Driver",
+            user = postgres.username,
+            password = postgres.password,
+        )
+
+        transaction(db) {
+            SchemaUtils.create(Tasks)
+            Tasks.insert { it[title] = "real PostgreSQL" }
+            val saved = Tasks.selectAll().single()
+            assertEquals("real PostgreSQL", saved[Tasks.title])
+            assertFalse(saved[Tasks.done])
+        }
     }
 }
 ```
@@ -11810,6 +12770,57 @@ Tests are only worth having if you *trust* them. Two threats:
 
 > ⚠️ **Gotcha — test behaviour, not implementation (again).** The single biggest cause of brittle suites is coupling tests to *how* code works rather than *what* it does. Assert on observable outcomes (return values, emitted state, HTTP responses), inject dependencies so you control inputs, and reserve interaction checks for genuinely important effects. Tests coupled to internals break on every refactor — punishing exactly the cleanup you want to encourage.
 
+### 36.5 Contract, mutation, concurrency, and CI
+
+The pyramid is a cost model, not a law about shapes. Add tests at the cheapest boundary that can detect each real risk:
+
+- **contract tests** run the same repository/API expectations against every implementation;
+- **consumer-driven contracts** verify independently deployed clients/providers without requiring every service in one fragile environment;
+- **migration tests** apply all migrations to an empty database and upgrade representative old snapshots;
+- **mutation tests** deliberately change conditions/returns and report tests that still pass, exposing assertions that execute code without proving behavior;
+- **concurrency tests** repeat schedules or use model-checking tools such as Lincheck for linearizable data structures;
+- **release-fixture tests** consume the actual published JAR/KMP variants, not project classes from the same build.
+
+A reusable repository contract prevents the in-memory fake from drifting away from PostgreSQL semantics:
+
+```kotlin
+abstract class TaskRepositoryContract {
+    protected abstract fun repository(): TaskRepository
+    protected abstract fun resetStorage()
+
+    @BeforeEach fun reset() = resetStorage()
+
+    @Test fun `new task is observable by id`() = runTest {
+        val repo = repository()
+        val created = repo.add("contract")
+        assertEquals(created, repo.find(created.id))
+    }
+
+    @Test fun `duplicate idempotency key creates once`() = runTest {
+        val repo = repository()
+        val first = repo.add("once", idempotencyKey = "k-1")
+        val second = repo.add("once", idempotencyKey = "k-1")
+        assertEquals(first.id, second.id)
+        assertEquals(1, repo.all().size)
+    }
+}
+
+class InMemoryRepositoryContract : TaskRepositoryContract() { /* factory + reset */ }
+class PostgresRepositoryContract : TaskRepositoryContract() { /* Testcontainer + migrations */ }
+```
+
+CI layers fast feedback without hiding failures:
+
+1. formatting/static analysis and unit/property tests;
+2. build plus integration/contract/migration tests with real dependencies;
+3. platform/device and end-to-end smoke tests;
+4. API/ABI, dependency, security, and publication-fixture checks;
+5. publish reports, seeds, shrunk counterexamples, logs, and container diagnostics on failure.
+
+Quarantine is a short, owned repair state—not a trash bin. Record flaky-test frequency, owner, issue, and deadline; fix or delete it. Retrying an entire suite until green converts nondeterminism into false confidence.
+
+> 💡 **Idiom — deterministic randomness.** Property/stress tests should print the random seed and replay it on failure. Run a small stable budget on every commit and a larger varied budget nightly; retain any discovered counterexample as a focused regression test.
+
 ---
 
 ### Summary
@@ -11819,6 +12830,7 @@ Tests are only worth having if you *trust* them. Two threats:
 - **Integration tests** verify pieces together: **Ktor `testApplication`** for routes in-memory, **Testcontainers** for a real database.
 - Follow the **testing pyramid**: many unit, fewer integration, few E2E.
 - Guard **trust**: eliminate **flakiness** (virtual time, isolated state, injected clocks) and **low-value** tests; **test behaviour, not implementation**.
+- Contract, migration, mutation, concurrency, and release-fixture tests cover risks ordinary unit tests cannot. CI should preserve seeds and diagnostics and treat quarantine as temporary repair work.
 
 ### Self-check quiz
 
@@ -11947,11 +12959,30 @@ class TaskApiTest {
 @Testcontainers
 class ExposedRepositoryTest {
     companion object {
-        @Container val postgres = PostgreSQLContainer("postgres:16")
+        @Container val postgres = PostgreSQLContainer<Nothing>("postgres:16")
     }
+
+    private fun connect(container: PostgreSQLContainer<Nothing>): Database = Database.connect(
+        url = container.jdbcUrl,
+        driver = "org.postgresql.Driver",
+        user = container.username,
+        password = container.password,
+    )
+
+    private fun migrate(db: Database) {
+        transaction(db) { SchemaUtils.create(Tasks) } // use Flyway migrations in the assembled app
+    }
+
     @Test
     fun `persists across a reconnect`() {
-        // connect Exposed to postgres, add a task, reconnect, assert it's still there
+        val firstDb = connect(postgres)
+        migrate(firstDb)
+        val firstRepo = ExposedTaskRepository(firstDb)
+        val created = firstRepo.add("Survive reconnect")
+
+        val secondDb = connect(postgres) // a distinct Exposed/connection-pool boundary
+        val secondRepo = ExposedTaskRepository(secondDb)
+        assertEquals(created, secondRepo.findById(created.id))
     }
 }
 ```
@@ -11978,6 +13009,9 @@ class ExposedRepositoryTest {
 | **Testcontainers** | Runs real services (e.g. PostgreSQL) in Docker for tests. |
 | **Testing pyramid** | Many unit, fewer integration, few E2E tests. |
 | **Flakiness** | Nondeterministic pass/fail; erodes trust. |
+| **Contract test** | A shared behavior suite applied to every implementation of an abstraction. |
+| **Mutation testing** | Deliberately changing production code to check whether tests detect it. |
+| **Migration test** | Verifies clean install and upgrade paths for persisted schemas/data. |
 
 ### What's next
 
@@ -12176,3 +13210,374 @@ By the end, the Task Manager is:
 
 That progression — from a beginner's first `println` to an expert's architected, tested, multiplatform system, built one concept at a time — *is* the journey from zero to expert. The language features were never the point; building real, well-structured software with them was. You now have both.
 
+### Buildable reference implementation
+
+The earlier chapter projects intentionally isolate one idea at a time. This section assembles their stable core into a small repository that actually compiles, runs, and tests. The default profile is self-contained and uses an in-memory adapter; replace only the composition-root binding with the Chapter 21 PostgreSQL adapter in production.
+
+#### Repository layout
+
+```text
+task-manager/
+├── settings.gradle.kts
+├── build.gradle.kts
+├── shared/
+│   ├── build.gradle.kts
+│   └── src/
+│       ├── commonMain/kotlin/tasks/Domain.kt
+│       └── commonTest/kotlin/tasks/TaskServiceTest.kt
+└── server/
+    ├── build.gradle.kts
+    ├── src/main/kotlin/tasks/server/Application.kt
+    └── src/test/kotlin/tasks/server/TaskApiTest.kt
+```
+
+#### Root build
+
+```kotlin
+// settings.gradle.kts
+pluginManagement { repositories { gradlePluginPortal(); mavenCentral() } }
+dependencyResolutionManagement { repositories { mavenCentral() } }
+rootProject.name = "task-manager"
+include("shared", "server")
+```
+
+```kotlin
+// build.gradle.kts
+plugins {
+    kotlin("multiplatform") version "2.4.0" apply false
+    kotlin("jvm") version "2.4.0" apply false
+    kotlin("plugin.serialization") version "2.4.0" apply false
+}
+
+allprojects {
+    group = "com.example.tasks"
+    version = "1.0.0"
+}
+```
+
+```kotlin
+// shared/build.gradle.kts
+plugins {
+    kotlin("multiplatform")
+    kotlin("plugin.serialization")
+}
+
+kotlin {
+    jvm()
+    explicitApi()
+
+    sourceSets {
+        commonMain.dependencies {
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+        }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+        }
+    }
+}
+```
+
+#### Shared domain and concurrency-safe adapter
+
+```kotlin
+// shared/src/commonMain/kotlin/tasks/Domain.kt
+package tasks
+
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.Serializable
+
+@Serializable
+public data class Task(
+    public val id: Long,
+    public val title: String,
+    public val done: Boolean = false,
+)
+
+public sealed interface TaskError {
+    public data object BlankTitle : TaskError
+    public data class TitleTooLong(public val maximum: Int) : TaskError
+    public data class NotFound(public val id: Long) : TaskError
+}
+
+public sealed interface TaskResult<out T> {
+    public data class Ok<T>(public val value: T) : TaskResult<T>
+    public data class Err(public val error: TaskError) : TaskResult<Nothing>
+}
+
+public interface TaskRepository {
+    public val tasks: StateFlow<List<Task>>
+    public suspend fun create(title: String): Task
+    public suspend fun find(id: Long): Task?
+    public suspend fun setDone(id: Long, done: Boolean): Task?
+    public suspend fun delete(id: Long): Boolean
+}
+
+public class InMemoryTaskRepository : TaskRepository {
+    private val mutex: Mutex = Mutex()
+    private val state: MutableStateFlow<List<Task>> = MutableStateFlow(emptyList())
+    private var nextId: Long = 1
+
+    override val tasks: StateFlow<List<Task>> = state.asStateFlow()
+
+    override suspend fun create(title: String): Task = mutex.withLock {
+        Task(nextId++, title).also { created -> state.value = state.value + created }
+    }
+
+    override suspend fun find(id: Long): Task? = mutex.withLock {
+        state.value.firstOrNull { it.id == id }
+    }
+
+    override suspend fun setDone(id: Long, done: Boolean): Task? = mutex.withLock {
+        var updated: Task? = null
+        state.value = state.value.map { task ->
+            if (task.id == id) task.copy(done = done).also { updated = it } else task
+        }
+        updated
+    }
+
+    override suspend fun delete(id: Long): Boolean = mutex.withLock {
+        val before = state.value
+        state.value = before.filterNot { it.id == id }
+        state.value.size != before.size
+    }
+}
+
+public class TaskService(private val repository: TaskRepository) {
+    public val tasks: StateFlow<List<Task>> = repository.tasks
+
+    public suspend fun create(rawTitle: String): TaskResult<Task> {
+        val title = rawTitle.trim()
+        if (title.isEmpty()) return TaskResult.Err(TaskError.BlankTitle)
+        if (title.length > MAX_TITLE_LENGTH) {
+            return TaskResult.Err(TaskError.TitleTooLong(MAX_TITLE_LENGTH))
+        }
+        return TaskResult.Ok(repository.create(title))
+    }
+
+    public suspend fun complete(id: Long): TaskResult<Task> =
+        repository.setDone(id, true)?.let { TaskResult.Ok(it) }
+            ?: TaskResult.Err(TaskError.NotFound(id))
+
+    public suspend fun delete(id: Long): TaskResult<Unit> =
+        if (repository.delete(id)) TaskResult.Ok(Unit)
+        else TaskResult.Err(TaskError.NotFound(id))
+
+    public companion object {
+        public const val MAX_TITLE_LENGTH: Int = 200
+    }
+}
+```
+
+The mutex protects `nextId` and each read-modify-write as one critical section. The public stream exposes immutable list snapshots, so callers cannot mutate repository state behind its back.
+
+#### Ktor server
+
+```kotlin
+// server/build.gradle.kts
+plugins {
+    kotlin("jvm")
+    kotlin("plugin.serialization")
+    application
+}
+
+dependencies {
+    implementation(project(":shared"))
+    implementation("io.ktor:ktor-server-core:3.5.0")
+    implementation("io.ktor:ktor-server-netty:3.5.0")
+    implementation("io.ktor:ktor-server-content-negotiation:3.5.0")
+    implementation("io.ktor:ktor-server-status-pages:3.5.0")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.5.0")
+    implementation("ch.qos.logback:logback-classic:1.5.20")
+
+    testImplementation(kotlin("test"))
+    testImplementation("io.ktor:ktor-server-test-host:3.5.0")
+    testImplementation("io.ktor:ktor-client-content-negotiation:3.5.0")
+}
+
+kotlin { jvmToolchain(21) }
+application { mainClass.set("tasks.server.ApplicationKt") }
+tasks.test { useJUnitPlatform() }
+```
+
+```kotlin
+// server/src/main/kotlin/tasks/server/Application.kt
+package tasks.server
+
+import io.ktor.http.HttpStatusCode
+import io.ktor.serialization.kotlinx.json.json
+import io.ktor.server.application.*
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
+import io.ktor.server.plugins.BadRequestException
+import io.ktor.server.plugins.ContentTransformationException
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.routing.*
+import kotlinx.serialization.Serializable
+import tasks.*
+
+@Serializable
+data class CreateTaskRequest(val title: String)
+
+@Serializable
+data class ApiError(val code: String, val message: String)
+
+fun main() {
+    val repository = InMemoryTaskRepository()
+    embeddedServer(Netty, port = 8080) { taskModule(TaskService(repository)) }
+        .start(wait = true)
+}
+
+fun Application.taskModule(service: TaskService) {
+    install(ContentNegotiation) { json() }
+    install(StatusPages) {
+        exception<ContentTransformationException> { call, _ ->
+            call.respond(HttpStatusCode.BadRequest, ApiError("INVALID_JSON", "Malformed JSON body"))
+        }
+        exception<BadRequestException> { call, _ ->
+            call.respond(HttpStatusCode.BadRequest, ApiError("BAD_REQUEST", "Malformed request"))
+        }
+        exception<Throwable> { call, cause ->
+            environment.log.error("Unhandled request", cause)
+            call.respond(HttpStatusCode.InternalServerError, ApiError("INTERNAL", "Unexpected failure"))
+        }
+    }
+
+    routing {
+        get("/health/live") { call.respond(mapOf("status" to "up")) }
+        get("/tasks") { call.respond(service.tasks.value) }
+
+        post("/tasks") {
+            when (val result = service.create(call.receive<CreateTaskRequest>().title)) {
+                is TaskResult.Ok -> call.respond(HttpStatusCode.Created, result.value)
+                is TaskResult.Err -> call.respondTaskError(result.error)
+            }
+        }
+
+        put("/tasks/{id}/complete") {
+            val id = call.parameters["id"]?.toLongOrNull()
+                ?: return@put call.respond(HttpStatusCode.BadRequest, ApiError("INVALID_ID", "Numeric id required"))
+            when (val result = service.complete(id)) {
+                is TaskResult.Ok -> call.respond(result.value)
+                is TaskResult.Err -> call.respondTaskError(result.error)
+            }
+        }
+
+        delete("/tasks/{id}") {
+            val id = call.parameters["id"]?.toLongOrNull()
+                ?: return@delete call.respond(HttpStatusCode.BadRequest, ApiError("INVALID_ID", "Numeric id required"))
+            when (val result = service.delete(id)) {
+                is TaskResult.Ok -> call.respond(HttpStatusCode.NoContent)
+                is TaskResult.Err -> call.respondTaskError(result.error)
+            }
+        }
+    }
+}
+
+private suspend fun ApplicationCall.respondTaskError(error: TaskError) {
+    when (error) {
+        TaskError.BlankTitle -> respond(
+            HttpStatusCode.UnprocessableEntity,
+            ApiError("BLANK_TITLE", "Title must not be blank"),
+        )
+        is TaskError.TitleTooLong -> respond(
+            HttpStatusCode.UnprocessableEntity,
+            ApiError("TITLE_TOO_LONG", "Maximum is ${error.maximum} characters"),
+        )
+        is TaskError.NotFound -> respond(
+            HttpStatusCode.NotFound,
+            ApiError("TASK_NOT_FOUND", "Task ${error.id} does not exist"),
+        )
+    }
+}
+```
+
+#### Tests that exercise behavior through real boundaries
+
+```kotlin
+// shared/src/commonTest/kotlin/tasks/TaskServiceTest.kt
+package tasks
+
+import kotlinx.coroutines.test.runTest
+import kotlin.test.*
+
+class TaskServiceTest {
+    @Test
+    fun blankTitleIsRejectedWithoutMutation() = runTest {
+        val service = TaskService(InMemoryTaskRepository())
+        assertEquals(TaskResult.Err(TaskError.BlankTitle), service.create("   "))
+        assertTrue(service.tasks.value.isEmpty())
+    }
+
+    @Test
+    fun createThenCompletePublishesANewSnapshot() = runTest {
+        val service = TaskService(InMemoryTaskRepository())
+        val created = (service.create("  Ship it  ") as TaskResult.Ok<Task>).value
+        val completed = (service.complete(created.id) as TaskResult.Ok<Task>).value
+        assertEquals("Ship it", completed.title)
+        assertTrue(completed.done)
+        assertEquals(listOf(completed), service.tasks.value)
+    }
+}
+```
+
+```kotlin
+// server/src/test/kotlin/tasks/server/TaskApiTest.kt
+package tasks.server
+
+import io.ktor.client.call.body
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.*
+import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.json
+import io.ktor.server.testing.testApplication
+import kotlin.test.*
+import tasks.*
+
+class TaskApiTest {
+    @Test
+    fun createCompleteListDeleteJourney() = testApplication {
+        application { taskModule(TaskService(InMemoryTaskRepository())) }
+        val apiClient = createClient { install(ContentNegotiation) { json() } }
+
+        val createdResponse = apiClient.post("/tasks") {
+            contentType(ContentType.Application.Json)
+            setBody("""{"title":"Integration test"}""")
+        }
+        assertEquals(HttpStatusCode.Created, createdResponse.status)
+        val created = createdResponse.body<Task>()
+
+        assertEquals(HttpStatusCode.OK, apiClient.put("/tasks/${created.id}/complete").status)
+        val listed = apiClient.get("/tasks").body<List<Task>>()
+        assertEquals(listOf(created.copy(done = true)), listed)
+
+        assertEquals(HttpStatusCode.NoContent, apiClient.delete("/tasks/${created.id}").status)
+        assertTrue(apiClient.get("/tasks").body<List<Task>>().isEmpty())
+    }
+}
+```
+
+#### Build, test, and run
+
+After copying the files into a new directory, generate the wrapper once with a trusted local Gradle installation (or the IDE's Gradle action), then commit every generated wrapper file:
+
+```bash
+gradle wrapper --gradle-version 9.5
+./gradlew clean check
+./gradlew :server:run
+
+curl -i -X POST http://localhost:8080/tasks \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"Read the assembled appendix"}'
+curl -s http://localhost:8080/tasks
+```
+
+Before calling this production-ready, apply the production sections of Chapters 19–22: commit the wrapper and lock/verify dependencies; replace the in-memory binding with a pooled PostgreSQL repository plus Flyway migrations; add authentication/authorization, request ids, metrics, readiness, bounded timeouts, secrets management, and graceful shutdown; then run the Chapter 36 contract, migration, container, and load tests. The architecture deliberately makes those adapters replaceable without changing the shared domain or route behavior.

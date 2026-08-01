@@ -34,6 +34,22 @@
 22. Virtualization & Containers (305)
 23. High Availability & Storage Clusters (306)
 
+### PART 4 — Objective-Aligned Completion & Professional Labs
+24. How Commands Work: Intent, Data Flow, Verification, and Safety
+25. LPIC-1 Objective Completion: Scheduling, Localization, Desktops, and Printing
+26. LPIC-2 Exam 201 Completion: Capacity, Boot, Filesystems, and Maintenance
+27. LPIC-2 Exam 202 Completion: DHCP, Proxy, SQL, and Client Services
+28. LPIC-3 Exam 300 Completion: Samba, FreeIPA, CIFS, and NFSv4
+29. LPIC-3 Exam 303 Completion: PKI, Host Hardening, and Access Control
+30. LPIC-3 Exams 305/306 Completion: Provisioning, Isolation, and HA Operations
+31. Safe Scenario Labs and LPIC-3 Exam Preparation
+32. Official Objective Master Checklist
+33. Exam 300 Advanced Operations Supplement
+34. Exam 303 Security Operations Supplement
+35. Exam 305 Virtualization and Containerization Supplement
+36. Exam 306 High Availability and Storage Supplement
+37. Distribution-Aware Labs and Final Readiness Gate
+
 ### Final Section: Exam Preparation
 - Mock Exam 1 — LPIC-1 (101)
 - Mock Exam 2 — LPIC-1 (102)
@@ -46,6 +62,10 @@
 ## How to Use This Handbook
 
 This handbook is **self-contained**. Read it cover-to-cover, then revisit chapters in any order for review. Every command shown includes its syntax, real-world use case, and runnable examples. Every chapter ends with exercises and mock questions.
+
+**Objective baseline (verify before booking):** LPIC-1 objectives 5.0 (`101-500`, `102-500`), LPIC-2 objectives 4.5 (`201-450`, `202-450`), and LPIC-3 objectives 3.0 (`300-300`, `303-300`, `305-300`, `306-300`). Exam objectives change independently of distributions; always compare this handbook with the current [LPIC-1](https://www.lpi.org/our-certifications/exam-101-102-objectives/), [LPIC-2](https://www.lpi.org/our-certifications/exam-201-202-objectives/), [300](https://www.lpi.org/our-certifications/exam-300-objectives/), [303](https://www.lpi.org/our-certifications/exam-303-objectives/), [305](https://www.lpi.org/our-certifications/exam-305-objectives/), and [306](https://www.lpi.org/our-certifications/exam-306-objectives/) objective pages and weights.
+
+**Lab safety rule:** commands that change partition tables, filesystems, bootloaders, firewall policy, authentication, cluster quorum, or encryption belong on disposable VMs or loop-backed images with snapshots and console access. Replace placeholders such as `/dev/sdX`; never paste them unchanged. Each professional lab in Part 4 includes a verification and rollback step.
 
 **Conventions used throughout:**
 
@@ -96,9 +116,10 @@ This handbook is **self-contained**. Read it cover-to-cover, then revisit chapte
 # lists all UEFI boot entries; fails entirely on BIOS systems
 efibootmgr -v
 
-# Method 3 — dmidecode shows firmware type
-# reads DMI/SMBIOS data and searches for the word "uefi" in the bios section
-dmidecode -t bios | grep -i uefi
+# Method 3 — inspect the firmware table only as supporting evidence
+dmidecode -t bios
+# DMI text is vendor-defined: absence/presence of the word "UEFI" does NOT prove boot mode.
+# /sys/firmware/efi is the reliable indicator of how this kernel was booted.
 ```
 
 **Secure Boot.** A UEFI feature that verifies bootloader signatures against keys stored in firmware (PK, KEK, db, dbx). Linux distributions ship a small signed bootloader called **shim** that loads GRUB. To check status:
@@ -156,6 +177,8 @@ Linux exposes hardware in several places — sysfs (`/sys`), procfs (`/proc`), a
 
 #### `lspci` — list PCI devices
 
+`lspci` enumerates devices on the PCI/PCIe bus and maps numeric vendor/device IDs to names. Use it to answer whether the kernel can see a controller and which driver/module claims it (`-k`); it does not prove the device or application is functioning. Compare with `dmesg`/journal and interface-specific tools for initialization errors.
+
 ```
 lspci [OPTIONS]
 ```
@@ -192,6 +215,8 @@ lspci -vvv -s 00:1f.2
 
 #### `lsusb` — list USB devices
 
+`lsusb` enumerates USB buses/devices and descriptors. It is the first check for physical detection, vendor/product ID, speed and topology; `lsusb -t` also shows driver and hierarchy. A listed device may still lack permissions, firmware, a class driver, or application support.
+
 ```
 lsusb [-v] [-s BUS:DEV] [-d VENDOR:PRODUCT] [-t]
 ```
@@ -203,6 +228,8 @@ lsusb -v -d 046d:c52b 2>/dev/null | less   # full descriptor for a Logitech devi
 ```
 
 #### `lshw` — list hardware (broad)
+
+`lshw` combines multiple kernel/firmware sources into a broad hardware tree. Use it for an inventory or to spot `UNCLAIMED` devices, then confirm important facts with focused tools. Some fields require root and firmware-reported values can be incomplete; its output is observation, not configuration.
 
 ```
 lshw [-class CLASS] [-short] [-html] [-json] [-businfo] [-sanitize]
@@ -217,6 +244,8 @@ lshw -class disk -class storage -businfo
 **NOTE:** `lshw` needs root for full output. As an unprivileged user it warns and produces partial data.
 
 #### `dmidecode` — read SMBIOS/DMI tables
+
+`dmidecode` decodes firmware-provided SMBIOS tables for system, board, BIOS, memory-slot and chassis inventory. It is useful for model/serial/slot information without opening a machine, but firmware may be wrong or generic and DMI does not report how the current kernel actually booted. Treat sensitive serial/asset data accordingly.
 
 `dmidecode` does *not* probe hardware; it reads the firmware's description of itself. Useful for serial numbers, slot layouts, and DIMM info even when slots are empty.
 
@@ -411,6 +440,8 @@ systemctl list-units --type=target
 
 #### `systemctl` — the core systemd command
 
+`systemctl` is the control/query client for systemd's manager and unit dependency graph. Separate three questions: **runtime state** (`start`, `stop`, `is-active`), **boot policy** (`enable`, `disable`, `is-enabled`), and **configuration visibility** (`cat`, `show`, `daemon-reload`). Enabling does not start a unit now, and starting does not necessarily enable it for the next boot. Prefer `reload` only when the service supports a safe configuration reload; otherwise validate configuration and restart with an availability plan.
+
 ```
 systemctl [OPTIONS] COMMAND [UNIT...]
 ```
@@ -488,7 +519,7 @@ dmesg [OPTIONS]
 
 | Flag | Meaning |
 |---|---|
-| `-T` | Human-readable timestamps |
+| `-T` | Estimated wall-clock timestamps (convenient, but may be inaccurate after clock changes) |
 | `-H` | Pager + colors + relative times |
 | `-w` | Follow (like `tail -f`) |
 | `-l LEVEL` | Filter by level: emerg, alert, crit, err, warn, notice, info, debug |
@@ -506,6 +537,7 @@ journalctl -b -1            # previous boot
 
 **Common Mistakes**
 - Believing `dmesg` survives reboots. The ring buffer is cleared at every boot; for history use `journalctl -k -b -N` (with negative N for older boots), assuming persistent journal is enabled (`/var/log/journal/` exists).
+- Treating `dmesg -T` as forensic time. Kernel records use time since boot; `-T` converts them using the current clock offset. Prefer journal timestamps for correlation and retain monotonic timestamps when precision matters.
 
 **Exercise**
 - *Exercise:* Display every kernel error from the previous boot only.
@@ -548,6 +580,8 @@ journalctl -b -1            # previous boot
 
 #### `fdisk` — interactive, MBR-first (also GPT since util-linux 2.23)
 
+`fdisk` edits the partition table—the map describing regions of a disk—not the filesystems inside those regions. Most changes are staged in memory until the write command, but writing can make existing data unreachable. Print and record the table first, verify sector units/alignment, and work on disposable images while learning.
+
 ```
 fdisk [-l] [DEVICE]
 ```
@@ -565,6 +599,8 @@ fdisk /dev/sdb                 # interactive partitioning
 
 #### `gdisk` — interactive, GPT-only
 
+`gdisk` is GPT-focused and understands primary/backup GPT headers, GUIDs and GPT type codes. Use it when inspecting or repairing GPT-specific structures; recovery commands can rewrite metadata, so distinguish a damaged backup header from a wrong disk selection and preserve an image before repair.
+
 Same letters as `fdisk`. Additionally: `r` (recovery menu), `x` (expert menu).
 
 ```bash
@@ -574,6 +610,8 @@ sgdisk -n 1:0:+512M -t 1:ef00 -c 1:"EFI" /dev/sda
 ```
 
 #### `parted` — script-friendly, supports both
+
+`parted` supports GPT/MBR and scripted creation/resizing of partition boundaries. Unlike some interactive tools, many operations take effect immediately rather than waiting for a final write command. Its `resizepart` changes only the partition boundary, not the contained filesystem; grow/shrink layers in the safe order for that filesystem.
 
 ```
 parted [-s] [-a ALIGN] DEVICE COMMAND [ARGS]
@@ -594,7 +632,7 @@ parted /dev/sda set 1 esp on
 
 **Exercises**
 - *Exercise 1:* Using `parted` non-interactively, build a GPT layout on `/dev/sdX`: 512 MB ESP, 1 GB `/boot`, rest as LVM.
-- *Exercise 2:* On an MBR disk, convert it to GPT using `sgdisk -g /dev/sdX`. Verify the conversion preserved partitions.
+- *Exercise 2:* On a disposable VM disk or loop-backed image (never the host disk), back up the partition table, convert an MBR test image to GPT, verify it, and practise restoring the backup. Note: `sgdisk -g` randomizes a disk GUID; it is not the MBR-to-GPT conversion command.
 
 **Mock Exam Questions**
 
@@ -632,6 +670,8 @@ parted /dev/sda set 1 esp on
 
 #### `mkfs` family
 
+`mkfs` dispatches to a filesystem-specific formatter and writes new filesystem metadata onto a block device. It is destructive to prior contents and is not the command for making a mount point directory. Confirm the exact unused device, signatures, stack layers and desired filesystem/features before running it, then verify with `blkid` and a controlled mount.
+
 ```
 mkfs.<TYPE> [OPTIONS] DEVICE
 ```
@@ -653,6 +693,8 @@ Useful ext flags:
 
 #### `tune2fs` — change ext2/3/4 parameters
 
+`tune2fs` queries or changes persistent ext-family superblock settings such as label, reserved-block percentage and check policy. `-l` is query-only; other options can materially change recovery/capacity behavior. It is not a general tool for XFS/Btrfs and it does not replace `e2fsck`.
+
 ```bash
 tune2fs -l /dev/sda1                  # print all superblock info
 tune2fs -L newlabel /dev/sda1
@@ -664,6 +706,8 @@ tune2fs -O ^has_journal /dev/sda1     # remove journal (turns ext4 → ext2)
 ```
 
 #### `xfs_info`, `xfs_growfs`, `xfs_repair`
+
+These serve distinct XFS tasks: `xfs_info` reports geometry/features, `xfs_growfs` expands a mounted filesystem after its underlying device grows, and `xfs_repair` checks/repairs an unmounted filesystem. XFS cannot shrink. Never use `xfs_repair -L` casually—it discards a corrupt log and can lose recent metadata changes.
 
 ```bash
 xfs_info /mnt/data
@@ -765,7 +809,7 @@ At the GRUB menu press `e`. Edit the `linux` line, change `ro` to `rw`, and appe
 - Setting `GRUB_DEFAULT=saved` without `GRUB_SAVEDEFAULT=true` and using `grub-set-default`.
 
 **Exercises**
-- *Exercise 1:* Add `mitigations=off` to your kernel command line persistently.
+- *Exercise 1:* In a disposable VM, add a harmless parameter such as `systemd.show_status=1` for one boot, inspect `/proc/cmdline`, then remove it. Do not disable CPU vulnerability mitigations on a real system merely as an exercise.
 - *Exercise 2:* Boot once into rescue without modifying any config file.
 
 **Mock Exam Questions**
@@ -923,6 +967,8 @@ priority=10
 
 #### `dpkg`
 
+`dpkg` is the low-level Debian package database/archive tool. It installs a local `.deb` and queries exact package/file ownership, but it does not resolve/download dependency graphs like APT. Use it for local inspection and repair diagnosis; if `dpkg -i` leaves dependencies unconfigured, let APT resolve them rather than repeatedly forcing state.
+
 ```bash
 dpkg -i package.deb              # install
 dpkg -r package                  # remove (keep configs)
@@ -943,6 +989,8 @@ dpkg-reconfigure tzdata          # rerun configuration
 So `ii` = installed cleanly; `rc` = removed but configs remain; `iU` = unpacked, needs configure.
 
 #### `apt` / `apt-get` / `apt-cache`
+
+APT resolves dependencies and retrieves packages from configured repositories above `dpkg`. `apt` is a friendly interactive interface; `apt-get`/`apt-cache` have more stable scripting traditions. `update` refreshes repository metadata but installs no upgrades; `upgrade` changes installed packages based on that metadata. Review removals/new dependencies before accepting high-impact transactions and use `apt-cache policy` to understand candidate versions.
 
 ```bash
 apt update                       # refresh package lists
@@ -996,7 +1044,7 @@ Pin: release a=bookworm-backports
 Pin-Priority: 100
 ```
 
-Priority < 100 = never; 100–500 = lower than default; 500 = default; 1000+ = always (even downgrade).
+APT selects the highest-priority available version, then applies version rules. A priority **below 0** prevents installation; `1–99` normally installs only when no version is installed; `100` is commonly the priority of the installed version/backports example; `500` is typical for an unconfigured repository; `990` is typical for the target release; and values above `1000` may permit a downgrade. Verify the real decision with `apt-cache policy PACKAGE`—do not memorize the ranges as a complete selection algorithm.
 
 **Common Mistakes**
 - `dpkg -r` leaves configs; users mistake it for full removal. Use `dpkg -P` (or `apt purge`).
@@ -1057,11 +1105,13 @@ flatpak update
 
 ## Chapter 3: GNU/Linux Commands — Complete Reference
 
-This chapter is the heart of LPIC-1. Memorize syntax and flags.
+This chapter is the heart of LPIC-1. Do not memorize flags in isolation. For each utility, know the problem it solves, what it reads, whether it changes state, what its exit status means, and which independent command verifies the result. Examples without `sudo` are normally queries or user-owned-file operations; destructive storage, account, process, and system configuration examples belong in a disposable lab.
 
 ### 3.1 Navigation & File Management
 
 #### `ls` — list directory contents
+
+`ls` asks the filesystem for directory entries and selected metadata. Use it for a quick human inventory, not as a reliable parser input: quoting, locale-dependent sorting, color escapes, newlines in filenames, aliases, and changing default formats make `ls` output fragile in scripts. For automation prefer globs, `find -print0`, or a command's machine-readable format.
 
 ```
 ls [OPTIONS] [PATH...]
@@ -1100,6 +1150,8 @@ Type letter: `-`=file, `d`=dir, `l`=symlink, `c`=char dev, `b`=block dev, `p`=fi
 
 #### `cd`, `pwd`
 
+`cd` is a shell builtin because it must change the working directory of the current shell; an external child process could not change its parent's directory. `pwd` reports that context. Logical mode preserves the path the user traversed (including symlink components), while physical mode resolves the kernel-visible directory path. This distinction matters when scripts compare paths or when `..` through a symlink is surprising.
+
 ```bash
 cd                # home
 cd ~              # home
@@ -1111,6 +1163,8 @@ pwd -P            # physical path (resolves symlinks)
 
 #### `mkdir`, `rmdir`
 
+`mkdir` creates directory entries; `-p` makes missing parents and makes an already-existing directory nonfatal, which is useful for repeatable setup. The requested mode is still filtered by the process umask unless adjusted afterward. `rmdir` intentionally removes only empty directories, so it is safer than recursive `rm` when emptiness is a required precondition.
+
 ```bash
 mkdir -p a/b/c              # create parents
 mkdir -m 700 secret         # specific perms at creation
@@ -1118,6 +1172,8 @@ rmdir empty                 # only succeeds if empty
 ```
 
 #### `rm`, `cp`, `mv`, `touch`
+
+These commands mutate directory entries and metadata. `rm` unlinks names (data survives while another hard link or open descriptor exists); `cp` creates a new destination object/data; `mv` renames atomically when source and destination are on the same filesystem but becomes copy-then-remove across filesystems; `touch` creates an empty file if absent or updates timestamps if present. Choose options according to the metadata contract—ordinary content copy, archival preservation, no-overwrite, or timestamp update are different intents.
 
 ```
 rm [-rfiv] FILE...
@@ -1144,6 +1200,8 @@ touch -m file                     # change mtime only
 **WARNING:** `rm -rf /` is catastrophic. Modern GNU coreutils refuses unless `--no-preserve-root`. Never run a command involving a variable like `rm -rf $DIR/` without confirming `$DIR` is non-empty.
 
 #### `find` — search by criteria
+
+`find` performs a live recursive walk starting at one or more paths, evaluates an expression for each entry, and optionally performs actions. Put narrowing tests before destructive actions for readability, quote glob patterns so the shell does not expand them early, and inspect with `-print` before replacing it with `-delete` or `-exec`. The overall expression is logic: implicit `-and` binds more tightly than `-or`, so use escaped parentheses for mixed conditions.
 
 ```
 find [PATH...] [EXPRESSION]
@@ -1269,6 +1327,8 @@ Format specifiers: `%n` name, `%s` size, `%a` perm octal, `%A` perm symbolic, `%
 
 #### `cat`, `tac`
 
+`cat` concatenates files in order and writes the bytes to stdout; with one file it is a simple way to feed a pipeline, not a general viewer for huge/binary files. `tac` reverses record order (normally lines). Neither edits the source. For interactive reading use `less`; for preserving binary bytes avoid options that number or decorate output.
+
 ```bash
 cat file               # whole file to stdout
 cat -n file            # number every line
@@ -1284,6 +1344,8 @@ tac file               # reverse line order
 **TRAP:** "Useless use of cat" (`cat file | grep x` vs `grep x file`) doesn't fail the exam but is ugly. Sometimes `cat` is used purely for argument order convenience.
 
 #### `head`, `tail`
+
+`head` selects the beginning of a stream and `tail` selects the end. They are useful for sampling a large file without loading it into an editor. `tail -f` follows a file descriptor while `tail -F` also retries by filename after log rotation, so `-F` is usually better for long-running log observation. Following output is observation, not proof that every event was persisted or processed.
 
 ```bash
 head file                  # first 10 lines
@@ -1323,6 +1385,8 @@ less -S file                       # don't wrap; chop long lines
 
 #### `wc`
 
+`wc` counts stream properties. Lines are newline characters rather than visual records, so a final unterminated line affects `-l`; bytes (`-c`) and locale-aware characters (`-m`) differ for multibyte encodings. Use exit status and filenames carefully when aggregating multiple inputs because a total row is added.
+
 ```
 wc [-clwLm] FILE...
 ```
@@ -1347,6 +1411,8 @@ find . -type f -print0 | xargs -0 wc -l
 
 #### `sort`
 
+`sort` orders complete input lines according to keys, type and locale. It reads all required data (using temporary files for large inputs) and writes a new stream; it does not edit the source file unless redirected safely. Choose ordinary lexical order for text, `-n` for numbers, `-h` for displayed units, and `-V` for embedded version numbers. Set `LC_ALL=C` when scripts need deterministic byte-oriented ordering across machines.
+
 ```bash
 sort file                  # alphabetical
 sort -n file               # numeric
@@ -1364,7 +1430,7 @@ sort -M file               # month names
 
 #### `uniq`
 
-`uniq` operates on **adjacent** duplicate lines only. Almost always paired with `sort` first.
+`uniq` collapses or selects **adjacent** equal lines; it does not search the whole file for repeated values. Pair it with `sort` when order may change, or use an `awk` set when original order must be retained. Counts produced by `uniq -c` are commonly sorted numerically afterward to find the most frequent values.
 
 ```bash
 sort file | uniq                # unique lines
@@ -1376,6 +1442,8 @@ sort file | uniq -i             # case-insensitive
 
 #### `cut`
 
+`cut` extracts fixed character/byte positions or delimiter-separated fields from every line. It does not understand quoted CSV, repeated semantic whitespace, or nested formats. Use it for simple stable records such as `/etc/passwd`; use `awk`, a CSV parser, JSON tooling, or the producing program's structured output when the format is richer.
+
 ```bash
 cut -c 1-5 file                 # chars 1-5 of every line
 cut -c 1,3,5 file               # specific chars
@@ -1386,7 +1454,7 @@ cut -d: --complement -f 2 file  # all fields except 2
 
 #### `paste`
 
-Combine lines side by side.
+`paste` combines corresponding lines from input files into columns. It is useful for simple positional data where line 1 in each file belongs together; it is not a relational match. If one file ends early, empty fields are emitted. `-s` serializes each file's lines into one line.
 
 ```bash
 paste a.txt b.txt               # tab-separated columns
@@ -1397,7 +1465,7 @@ paste -d: - - < file            # group every two lines
 
 #### `join`
 
-Relational join on a common field (both files must be **sorted** on that field).
+`join` performs a small relational equality join on a selected text field. Both inputs must be sorted using a compatible collation and the same join key, or matches can be lost/reported out of order. Use `-a` for unmatched rows and `-o` to control output; for quoted CSV or complex keys use a format-aware tool.
 
 ```bash
 sort -k1 users.txt > u
@@ -1414,6 +1482,8 @@ join -a 1 a b                    # left outer join
 
 #### `tr` — translate or delete characters
 
+`tr` transforms a stream character-by-character: it has no filename operand and therefore reads stdin and writes stdout. It is ideal for case conversion, deleting a known character, or squeezing runs; it cannot perform multi-character regular-expression substitutions. Locale affects character classes, so use `LC_ALL=C` when byte-level behavior is intended.
+
 ```bash
 echo hello | tr a-z A-Z              # HELLO
 echo "a-b-c" | tr '-' ' '            # a b c
@@ -1426,7 +1496,7 @@ POSIX classes: `[:alpha:]`, `[:digit:]`, `[:alnum:]`, `[:lower:]`, `[:upper:]`, 
 
 #### `expand` / `unexpand`
 
-Convert tabs ↔ spaces.
+These convert tab characters to equivalent spaces or suitable spaces back to tabs according to tab stops. They change representation, not visual intent in every font/editor. Use them when a downstream format or style policy requires consistent indentation; do not run `unexpand -a` blindly on data where interior spaces are significant.
 
 ```bash
 expand file                # tabs → spaces (default tab=8)
@@ -1436,6 +1506,8 @@ unexpand --first-only file # only leading spaces
 ```
 
 #### `od` and `xxd` — view binary
+
+`od` and `xxd` render bytes in human-readable numeric/character forms, which helps diagnose encoding, line endings, file signatures, and corruption invisible in a text editor. `xxd -r` reverses a compatible dump and therefore writes real binary data; verify offsets/content before using it as an editing mechanism.
 
 ```bash
 od -c file               # character (escaped) view
@@ -1448,6 +1520,10 @@ xxd -r hexdump.txt > file # reverse: turn dump back into binary
 ---
 
 ### 3.5 grep (BRE, ERE, PCRE)
+
+`grep` selects input lines that match a pattern and writes those lines (or requested metadata) to stdout. Use `-F` when the search term is literal, `-E` when alternation/grouping/repetition is needed, and default BRE when the objective specifically tests it. Exit status is part of the interface: `0` means at least one match, `1` means no match, and `2` (or greater in some implementations) indicates an error. Therefore “no match” is often a normal branch in scripts.
+
+Recursive grep combines filesystem traversal with matching, but structured logs/data should be queried through their native tools when possible. Quote patterns so the shell does not expand `$`, `*`, brackets, or backslashes. `-q` is ideal for a condition because it suppresses output; `-l` answers which files matched rather than which lines.
 
 ```
 grep [OPTIONS] PATTERN [FILE...]
@@ -1547,6 +1623,10 @@ grep -lFr 'literal string' .
 
 ### 3.6 sed — Stream Editor
 
+`sed` applies a small editing program to each input line and normally prints the resulting pattern space. Without `-i`, it is a stream transformer and leaves input files untouched, which makes previewing and pipelines safe. With `-n`, default output is suppressed and commands such as `p` explicitly select output. With `-i`, it becomes a file mutation: create a backup, test the expression without `-i`, and remember GNU/BSD syntax differs.
+
+Choose `sed` for line-oriented substitutions/deletions and simple stateful transformations; use `awk` when fields, arithmetic, aggregation, or richer logic dominate. A successful `sed` exit status does not prove the pattern matched—verify the changed content separately.
+
 ```
 sed [OPTIONS] 'COMMANDS' [FILE...]
 ```
@@ -1627,6 +1707,10 @@ sed -E 's/(.*)\s+(.*)/\2 \1/' file  # swap two columns
 ---
 
 ### 3.7 awk — Pattern-Action Language
+
+`awk` reads records (normally lines), splits them into fields, evaluates pattern/action rules, and can aggregate state across the file. It is appropriate when the question is about columns, numeric calculations, counts, or reports rather than simple substring replacement. `BEGIN` initializes before input, ordinary rules run per record, and `END` emits final aggregates.
+
+`-F` defines input splitting; `OFS` controls output separation. Avoid using the default whitespace field model for quoted CSV/JSON. Pass shell values with `-v` rather than constructing an awk program through unsafe string interpolation, and set locale deliberately for numeric/text comparisons in scripts.
 
 ```
 awk [OPTIONS] 'PATTERN { ACTION } ...' [FILE...]
@@ -1714,6 +1798,8 @@ awk -v threshold=100 '$3 > threshold' file
 
 #### `diff`
 
+`diff` compares two files or trees and describes how the first differs from the second. It is query-only: exit status `0` means identical, `1` means differences were found, and values greater than `1` mean an error. This is why `diff` returning `1` is useful information rather than a command failure in comparison scripts. Unified format is preferred for review and `patch` interoperability.
+
 ```bash
 diff a.txt b.txt                # default normal diff
 diff -u a.txt b.txt             # unified (most readable)
@@ -1732,6 +1818,8 @@ Diff output legend:
 - Unified: `@@ -L,K +L,K @@` lines; `-` line removed, `+` added.
 
 #### `patch`
+
+`patch` applies a change description to a working tree. Unlike `diff`, it mutates files and may create backup/reject files. Always inspect the patch source, run `--dry-run`, confirm the path-stripping level, and apply inside version control or a restorable copy. A successful textual application does not prove the changed program builds or behaves correctly.
 
 Applies a diff.
 
@@ -1762,6 +1850,8 @@ comm -23 a.s b.s        # only in a (difference)
 ### 3.9 Archiving and Compression
 
 #### `tar`
+
+`tar` serializes a set of files and metadata into one archive stream; compression is an optional outer transformation. Use it when directory structure, symlinks, modes, and timestamps need to travel together. An archive is not automatically a backup: test listing and restoration, preserve ACLs/xattrs when required, record numeric ownership for disaster recovery, and inspect untrusted paths before extracting as root because absolute paths or `..` components can be dangerous.
 
 ```
 tar [MODE] [OPTIONS] [-f ARCHIVE] [FILE...]
@@ -1815,6 +1905,8 @@ tar --strip-components=1 -xzvf pkg-1.2.3.tar.gz -C /usr/src/pkg
 
 #### `gzip`, `bzip2`, `xz`
 
+These are single-stream compression formats, not multi-file archive formats. Compress a directory by archiving it with `tar` first. gzip usually favors speed/compatibility, xz favors compression ratio at greater CPU/memory cost, and bzip2 is common in older workflows. The ordinary commands replace the input unless `-k` is used; the `*cat` variants decompress to stdout for pipelines without creating an intermediate file.
+
 ```bash
 gzip file                # creates file.gz, removes file
 gzip -k file             # keep original
@@ -1836,6 +1928,8 @@ xzcat file.xz
 
 #### `zip` / `unzip`
 
+ZIP combines archiving and per-entry compression and is widely interoperable with non-Unix systems. Traditional ZIP does not preserve every Unix metadata feature consistently, and `zip -e` uses legacy password-based encryption unsuitable for strong security requirements. List untrusted archives and extract into an isolated directory before moving reviewed files into place.
+
 ```bash
 zip -r out.zip dir/
 zip -e out.zip secret.txt           # encrypted (prompts for password)
@@ -1847,7 +1941,7 @@ unzip -p out.zip file.txt           # to stdout
 
 #### `cpio`
 
-Older archive tool, still appears on exam.
+`cpio` copies a list of pathnames into/out of an archive or between directory trees. Unlike `tar`, archive creation normally receives its file list on stdin, so it composes with `find`. It remains relevant to initramfs and legacy backup workflows. Use NUL-delimited modes where supported for arbitrary filenames and inspect archives before privileged extraction.
 
 ```bash
 find . -name '*.c' -print | cpio -ov > src.cpio       # create
@@ -1859,7 +1953,7 @@ Modes: `-o` (copy-out, create), `-i` (copy-in, extract), `-p` (pass-through). Fl
 
 #### `dd`
 
-Low-level block copy. Powerful and dangerous.
+`dd` copies byte blocks from one file/device stream to another without understanding partitions or filesystems. Use it for exact images, controlled regions, and device initialization—not for ordinary file copies where `cp`/`rsync` provide safer semantics. Input and output direction is easy to reverse, and success only proves bytes were copied, not that the source was consistent or the restored filesystem is healthy.
 
 ```bash
 dd if=/dev/sda of=disk.img bs=4M status=progress
@@ -1929,7 +2023,7 @@ cmd 2>&1 | grep ERROR         # filter on both streams
 
 #### `tee`
 
-Reads stdin, writes to stdout *and* one or more files.
+`tee` reads stdin and duplicates it to stdout and one or more files. Use it when a pipeline must continue while you also retain or display the same data. Shell redirection is established by the current shell before `sudo` runs, so `command | sudo tee /root-owned/file` is the correct pattern when the write itself requires privilege. By default it truncates; `-a` appends.
 
 ```bash
 cmd | tee out.log
@@ -1940,7 +2034,7 @@ ls | sudo tee /etc/somefile        # write through sudo
 
 #### `xargs`
 
-Convert stdin into command-line arguments.
+`xargs` collects items from stdin and constructs one or more command invocations, staying under the system argument-length limit. It is useful when a program accepts path arguments but not stdin. Newlines and whitespace are unsafe delimiters for arbitrary filenames; pair `find -print0` with `xargs -0`, or prefer `find -exec ... {} +`. Parallel `-P` changes ordering and can make unsafe commands race, so use it only for independent work.
 
 ```bash
 find . -name '*.log' | xargs rm                 # may break on spaces
@@ -2011,7 +2105,7 @@ realpath file
 
 #### `ps`
 
-Two argument styles: BSD (no dash, like `aux`) and UNIX (dash, like `-ef`).
+`ps` takes a snapshot of processes visible to the caller. It does not continuously monitor, and the process may change or exit immediately after the snapshot. Use explicit `-o` columns in scripts and diagnosis. Two historical option styles coexist—BSD (no dash, like `aux`) and UNIX (dash, like `-ef`)—and mixing styles can change selection/default columns.
 
 ```bash
 ps                          # processes in current shell
@@ -2029,6 +2123,8 @@ ps -eo pid,ppid,cmd,stat
 
 #### `top`, `htop`, `pstree`
 
+`top`/`htop` repeatedly sample process and system counters to find current CPU/memory pressure; `pstree` shows ancestry rather than resource consumption. A high instantaneous percentage is not automatically a fault—observe duration, load, I/O wait, memory/swap and workload expectations. Batch mode makes one or more `top` snapshots usable in evidence collection.
+
 ```bash
 top                  # interactive: q quit, M sort by mem, P sort by cpu, k kill, r renice, 1 per-CPU
 top -b -n 1          # batch mode (scripting)
@@ -2038,6 +2134,8 @@ pstree -aps 1234     # ancestor chain for PID 1234
 ```
 
 #### Killing processes
+
+`kill` sends a signal to a PID; it does not inherently “kill.” Signals request actions such as terminate, reload, stop, continue, or dump core. Use `pgrep` to verify selection, send `SIGTERM` for orderly cleanup, wait and inspect logs/state, and reserve `SIGKILL` for a process that cannot respond. Name/pattern tools can match more processes than intended, especially with `-f`.
 
 ```
 kill [-SIG] PID
@@ -2072,7 +2170,7 @@ pgrep -u www-data -lf
 
 #### Priorities — `nice`, `renice`
 
-Linux nice values range −20 (highest priority) to +19 (lowest). Default is 0. Non-root users can only *raise* nice (lower priority).
+Niceness biases the CPU scheduler among competing runnable tasks; it is not a CPU limit and cannot solve disk or memory contention. Linux nice values range −20 (more favorable CPU priority) to +19 (less favorable). Default is 0. Ordinary users can normally make their own work less favorable but require privilege to increase scheduling priority. Verify the result with `ps` and measure whether CPU contention actually exists.
 
 ```bash
 nice -n 10 long_job          # start at niceness 10
@@ -2083,6 +2181,8 @@ ps -eo pid,ni,comm           # see niceness column
 ```
 
 #### Background, foreground, jobs
+
+Job control is maintained by an interactive shell and refers to pipelines started from that shell, not every process on the host. `&`, `fg`, `bg`, and `%job` manipulate shell jobs; `Ctrl+Z` sends a terminal stop signal. `nohup` changes hangup handling and redirection, while `disown` changes the shell's job table/HUP behavior—neither turns a program into a supervised service. Use systemd or another supervisor for persistent production work.
 
 ```bash
 long_cmd &              # background
@@ -2124,55 +2224,90 @@ ls -l /proc/1234/fd
 
 #### `df`
 
+`df` means **disk free**. It asks each mounted filesystem for its allocation counters and reports how much filesystem space is available. Use it when the question is “which mounted filesystem is full?” rather than “which directory contains the data?” Its unit of accounting is the filesystem, so every path on the same filesystem normally produces the same row.
+
+The important columns are `Size`, `Used`, `Avail`, `Use%`, and `Mounted on`. `Avail` may be smaller than `Size - Used` because ext filesystems can reserve blocks for root and because filesystem metadata consumes space. A filesystem can fail writes either because data blocks are exhausted (`df -h`) or because all inodes are used (`df -i`), even when the other resource remains available.
+
 ```bash
-df                  # all mounts
-df -h               # human readable
-df -i               # inode usage
-df -T               # also FS type
-df --total          # add total row
-df -h /var
-df --exclude-type=tmpfs -h
+df                              # report allocation for all mounted filesystems
+df -h                           # scale block values as KiB/MiB/GiB for human reading
+df -i                           # report inode counts instead of data-block capacity
+df -T                           # include filesystem type, useful before choosing FS-specific tools
+df --total                      # add an aggregate row; useful for a quick capacity overview
+df -h /var                      # identify and report the filesystem that contains /var
+df --exclude-type=tmpfs -h      # hide memory-backed tmpfs entries from a storage report
 ```
+
+**How to choose:** use `df -h` for ordinary capacity incidents; add `-T` when behavior depends on ext4/XFS/Btrfs/NFS; use `df -i` when applications report “No space left on device” although block usage is low. `df` cannot identify the large directory—follow it with `du` or filesystem-specific tooling.
+
+**Common diagnostic mismatch:** after deleting a large log, `du` may no longer see it while `df` still shows its blocks in use. A running process can retain an open file descriptor to an unlinked file. Find such files with `lsof +L1`, verify the owning service, then rotate/reload/restart it safely; do not reboot blindly.
 
 #### `du`
 
+`du` means **disk usage**. It walks directory entries, calls filesystem metadata operations, and totals blocks attributed to the files it can reach. Use it to answer “where inside this tree is space being consumed?” Unlike `df`, it can be slow and I/O-intensive on a large tree and its result is limited by permissions and by files visible in the namespace.
+
+By default `du` reports allocated blocks, so sparse files can appear smaller than their logical length. `--apparent-size` instead totals logical file lengths. Hard-linked data is normally counted once during one traversal; snapshots, reflinks, compression, filesystem metadata, deleted-open files, and reserved blocks can make `du` and `df` legitimately disagree.
+
 ```bash
-du -sh /var         # summary, human
-du -h --max-depth=1 /var
-du -ch *.log        # show grand total
-du -x /             # don't cross mount points
-du --apparent-size  # file size not block usage
-sort -h
+du -sh /var                     # one human-readable total for the complete /var tree
+du -h --max-depth=1 /var        # totals for immediate children: locate the largest branch
+du -ch /var/log/*.log           # show each matching log and a final grand total
+du -xhd1 /                      # inspect root's first level without entering other filesystems
+du -sh --apparent-size FILE     # report logical length rather than allocated disk blocks
+du -ahx /var | sort -h | tail   # rank reachable files/directories by allocated size
 ```
+
+`-s` suppresses per-child output and prints only a summary; `-h` changes display units; `-x` keeps the scan on one filesystem, which avoids traversing `/proc`, NFS, separate home volumes, and bind-mounted trees. `sort -h` is a separate command: it understands human units, so `900M` is ordered before `2G`. For automation, prefer stable byte units such as `du -B1` rather than parsing localized human output.
 
 #### `mount`, `umount`
 
+A filesystem is not accessed merely because its block device exists. `mount` attaches a filesystem's root to a directory in the current **mount namespace**, making its tree reachable through that mount point. It changes runtime kernel state; without an `/etc/fstab` entry or a generated systemd mount unit, the attachment normally disappears at reboot.
+
+Before mounting, identify the device and filesystem with `lsblk -f`/`blkid`, create an empty mount point, and check whether it is already mounted with `findmnt`. Mounting over a non-empty directory temporarily hides the directory's original contents until unmount; it does not delete them.
+
 ```bash
-mount                                   # show all mounts
-mount /dev/sdb1 /mnt
+mount                                   # compatibility listing; prefer findmnt for clear output
+mount /dev/sdb1 /mnt                    # attach the detected filesystem at /mnt
 mount -t ext4 -o defaults,noatime /dev/sdb1 /mnt
-mount -o remount,rw /
-mount -o remount,ro /
-mount -o loop ubuntu.iso /mnt/iso       # loopback
-mount --bind /src /dst
-mount -a                                # mount everything in fstab
-umount /mnt
-umount -l /mnt                          # lazy: detach immediately
-umount -f /mnt                          # force (NFS)
+                                         # require ext4 and suppress ordinary access-time updates
+mount -o remount,rw /                   # change options on an existing root mount to read-write
+mount -o remount,ro /                   # request read-only mode, often before repair/recovery
+mount -o loop,ro ubuntu.iso /mnt/iso    # expose an image through a loop device without modifying it
+mount --bind /src /dst                  # expose the same existing subtree at a second path
+mount -a                                # apply eligible fstab entries; used to test fstab before reboot
+umount /mnt                             # detach cleanly after all users release the mount
+umount -l /mnt                          # detach namespace now; clean references later (last resort)
+umount -f /mnt                          # force selected network filesystems such as unreachable NFS
 ```
+
+`-t` declares/limits the filesystem type; modern `mount` can usually detect it, but explicit type helps reject a wrong assumption. `-o` supplies comma-separated policy. `defaults` is a conventional baseline (`rw,suid,dev,exec,auto,nouser,async`), not a universal security recommendation. `noatime` reduces metadata writes; `ro` blocks ordinary writes; `nosuid`, `nodev`, and `noexec` reduce particular attack surfaces but do not form a complete sandbox.
+
+Normal `umount` fails with “target is busy” to protect active working directories, open files, mapped executables, and nested mounts. Diagnose first:
+
+```bash
+findmnt -R /mnt                 # see the mount and any child mounts
+fuser -vm /mnt                 # processes using paths on the filesystem
+lsof +f -- /mnt                # open files where supported; may be expensive
+```
+
+Leave the directory in every shell, stop or reconfigure the relevant process, unmount children, then retry. Lazy unmount is useful for a broken namespace or unreachable service but can hide continued resource use. Forced unmount is mainly a network-filesystem recovery tool and can lose pending work; it is not the normal solution to a busy local disk.
 
 #### `/etc/fstab`
 
-Six fields:
+`/etc/fstab` is the administrator's persistent declaration of filesystems, swap areas, and their intended mount points/options. At boot, generators and mount tooling translate these declarations into runtime mounts. `mount DEVICE_OR_POINT` can also look up the missing arguments here. Because an invalid root or required-data entry can disrupt boot, edit carefully and validate before rebooting.
+
+Each non-comment entry has six whitespace-separated fields:
 
 ```
 <device>  <mountpoint>  <type>  <options>  <dump>  <fsck-pass>
 ```
 
-- `<device>` — `/dev/...`, `UUID=...`, `LABEL=...`, `PARTUUID=...`, NFS like `host:/path`
-- `<options>` — comma-separated: `defaults`, `ro`, `rw`, `noatime`, `nodiratime`, `relatime`, `noexec`, `nosuid`, `nodev`, `user`, `users`, `noauto`, `auto`, `_netdev`, `discard`
-- `<dump>` — backup flag for `dump(8)`; usually 0
-- `<fsck-pass>` — order of fsck at boot; 1 for `/`, 2 for other, 0 to skip
+- **Device/source:** `/dev/...`, `UUID=...`, `LABEL=...`, `PARTUUID=...`, a pseudo-filesystem name, or a remote source such as `host:/path`. Prefer UUID/PARTUUID for disks because `/dev/sdX` names can change with discovery order. Labels are readable but must be kept unique.
+- **Mount point:** directory where the tree appears. Use `none` for swap. Spaces and some special characters require fstab escaping such as `\040`; shell quoting is not the fstab grammar.
+- **Type:** `ext4`, `xfs`, `vfat`, `swap`, `nfs`, `cifs`, `auto`, and so on. It determines the helper and valid options.
+- **Options:** comma-separated mount and policy settings. `auto`/`noauto` controls automatic mounting; `user` permits one ordinary user to mount and that user to unmount, whereas `users` permits any user to unmount; `_netdev` tells boot logic that network availability is required. `discard` issues ongoing discard where supported, but periodic `fstrim` is often preferred to reduce continuous overhead.
+- **Dump:** historical `dump(8)` selection flag, normally `0` on modern systems.
+- **fsck pass:** `1` for the root filesystem, `2` for other boot-checked local filesystems, and `0` to skip. Filesystem support matters: XFS repair is not orchestrated like ext `fsck`.
 
 Example:
 ```
@@ -2182,36 +2317,64 @@ LABEL=swap   none       swap   sw                                  0 0
 tmpfs        /tmp       tmpfs  defaults,nosuid,nodev,size=2G       0 0
 ```
 
-#### `findmnt`, `lsblk`, `blkid`
+Interpretation: the root entry is checked first and can remount read-only after ext4 errors; `/home` is checked after root; swap is activated rather than mounted; tmpfs stores `/tmp` in memory/swap with a 2 GiB ceiling and disables device/SUID interpretation.
+
+Validate changes without waiting for a reboot:
 
 ```bash
-findmnt                          # tree of mounts
-findmnt /home
-findmnt -t ext4
-lsblk                            # devices and partitions tree
-lsblk -f                         # also UUIDs/labels/FS
-lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT
-blkid                            # all block devs with UUID and TYPE
-blkid /dev/sda1
-blkid -L mylabel                 # find device by label
-blkid -U <UUID>
+findmnt --verify --verbose       # parse fstab and report semantic inconsistencies
+mount -av                       # attempt all eligible entries and show what happens
+findmnt --fstab                 # display the declared configuration
+systemctl daemon-reload         # refresh generated mount units after fstab edits on systemd
 ```
+
+Keep an existing root/console session open while testing remote or authentication-dependent mounts. `nofail` lets boot continue if a nonessential mount fails; use it only when that operational behavior is intended.
+
+#### `findmnt`, `lsblk`, `blkid`
+
+These tools answer different layers of the same storage question:
+
+- `lsblk` shows the **block-device topology** obtained mainly from sysfs/udev: disks, partitions, device-mapper layers and their relationships.
+- `blkid` probes or reads cached **on-device signatures** such as filesystem type, UUID and label.
+- `findmnt` shows the **currently mounted namespace** and can compare it with fstab declarations.
+
+Use all three during diagnosis: `lsblk` finds the device and layering, `blkid` confirms the identity stored on it, and `findmnt` proves where and with which options it is actually attached.
+
+```bash
+findmnt                          # tree of runtime mounts and their parent relationships
+findmnt --target /home           # filesystem containing /home, even if /home is not a mount point
+findmnt --mountpoint /home       # succeed only if /home itself is a mount point
+findmnt -t ext4 -o SOURCE,TARGET,OPTIONS
+lsblk -f                         # topology plus filesystem label, UUID and mount points
+lsblk -o NAME,TYPE,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINTS
+blkid /dev/sda1                  # probe one device's persistent signatures
+blkid -L mylabel                 # resolve a filesystem label to a device
+blkid -U UUID                    # resolve an exact UUID to a device
+```
+
+`lsblk` output is not a guarantee that a device is safe to format: mounted children, swap, RAID, LVM, multipath, containers, or another namespace may use it. Combine `lsblk`, `findmnt`, `swapon --show`, `pvs`, `mdadm`, and process/container context before destructive work. In scripts, request explicit columns and machine formats (`--json`, `--pairs`, or `--raw`) because default columns can change.
 
 #### fsck family
 
+`fsck` is a front end that selects a filesystem-specific checker (`fsck.ext4`/`e2fsck`, etc.). It verifies and, when requested, repairs **filesystem metadata consistency**; it does not test the physical health of a disk and it is not a file-recovery or backup tool. Use SMART/NVMe health tools for hardware evidence and restore from backup when data is lost.
+
 ```bash
-fsck /dev/sdb1                  # auto-pick fs type
-fsck -n /dev/sdb1               # answer "no" to all — read only
-fsck -y /dev/sdb1               # "yes" to all
-fsck -A                         # all in /etc/fstab
-fsck -t ext4 -- -f /dev/sdb1    # force even if clean
-e2fsck -p /dev/sdb1             # auto, only safe fixes
-e2fsck -f /dev/sdb1             # force
-dumpe2fs /dev/sda1 | head -40
-tune2fs -l /dev/sda1
+fsck /dev/sdb1                  # inspect signature/type and invoke the appropriate checker
+fsck -n /dev/sdb1               # make no repairs; useful for an initial evidence-gathering pass
+fsck -y /dev/sdb1               # approve every proposed repair; risky without review/backup
+fsck -A                         # check eligible fstab filesystems according to configuration
+fsck -t ext4 /dev/sdb1 -- -f    # select the device/type; pass -f to its checker
+e2fsck -p /dev/sdb1             # automatically apply only repairs considered safe by e2fsck
+e2fsck -f /dev/sdb1             # force a complete ext-family check even when marked clean
+dumpe2fs -h /dev/sda1           # show ext superblock summary without dumping every block group
+tune2fs -l /dev/sda1            # list ext filesystem parameters; query-only with -l
 ```
 
-**WARNING:** Never `fsck` a mounted, writable filesystem — corruption can result. Unmount first or remount RO.
+The `--` in the front-end example ends `fsck`'s options; following arguments go to the filesystem-specific checker. Do not assume every filesystem uses the same checker: XFS normally uses `xfs_repair` while unmounted, Btrfs has its own check/scrub/recovery distinctions, and a simple `fsck` may intentionally do little for some journaled/network filesystems.
+
+**Safe repair workflow:** identify the exact device and filesystem; capture backups/SMART evidence if failure is suspected; stop writers and unmount it (or boot rescue media for root); run a no-change or preen pass; read the proposed damage; repair with the appropriate filesystem tool; mount read-only first if risk is high; inspect logs/data; then restore service. A read-only remount is safer than writable but an offline check is the normal rule because the live kernel can still hold changing state.
+
+**WARNING:** Never run a repairing `fsck` on a mounted, writable filesystem—concurrent kernel and checker changes can create corruption. Never copy `/dev/sdX` examples literally; confirm identity through persistent attributes and topology first.
 
 ---
 
@@ -2372,6 +2535,8 @@ chattr +a /var/log/audit.log     # only appends allowed
 
 #### `echo`, `printf`
 
+Both write text, but `printf` has a defined format language and consistent behavior across shells, making it the preferred tool for scripts and structured output. Treat the format string as trusted code: pass untrusted values through `%s` rather than using them as the format. `echo` is convenient interactively, but handling of `-n`, `-e`, and backslashes varies.
+
 ```bash
 echo hello                     # newline added
 echo -n hello                  # no newline
@@ -2384,6 +2549,8 @@ printf '%(%F %T)T\n' -1        # current date — bash builtin
 **TRAP:** `echo`'s `-e` interpretation is non-portable. POSIX-pure scripts should use `printf`.
 
 #### `read`
+
+`read` consumes one logical line from stdin into shell variables, so it is the normal building block for interactive prompts and file loops. Use `-r` unless backslash escaping is intentionally part of the input language; quote the receiving variable later; and remember that a pipeline may run a loop in a subshell, losing variable changes in the parent shell.
 
 ```bash
 read name                              # read one line into $name
@@ -2398,7 +2565,7 @@ while read -r line; do echo "$line"; done < file
 
 #### `test`, `[`, `[[`
 
-`test` is a builtin; `[` is its synonym (note the required space) and **must end with `]`**. `[[ ... ]]` is the bash-extended form with pattern matching, regex, and lazy logical operators.
+These commands convert a condition into an exit status, which `if`, `&&`, and `||` consume. `test` is a builtin; `[` is its synonym (note the required space) and **must end with `]`**. `[[ ... ]]` is the safer Bash-extended syntax with pattern matching, regex, and lazy logical operators, but it is not POSIX `sh`. Quote expansions in `[`; understand when the right side of `[[ == ]]` is a glob and `[[ =~ ]]` is a regex.
 
 | Operator | Meaning |
 |---|---|
@@ -2425,6 +2592,8 @@ while read -r line; do echo "$line"; done < file
 
 #### Command substitution
 
+Command substitution runs a command and replaces the expression with its stdout after removing trailing newlines. It does not capture stderr or the exit status automatically, and unquoted results undergo word splitting/globbing. Store the status immediately when failure matters and quote the expansion (`"$(command)"`) unless splitting is explicitly intended.
+
 ```bash
 date=$(date +%F)
 files=`ls`        # backticks: legacy, avoid nesting
@@ -2432,6 +2601,8 @@ echo "today is $(date)"
 ```
 
 #### Arithmetic
+
+Shell arithmetic evaluates integer expressions. In Bash, `(( expression ))` also returns success when the numeric result is nonzero, which makes `((i++))` surprising under `set -e` when the old value is zero. It is not floating-point arithmetic and values derived from untrusted text need validation before evaluation.
 
 ```bash
 echo $((1 + 2 * 3))
@@ -3444,6 +3615,8 @@ ip [OPTIONS] OBJECT COMMAND [ARGS]
 
 #### `ip link` — layer 2
 
+`ip link` queries or changes network-interface properties below IP addressing: administrative up/down state, MTU, MAC address, and virtual link types. “UP” means administratively enabled; it does not prove carrier, an IP address, a route, DNS, or application reachability. Use `ip -s link`, `ethtool`, and logs to separate link errors from higher-layer failures. Changes made with `ip` are runtime-only unless also declared in the system's persistent network manager.
+
 ```bash
 ip link                         # all interfaces
 ip -br link                     # brief
@@ -3459,6 +3632,8 @@ ip link add br0 type bridge
 
 #### `ip addr` — layer 3 addresses
 
+`ip addr` manages the kernel's address objects on interfaces. Adding an address also creates a connected route for its prefix; it does not create a default gateway or DNS configuration. `flush` can remove every matching address and disconnect the host, so filter carefully and keep console access when working remotely. IPv6 addresses may have tentative/deprecated states that affect usability.
+
 ```bash
 ip addr                         # all
 ip -4 addr                      # IPv4 only
@@ -3470,6 +3645,8 @@ ip addr flush dev eth0
 ```
 
 #### `ip route`
+
+The routing table tells the kernel which next hop and output interface to use for a destination. Longest prefix wins first; metric/preferences break relevant ties; policy rules may select a different table before lookup. `ip route get ADDRESS` is more diagnostic than merely listing routes because it asks the kernel to resolve a concrete path including source address. `replace` is useful for idempotent changes, whereas `add` fails if the route already exists.
 
 ```bash
 ip route                        # routing table
@@ -3485,6 +3662,8 @@ ip route flush table main
 
 #### `ip neigh` — ARP table
 
+The neighbor table maps on-link network addresses to link-layer addresses: ARP for IPv4 and Neighbor Discovery for IPv6. Entries have states such as `REACHABLE`, `STALE`, `DELAY`, `PROBE`, `FAILED`, or `INCOMPLETE`. An incomplete/failed entry points to a layer-2/VLAN/address-resolution problem, not DNS. Static entries bypass discovery and must be maintained deliberately.
+
 ```bash
 ip neigh
 ip neigh show dev eth0
@@ -3493,6 +3672,8 @@ ip neigh flush all
 ```
 
 #### `ip rule` — policy routing
+
+Policy rules choose a routing table based on source, mark, interface and other selectors before normal route lookup. Use them for multi-homing, source-specific gateways, or traffic classes—not as a replacement for ordinary destination routes. Rule priority is evaluation order; document custom table names in `/etc/iproute2/rt_tables` and add both rule and routes persistently.
 
 ```bash
 ip rule                                   # default table priorities
@@ -3522,6 +3703,8 @@ ifconfig eth0:0 192.168.2.10/24  # virtual alias
 | `ip -s link` | `ifconfig` (with stats) |
 
 ### 7.5 NetworkManager — `nmcli`, `nmtui`
+
+NetworkManager distinguishes a **device** (current interface) from a **connection profile** (persistent desired configuration). `nmcli device` answers what hardware is managed now; `nmcli connection` answers what profiles can be activated. Modify a named profile, activate it, then verify kernel state with `ip` and resolver state with `resolvectl`/`getent`. Changing a profile without reactivation may not alter the live interface.
 
 ```bash
 nmcli                                  # status summary
@@ -3639,6 +3822,8 @@ resolvectl query example.com             # systemd-resolved
 
 #### `ping`
 
+`ping` sends ICMP echo requests and measures replies/loss/round-trip time. It proves only that this ICMP exchange works; firewalls may block it while TCP services work, and a reply does not prove an application is healthy. Use numeric targets to separate DNS from reachability, bounded `-c` in scripts, and MTU probing to diagnose path-MTU issues.
+
 ```bash
 ping example.com
 ping -c 4 example.com
@@ -3649,6 +3834,8 @@ ping6 ipv6.google.com
 ```
 
 #### `traceroute`, `tracepath`, `mtr`
+
+These infer successive hops by sending probes with increasing TTL/hop-limit and observing expiration messages. Missing hops can mean filtering or rate limiting rather than packet loss at that router. `mtr` repeats the experiment to show trends; loss shown at an intermediate hop is meaningful only if it continues to later hops. Choose TCP/ICMP probes resembling the real application when UDP probes are filtered.
 
 ```bash
 traceroute example.com
@@ -3661,6 +3848,8 @@ mtr -rwc 100 example.com                 # report mode
 ```
 
 #### `netstat` (legacy) and `ss` (modern)
+
+`ss` queries kernel socket tables and is the preferred way to determine which local addresses/ports are listening, which connections exist, and which process owns them. `-l` means listening, `-n` prevents slow/misleading name resolution, and `-p` may require privilege. A listening socket proves a process bound the port; it does not prove firewall reachability or application correctness. `netstat` remains exam-relevant but comes from legacy net-tools.
 
 ```bash
 ss -tulpn                       # TCP+UDP, listening, processes, numeric
@@ -3675,6 +3864,8 @@ netstat -i
 
 #### `nmap`
 
+`nmap` sends active probes to discover hosts, ports and selected service fingerprints. Use it from the same network perspective as the affected client; a local scan and a remote scan test different firewalls/routes. States such as open, closed and filtered describe observed responses, not absolute truth. Scan only systems and ranges you are authorized to test.
+
 ```bash
 nmap 192.168.1.0/24                # ping sweep + top ports
 nmap -sn 192.168.1.0/24            # just discovery
@@ -3687,6 +3878,8 @@ nmap -A host
 ```
 
 #### `tcpdump`
+
+`tcpdump` captures packets visible at an interface and applies a BPF capture/display filter. Use `-nn` to keep addresses and ports numeric, `-i any` for broad host diagnosis, `-s 0` when full payload capture is justified, and `-w` to preserve evidence for Wireshark. Captures can contain credentials and personal data; limit scope, protect files, and correlate packet timestamps with application logs.
 
 ```bash
 tcpdump -i eth0
@@ -3912,6 +4105,8 @@ logrotate -f /etc/logrotate.conf       # force, ignoring schedule
 
 #### `chronyd`
 
+`chronyd` continuously estimates clock drift and disciplines the system clock using configured sources; `chronyc` queries/controls the daemon. Use `tracking` to judge local synchronization and error estimates, `sources -v` to see selection/reachability, and `sourcestats` to inspect measurement quality. A reachable source is not necessarily the selected source, and stepping a clock can disrupt applications—use `makestep` only under the configured/approved policy.
+
 ```
 pool 2.pool.ntp.org iburst
 makestep 1.0 3
@@ -3928,6 +4123,8 @@ systemctl enable --now chronyd
 
 #### `ntpd` (legacy)
 
+`ntpd` implements the classic NTP daemon and remains exam-relevant. `ntpq -p` shows peers, selection markers, reach and delay/offset/jitter. Large offsets, zero reach, firewall issues on UDP/123, DNS, and bad upstream strata are different failure classes. Do not run multiple time-disciplining daemons against the same system clock.
+
 ```
 server 0.pool.ntp.org iburst
 driftfile /var/lib/ntp/drift
@@ -3939,6 +4136,8 @@ ntpdate -u pool.ntp.org
 ```
 
 #### `timedatectl`
+
+`timedatectl` presents system clock, RTC, timezone and systemd time-sync state. It is a management/status interface, not proof that a particular daemon has converged; follow it with `chronyc tracking` or the daemon-specific query. Changing timezone alters display/civil-time interpretation, while changing the system clock alters the underlying time seen by applications.
 
 ```bash
 timedatectl
@@ -4134,6 +4333,8 @@ systemctl restart sshd
 
 #### Local forwarding (`-L`)
 
+Local forwarding makes the SSH client listen locally and asks the SSH server side to connect to a destination. Use it to reach a remote/internal service through the SSH host: traffic to the local listening port is encrypted only across the SSH segment. Bind to loopback unless other local-network clients intentionally need access, and remember destination authorization/firewalls are evaluated from the server side.
+
 ```
 ssh -L LPORT:RHOST:RPORT user@sshserver
 ```
@@ -4146,6 +4347,8 @@ ssh -L 5432:db.internal:5432 user@bastion
 ```
 
 #### Remote forwarding (`-R`)
+
+Remote forwarding makes the SSH server listen and sends accepted traffic back through the tunnel to a destination reachable from the client side. Use it to expose a client-side service to the remote environment. Server `GatewayPorts` controls non-loopback exposure; an accidental wildcard bind can publish a private service, so verify with `ss` on the remote host.
 
 ```
 ssh -R RPORT:LHOST:LPORT user@sshserver
@@ -4160,6 +4363,8 @@ ssh -R 8080:localhost:80 user@public.example.com
 For other interfaces on the server, `sshd_config` needs `GatewayPorts yes`.
 
 #### Dynamic forwarding (`-D`) — SOCKS5
+
+Dynamic forwarding creates a local SOCKS proxy; each SOCKS-aware application chooses destinations through the SSH connection. It is not a host-wide VPN and DNS may still leak locally unless the application proxies name resolution. Use it for flexible application traffic, then verify both route perspective and DNS behavior.
 
 ```
 ssh -D 1080 user@host
@@ -4211,7 +4416,7 @@ sha512sum file > file.sha512
 
 Avoid MD5 for security. Use SHA-256 or SHA-512.
 
-### 9.8 TCP Wrappers — `/etc/hosts.allow`, `/etc/hosts.deny`
+### 9.8 TCP Wrappers — `/etc/hosts.allow`, `/etc/hosts.deny` (legacy/exam context)
 
 Order: allow checked first. Match-and-allow stops. If neither matches, access is granted.
 
@@ -4730,6 +4935,8 @@ RAID levels:
 
 #### Create
 
+`mdadm --create` writes RAID metadata and begins constructing a new array from member devices. It is destructive to existing signatures/data, so confirm every member with `lsblk`, `wipefs -n`, persistent IDs, and backups before execution. RAID level determines capacity, fault tolerance, write behavior, and minimum devices; RAID is availability against selected device failures, not a backup against deletion, corruption, theft, or site loss.
+
 ```bash
 mdadm --create /dev/md0 --level=1 --raid-devices=2 /dev/sdb1 /dev/sdc1
 mdadm --create /dev/md1 --level=5 --raid-devices=3 --spare-devices=1 \
@@ -4739,6 +4946,8 @@ mdadm --create /dev/md1 --level=5 --raid-devices=3 --spare-devices=1 \
 Common flags: `-l LEVEL`, `-n COUNT`, `-x SPARES`, `-c CHUNK` (default 512K), `-e VERSION` (metadata version 0.90/1.0/1.1/1.2; default 1.2), `--name=`.
 
 #### Watch / verify
+
+`/proc/mdstat` gives the kernel's compact live array/resync view; `mdadm --detail` explains array state and member roles; `--examine` reads RAID metadata from one candidate member even when the array is not assembled. Use them together: the array view answers “is service degraded/resyncing?” and member metadata answers “does this device belong here?” A resync percentage alone does not prove application data correctness.
 
 ```bash
 cat /proc/mdstat                # status, sync progress
@@ -4756,6 +4965,8 @@ update-initramfs -u
 ```
 
 #### Manage members
+
+Member replacement is an ordered state transition: mark a known-bad active member failed, remove it, add the verified replacement, and monitor rebuild to completion. Never fail the wrong member in an already-degraded array. `--grow` changes geometry and can run for a long time; maintain backups, power stability and monitoring. `--zero-superblock` erases membership metadata and should be used only after confirming the device is no longer needed by any array.
 
 ```bash
 mdadm --manage /dev/md0 --fail /dev/sdb1
@@ -4796,6 +5007,8 @@ Layered abstraction: **Physical Volume (PV)** → **Volume Group (VG)** → **Lo
 
 #### PVs
 
+A Physical Volume places LVM metadata on a block device and divides usable space into physical extents. `pvcreate` prepares it for LVM and may overwrite signatures; `pvs`/`pvdisplay` query allocation; `pvmove` relocates allocated extents while the VG remains active so a device can be removed safely. `pvremove` removes LVM metadata—it is not the first step for a PV still holding live extents.
+
 ```bash
 pvcreate /dev/sdb1                   # mark as a PV
 pvcreate /dev/sdb /dev/sdc           # whole disks fine
@@ -4809,6 +5022,8 @@ pvmove /dev/sdb1 /dev/sdc1           # move to a specific PV
 ```
 
 #### VGs
+
+A Volume Group pools extents from one or more PVs. `vgextend` adds capacity; before `vgreduce`, all allocated extents must be moved away unless data loss is explicitly intended. Activation (`vgchange -ay`) exposes its LVs as device-mapper devices; deactivation requires that filesystems, swap, and other users have released them. Extent size affects allocation granularity and some maximums but cannot be casually changed later.
 
 ```bash
 vgcreate datavg /dev/sdb1 /dev/sdc1
@@ -4824,6 +5039,8 @@ vgchange -ay datavg                  # activate
 ```
 
 #### LVs
+
+A Logical Volume is a virtual block device carved from VG extents. Creating/extending the LV changes block-device capacity but does not automatically create or grow the filesystem unless a helper such as `-r` is used. Always reason about layers in order: underlying storage → PV → VG → LV → encryption/filesystem → mount. Growing is usually online-capable; shrinking is riskier, filesystem-specific, and XFS cannot shrink.
 
 ```bash
 lvcreate -L 20G -n www datavg                  # by size
@@ -4850,6 +5067,8 @@ lvdisplay /dev/datavg/www
 
 #### Filesystem resize companions
 
+The LV and the filesystem maintain separate size metadata. For growth, enlarge the block device first, then grow the filesystem (`resize2fs` for ext, `xfs_growfs` on the mounted XFS path). For supported ext shrink, shrink the unmounted filesystem first and only then reduce the LV; reversing that order truncates filesystem data. Prefer `lvresize -r` when its fsadm integration supports the exact stack, but still back up and verify.
+
 ```bash
 resize2fs /dev/datavg/www              # ext2/3/4 (online grow ok)
 xfs_growfs /var/www                    # XFS, mountpoint, grow only
@@ -4857,6 +5076,8 @@ btrfs filesystem resize +5G /mnt/btrfs
 ```
 
 #### Snapshots
+
+An LVM snapshot records the original blocks that change after snapshot creation, providing a point-in-time view of one LV. It is not an independent backup: it shares the origin's storage/failure domain, consumes copy-on-write space, and becomes invalid if that space fills. Use it to create a consistent short-lived backup source after coordinating application/filesystem consistency, then remove it promptly and monitor `Data%`.
 
 A snapshot LV captures the state at creation; original LV continues. Copy-on-write means only changes consume space in the snapshot.
 
@@ -4874,6 +5095,8 @@ lvconvert --merge /dev/datavg/www_snap
 If a snapshot fills up its allocated space, it becomes invalid. Monitor with `lvs`.
 
 #### Thin provisioning
+
+Thin provisioning presents virtual LVs larger than currently allocated physical storage and assigns blocks on write. It improves flexibility and snapshot efficiency but turns capacity monitoring into a correctness requirement: exhaustion of thin-pool data or metadata can suspend/fail writes across many volumes. Monitor both percentages, configure automatic extension with real free VG space, and do not confuse virtual capacity with guaranteed storage.
 
 ```bash
 lvcreate -L 100G --thinpool tp datavg
@@ -6991,7 +7214,7 @@ session  optional      pam_mkhomedir.so
 ### 21.1 Cryptography Fundamentals
 
 - **Symmetric encryption** — one shared key (AES, ChaCha20). Fast, used for bulk data.
-- **Asymmetric encryption** — keypair (RSA, ECDSA, Ed25519). Slow; used for key exchange and signatures.
+- **Public-key cryptography** — separate public/private keys. RSA can encrypt or sign depending on the protocol; ECDSA and Ed25519 are signature schemes; finite-field DH and ECDH/X25519 are key-agreement schemes. Do not call every public-key algorithm “encryption.”
 - **Hashing** — one-way function (SHA-256, SHA-3, BLAKE2). For integrity, not encryption.
 - **HMAC** — keyed hash for authenticity.
 - **KDF** — Key Derivation Function (PBKDF2, scrypt, Argon2, bcrypt) — turn a password into a key with intentional cost.
@@ -7120,14 +7343,14 @@ getsebool -a | grep httpd
 setsebool -P httpd_can_network_connect on            # -P = persistent
 
 ausearch -m AVC -ts recent                            # find denials
-audit2allow -a                                       # suggest module
-audit2allow -a -M myhttpd                            # generate myhttpd.pp
+ausearch -m AVC -ts recent | audit2why               # explain likely cause first
+ausearch -m AVC -ts recent | audit2allow -M myhttpd  # generate a narrowly scoped candidate
 semodule -i myhttpd.pp                                # install module
 semodule -l                                           # list modules
 semodule -r myhttpd                                   # remove
 ```
 
-**TRAP:** A common mistake is troubleshooting "permission denied" without checking `getenforce`. Run `ausearch -m AVC` first.
+**TRAP:** A common mistake is troubleshooting "permission denied" without checking `getenforce`. Run `ausearch -m AVC` first. Never install an `audit2allow -a` policy blindly: most denials are fixed by correct labels, an existing boolean, or application configuration. Read the generated `.te` file and test the least privilege rule.
 
 ### 21.6 AppArmor
 
@@ -7304,6 +7527,8 @@ apt install qemu-kvm libvirt-daemon-system virtinst bridge-utils
 
 #### `virsh` — the libvirt CLI
 
+`virsh` queries and changes objects managed by libvirt: domains, networks, storage pools, volumes and snapshots. Distinguish persistent configuration from live state—`define` stores a domain for later starts, `create` starts a transient domain, and many edits need explicit `--live`/`--config` scope. Verify both with `dominfo`/`dumpxml` and guest functionality; a “running” domain is not proof the OS or service is healthy.
+
 ```bash
 virsh list --all
 virsh start vmname
@@ -7346,6 +7571,8 @@ virsh net-start default
 ```
 
 #### `virt-install`
+
+`virt-install` assembles a libvirt domain definition and launches an installation from explicit CPU, memory, disk, network and install-source choices. It does not install a safe guest automatically: storage paths/capacity, bridge exposure, firmware mode, console access and unattended credentials are administrator decisions. Use `--print-xml`/dry planning where available and keep base images immutable when using copy-on-write children.
 
 ```bash
 virt-install \
@@ -7415,6 +7642,8 @@ Domains: **dom0** (privileged, hosts drivers), **domU** (guests). PV (paravirtua
 - **Network** — virtual network (bridge, host, overlay, macvlan).
 
 #### Command reference
+
+Docker commands operate on different object lifecycles: images are immutable templates, containers are runtime instances with a writable layer, volumes persist data independently, and networks provide connectivity. `run` combines create+start; `exec` starts another process in an existing container; `stop` requests graceful termination before kill; `rm` removes container metadata/writable state but not automatically every volume/image. Inspect mounts, published ports, user, capabilities and health rather than treating “Up” as application health.
 
 ```bash
 docker pull nginx:1.27
@@ -7513,6 +7742,8 @@ ENTRYPOINT ["/app"]
 
 #### Docker Compose
 
+Compose declares a multi-container application model—services, networks, volumes, configs and dependencies—and reconciles it on one engine. `docker compose config` renders merged/interpolated configuration before mutation; `up -d` creates/updates runtime objects; `down` removes the project containers/networks but retains named volumes unless explicitly requested. `depends_on` ordering does not universally mean the dependency is ready; use health checks and application retry logic.
+
 ```yaml
 services:
   web:
@@ -7531,11 +7762,15 @@ services:
     volumes: ["pgdata:/var/lib/postgresql/data"]
     networks: [back]
     environment:
-      POSTGRES_PASSWORD: secret
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
 networks:
   back: {}
 volumes:
   pgdata: {}
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
 ```
 
 ```bash
@@ -7564,8 +7799,10 @@ Drop-in CLI compatible with Docker, daemonless, with native rootless support.
 podman pull nginx
 podman run -d -p 8080:80 nginx
 podman ps
-podman generate systemd --name web > ~/.config/systemd/user/web.service
-systemctl --user enable --now web
+# Modern persistent approach: create ~/.config/containers/systemd/web.container (Quadlet), then:
+systemctl --user daemon-reload
+systemctl --user enable --now web.service
+# `podman generate systemd` remains relevant on older installations but is deprecated upstream.
 ```
 
 ### 22.6 LXC / LXD
@@ -7740,6 +7977,8 @@ pcs status
 
 #### Resources
 
+Pacemaker resources are managed services/addresses/filesystems described through resource agents. Creating one delegates start, stop and monitor actions to the cluster; it does not copy application data or make an unsafe service cluster-aware. Inspect agent metadata, choose correct monitor intervals/timeouts, and test start/stop/monitor manually before relying on recovery.
+
 ```bash
 pcs resource list                     # available agents
 pcs resource create VirtualIP ocf:heartbeat:IPaddr2 ip=192.168.1.100 cidr_netmask=24 op monitor interval=30s
@@ -7754,6 +7993,8 @@ pcs resource clear WebSrv                          # remove location constraint 
 
 #### Constraints
 
+Constraints express policy rather than imperative moves: location preferences choose nodes, colocation ties placement, and ordering sequences actions. Scores and direction matter, and over-constraining can leave resources intentionally stopped. Use `pcs constraint config` plus simulation/status to explain why the scheduler chose a placement before forcing it.
+
 ```bash
 pcs constraint location WebSrv prefers node1=100
 pcs constraint colocation add WebSrv with VirtualIP
@@ -7762,6 +8003,8 @@ pcs constraint list
 ```
 
 #### STONITH
+
+STONITH/fencing gives the cluster proof that an uncertain node cannot access shared resources. It is a data-integrity prerequisite, not an optional reboot convenience. Configure independent credentials/path, map devices to nodes correctly, and perform an approved real fence test; listing a device successfully does not prove it can isolate the failed node during a partition.
 
 ```bash
 pcs property set stonith-enabled=true
@@ -8090,16 +8333,1283 @@ Devices appear as `/dev/mapper/mpathX`. Use that name in `/etc/fstab` or LVM PV 
 
 ---
 
+# PART 4 — Objective-Aligned Completion & Professional Labs
+
+### Objective coverage map
+
+Use this map as a navigation aid; use the current LPI page for the authoritative per-objective weight and partial command list.
+
+| Exam | Official topic families | Primary coverage |
+|---|---|---|
+| 101-500 | 101 architecture; 102 installation/packages; 103 GNU commands; 104 devices/filesystems/FHS | Chapters 1–4, 24 |
+| 102-500 | 105 shells/scripts; 106 interfaces/desktops; 107 administration; 108 services; 109 networking; 110 security | Chapters 5–9, 25 |
+| 201-450 | 200 capacity; 201 kernel; 202 startup; 203 filesystems/devices; 204 storage; 205 networking; 206 maintenance | Chapters 10–14, 26 |
+| 202-450 | 207 DNS; 208 web; 209 file sharing; 210 network clients; 211 mail; 212 security | Chapters 15–19, 27 |
+| 300-300 | Samba basics/AD/shares/clients; Linux identity and file sharing | Chapters 20, 28 |
+| 303-300 | Cryptography; host security; access control; network security; threats/vulnerability assessment | Chapters 9, 13, 19, 21, 29 |
+| 305-300 | Full virtualization; container virtualization; VM deployment/provisioning | Chapters 22, 30 |
+| 306-300 | HA cluster management; HA cluster storage | Chapters 23, 30 |
+
+**Study rule:** when an objective has a higher official weight, allocate proportionally more lab and question time. A long chapter is not evidence of a high exam weight.
+
+## Chapter 24: How Commands Work — Intent, Data Flow, Verification, and Safety
+
+Memorizing flags is fragile. An administrator first identifies the **state to observe or change**, then chooses the narrowest command, predicts its output and side effects, verifies the result through an independent view, and keeps a rollback path.
+
+### 24.1 The command reasoning card
+
+For every command, answer seven questions:
+
+| Question | Why it matters |
+|---|---|
+| Intent | What problem does the command solve? |
+| Input | Arguments, stdin, files, kernel API, or network? |
+| Output | Human text, machine format, stdout, stderr, or exit status? |
+| Authority | Regular user, root, capability, group, or remote credential? |
+| Side effect | Query-only, temporary runtime change, or persistent change? |
+| Verification | Which independent command proves the desired state? |
+| Rollback | How is the old state restored? |
+
+Example—`ip route replace default via 192.0.2.1 dev eth0`:
+
+- **Intent:** select the next hop for destinations with no more-specific route.
+- **Why `replace`:** unlike `add`, it is useful in repeatable scripts because it creates or updates the route.
+- **Input:** destination `default`, gateway, and output interface.
+- **Side effect:** changes the running kernel routing table only; it does not edit NetworkManager/netplan configuration.
+- **Verify:** `ip route get 1.1.1.1` shows the route the kernel would actually choose.
+- **Rollback:** restore the previous route captured with `ip -json route show default`.
+
+### 24.2 Syntax is parsed in layers
+
+```bash
+LC_ALL=C find /var/log -type f -mtime -7 -print0 2>errors.log |
+  xargs -0r grep -Hn -- 'authentication failure' >matches.txt
+```
+
+1. The shell expands variables/globs and creates redirections/pipes.
+2. `find` walks the directory tree and emits NUL-delimited paths.
+3. `2>errors.log` separates traversal errors from data.
+4. `xargs -0` reconstructs arguments without breaking on spaces/newlines; `-r` avoids an empty invocation.
+5. `grep -- PATTERN` uses `--` to end option parsing, so a pattern beginning with `-` is safe.
+6. Exit statuses still matter: `grep` returns 0 for a match, 1 for no match, and >1 for an error.
+
+**Logic:** pipes transport bytes, not “files” or structured objects. Quote expansions unless intentional splitting is required. Prefer NUL delimiters for filenames.
+
+### 24.3 Query, runtime change, persistent change
+
+Many Linux tasks have three distinct commands:
+
+| Layer | Example | Meaning |
+|---|---|---|
+| Query | `sysctl net.ipv4.ip_forward` | Read current kernel state. |
+| Runtime change | `sysctl -w net.ipv4.ip_forward=1` | Change until reboot/reconfiguration. |
+| Persistence | file in `/etc/sysctl.d/*.conf` + `sysctl --system` | Declare desired boot-time state and apply it. |
+
+The same model applies to `ip` versus NetworkManager configuration, `mount` versus `/etc/fstab`, `setenforce` versus `/etc/selinux/config`, and `systemctl start` versus `systemctl enable`.
+
+### 24.4 Discovery commands
+
+| Command | Job and logic |
+|---|---|
+| `type -a NAME` | Ask the shell whether NAME is an alias, function, builtin, or executable; use before assuming a man page describes what runs. |
+| `command -V NAME` | Portable-ish shell description of command resolution. |
+| `help BUILTIN` | Bash documentation for builtins such as `read`, `test`, and `printf`. |
+| `man 1 command` | User command manual; sections 5 and 8 cover file formats and admin commands. |
+| `apropos keyword` | Search manual descriptions when the command name is unknown. |
+| `info coreutils 'command invocation'` | Detailed GNU documentation and edge cases. |
+| `command --help` | Quick option reminder; not a replacement for the full manual. |
+
+### 24.5 Machine-readable output
+
+Do not parse decorative text if a stable format exists:
+
+```bash
+ip -json address show | jq -r '.[] | .ifname'
+lsblk --json -o NAME,TYPE,FSTYPE,MOUNTPOINTS
+systemctl show ssh.service -p ActiveState -p SubState --value
+findmnt --json --target /var
+```
+
+`-json`/`--json` asks the producer for structure; `jq` selects fields. In scripts, set `LC_ALL=C` when parsing legacy text so translations do not alter keywords.
+
+### 24.6 Safe mutation workflow
+
+1. Capture state: `nft list ruleset > before.nft`.
+2. Validate candidate: `nft --check -f candidate.nft`.
+3. Ensure recovery: local console or timed rollback.
+4. Apply atomically where supported: `nft -f candidate.nft`.
+5. Verify behavior: `ss`, `ping`, `curl`, counters, and logs.
+6. Persist only after runtime validation.
+
+**Exercise:** choose `mount`, `useradd`, `systemctl`, and `nft`. Write a reasoning card for one query and one mutation from each family.
+
+---
+
+## Chapter 25: LPIC-1 Objective Completion — Scheduling, Localization, Desktops, and Printing
+
+### 25.1 `cron`, `at`, and systemd timers
+
+`cron` is for repeating calendar schedules. A user edits their installed table with `crontab -e`; the command validates and installs it rather than editing the spool file directly.
+
+```bash
+crontab -l                              # query the current user's table
+crontab -e                              # edit/install safely
+systemctl status cron.service           # Debian name; crond.service on many RPM systems
+journalctl -u cron --since today        # verify executions where cron logs to journal
+```
+
+The five fields are minute, hour, day-of-month, month, day-of-week. The command runs with a small environment and a non-interactive shell, so use absolute paths and redirect output.
+
+```cron
+17 2 * * * /usr/local/sbin/backup-home >>/var/log/backup-home.log 2>&1
+```
+
+`at` schedules one job once:
+
+```bash
+printf '%s\n' '/usr/local/sbin/reindex' | at 23:30
+atq                                     # list queued jobs; first column is job ID
+at -c JOB_ID                            # inspect the captured environment and script
+atrm JOB_ID                             # remove before execution
+```
+
+Use a systemd timer when the job needs dependency ordering, randomized delay, missed-run catch-up, resource limits, or journal integration. `systemctl list-timers --all` shows next/last activation; `systemctl cat name.timer` reveals the schedule.
+
+### 25.2 Locales and character conversion
+
+A locale controls language, collation, character classes, number formats, currency, and dates.
+
+```bash
+locale                                  # effective values after LANG/LC_* precedence
+locale -a                               # names actually generated on this host
+LC_ALL=C sort names.txt                 # byte-oriented deterministic order for scripts
+localectl status                        # systemd host locale/keymap overview
+iconv -f ISO-8859-1 -t UTF-8 old.txt >new.txt
+file --mime-encoding old.txt            # heuristic input-encoding evidence
+```
+
+`LANG` supplies defaults; an individual `LC_TIME` overrides one category; `LC_ALL` overrides every category and is best used temporarily. `iconv` converts bytes—it cannot repair text whose original encoding is unknown. Verify with `iconv -f UTF-8 -t UTF-8 new.txt >/dev/null` and inspect application semantics.
+
+### 25.3 X11, Wayland, display managers, and accessibility
+
+LPIC-1 emphasizes concepts and configuration locations. X11 clients connect to an X server selected by `DISPLAY`; Wayland compositors combine display server and window manager roles.
+
+```bash
+printf '%s\n' "$XDG_SESSION_TYPE"       # commonly x11, wayland, or tty
+loginctl show-session "$XDG_SESSION_ID" -p Type -p Remote
+xdpyinfo | head                          # query X server capabilities; requires X session
+xrandr --query                           # X11 outputs/modes; not a universal Wayland tool
+systemctl status display-manager.service # alias to GDM, SDDM, LightDM, etc.
+```
+
+Key files/concepts: `/etc/X11/xorg.conf`, `/etc/X11/xorg.conf.d/`, `~/.xinitrc`, `xhost`, `xauth`, `XDG_*`, keyboard repeat/layout, screen reader, high contrast, sticky keys, and on-screen keyboard. `xhost +` disables meaningful X access control; prefer per-user cookies through `xauth` or SSH X forwarding.
+
+### 25.4 CUPS printing
+
+CUPS accepts jobs, filters them, queues them, and speaks printer protocols. A **queue** is the administrator-facing destination; the physical printer may be remote.
+
+```bash
+lpstat -t                              # full scheduler/queue/default status
+lpinfo -v                              # discover device URIs/backends (admin context)
+lpoptions -p office -l                 # capabilities/options advertised by a queue
+lp -d office -n 2 report.pdf           # submit two copies; prints a job ID
+lpstat -W not-completed -o office      # verify queued/active jobs
+cancel office-42                       # cancel by the ID returned at submission
+cupsctl --debug-logging                # temporary troubleshooting; disable afterward
+journalctl -u cups --since '10 min ago'
+```
+
+`lpadmin` changes persistent queue configuration; `lp` merely submits a job. Validate `/etc/cups/cupsd.conf` changes with a controlled restart and keep access rules narrow.
+
+**Scenario lab:** create a PDF printer queue in a disposable VM, submit a job, inspect its ID/state, cancel another job, and explain which commands queried versus changed state.
+
+---
+
+## Chapter 26: LPIC-2 Exam 201 Completion — Capacity, Boot, Filesystems, and Maintenance
+
+### 26.1 Capacity planning: observe before tuning
+
+Use multiple views because a single percentage rarely identifies a bottleneck.
+
+```bash
+uptime                                  # load averages: runnable + uninterruptible tasks
+vmstat 1 10                             # CPU, run queue, paging, and block I/O samples
+iostat -xz 1 10                         # per-device latency, queue, utilization (sysstat)
+pidstat -dur 1 10                       # per-process CPU, disk, and memory activity
+sar -n DEV 1 10                         # historical/current interface rates
+ss -s                                   # socket population summary
+```
+
+- `vmstat` first row is an average since boot; later rows are interval samples. High `r` suggests CPU pressure; high `b` and I/O wait suggest blocked storage work; sustained `si/so` means swapping.
+- `iostat -x` explains devices. `await` is request latency; `%util` needs device context and is not a universal saturation proof, especially for parallel NVMe.
+- `sar` reads data collected by `sysstat`; without collection enabled, history does not exist.
+
+The logic is symptom → resource demand → queue/latency → responsible process → trend. Record baselines and graph percentiles/capacity growth; do not tune `swappiness` merely because swap is nonzero.
+
+### 26.2 SMART, NVMe, and filesystem health
+
+```bash
+smartctl --scan-open                     # discover devices smartmontools can open
+smartctl -a /dev/sda                    # identity, health, attributes, error/self-test logs
+smartctl -t short /dev/sda              # start device test; returns estimated completion
+smartctl -l selftest /dev/sda           # read result later
+nvme smart-log /dev/nvme0               # NVMe health counters
+```
+
+SMART “PASSED” is not proof of future health. Watch reallocated/pending sectors, media errors, temperature, wear, and change over time. A self-test runs inside the device; it does not replace backup or filesystem checking.
+
+```bash
+btrfs filesystem usage /mnt
+btrfs subvolume list /mnt
+btrfs subvolume snapshot -r /mnt/data /mnt/snaps/data-$(date +%F)
+btrfs scrub start -Bd /mnt               # verify checksums; repair only with redundant good copy
+xfsdump -l 0 -f /backup/home.xfs /home   # filesystem-aware XFS full dump
+xfsrestore -f /backup/home.xfs /restore  # restore to a mounted target
+```
+
+A Btrfs snapshot shares blocks; it is not an independent backup. XFS dump levels support incremental chains and require restore metadata discipline.
+
+### 26.3 DKMS and kernel modules
+
+DKMS rebuilds an out-of-tree module for each installed kernel:
+
+```bash
+dkms status                              # module/version/kernel/build state
+dkms add ./module-source                 # register source containing dkms.conf
+dkms build -m vendor -v 1.2 -k "$(uname -r)"
+dkms install -m vendor -v 1.2 -k "$(uname -r)"
+modinfo vendor                           # verify path, version, parameters, signature
+modprobe vendor                          # dependency-aware runtime load
+```
+
+`insmod file.ko` loads exactly one path and does not resolve dependencies; `modprobe NAME` uses module metadata and `/etc/modprobe.d/`, so it is normally the administrative tool.
+
+### 26.4 Alternate bootloaders and PXE
+
+- SYSLINUX boots FAT filesystems; EXTLINUX supports ext-family filesystems; ISOLINUX targets ISO media; PXELINUX historically boots over PXE.
+- systemd-boot reads Boot Loader Specification entries from the EFI System Partition; `bootctl status` queries the active setup and `bootctl install` changes the ESP.
+- U-Boot is common on embedded systems and uses environment variables/scripts.
+
+PXE logic: firmware obtains network configuration and a boot filename via DHCP, downloads a network boot program (TFTP/HTTP depending on firmware), then fetches kernel/initrd/config. BIOS and UEFI need compatible boot binaries.
+
+### 26.5 Maintenance communication
+
+```bash
+wall < maintenance.txt                   # write to logged-in terminals
+shutdown -r +15 'Kernel maintenance'     # schedule reboot and notify users
+systemctl list-jobs                      # see pending systemd work
+```
+
+`/etc/issue` is pre-login local text, `/etc/issue.net` may be used by remote login services, and `/etc/motd` is post-login information. Never place secrets in banners.
+
+**Scenario lab:** induce storage pressure in a disposable VM, collect `vmstat`, `iostat`, `pidstat`, and `sar`, identify the process/device, then write an evidence-based diagnosis rather than a tuning guess.
+
+---
+
+## Chapter 27: LPIC-2 Exam 202 Completion — DHCP, Proxy, SQL, and Client Services
+
+### 27.1 DHCP server
+
+DHCP leases configuration through Discover → Offer → Request → Ack. A relay forwards broadcasts between subnets.
+
+```conf
+# /etc/dhcp/dhcpd.conf
+authoritative;
+default-lease-time 3600;
+max-lease-time 86400;
+subnet 192.0.2.0 netmask 255.255.255.0 {
+  range 192.0.2.100 192.0.2.199;
+  option routers 192.0.2.1;
+  option domain-name-servers 192.0.2.53;
+}
+host printer { hardware ethernet 02:00:00:00:00:42; fixed-address 192.0.2.42; }
+```
+
+```bash
+dhcpd -t -cf /etc/dhcp/dhcpd.conf        # parse/check without starting service
+journalctl -u isc-dhcp-server -f         # watch lease decisions/errors
+tcpdump -ni eth0 -vv 'udp port 67 or 68' # prove protocol exchange on the wire
+```
+
+The config declares policy; the lease file records dynamic state. Check syntax before restart and ensure only one authoritative DHCP server serves a broadcast domain.
+
+### 27.2 Squid proxy
+
+Squid is an HTTP proxy/cache. ACLs define sets; `http_access` evaluates rules top-to-bottom and stops at the first match.
+
+```conf
+acl localnet src 192.0.2.0/24
+acl SSL_ports port 443
+http_access deny CONNECT !SSL_ports
+http_access allow localnet
+http_access deny all
+```
+
+```bash
+squid -k parse                           # validate configuration
+squid -z                                 # create cache directories when required
+squid -k reconfigure                     # reload without a full stop
+tail -f /var/log/squid/access.log        # verify client decisions/status codes
+```
+
+An open proxy is abuse infrastructure. End every policy with an explicit deny and test from allowed and denied clients.
+
+### 27.3 SQL fundamentals for administrators
+
+LPIC-2 expects basic data manipulation, not database engineering:
+
+```sql
+SELECT id, email FROM users WHERE active = TRUE ORDER BY id LIMIT 20;
+INSERT INTO users (email, active) VALUES ('a@example.com', TRUE);
+UPDATE users SET active = FALSE WHERE id = 42;
+DELETE FROM sessions WHERE expires_at < CURRENT_TIMESTAMP;
+```
+
+`WHERE` selects rows; omitting it from `UPDATE`/`DELETE` targets every row. In a transaction, inspect first and roll back if counts are wrong.
+
+```bash
+psql -d appdb -c 'SELECT current_database(), current_user;'
+mysql --database appdb -e 'SHOW TABLES;'
+```
+
+These clients send SQL to a server; they do not make a backup by redirecting table output. Use `pg_dump`/`pg_restore` or `mysqldump` and verify a restore.
+
+### 27.4 `xinetd` and socket activation
+
+`xinetd` listens on behalf of simple network services and starts a server per policy. Key fields are `socket_type`, `protocol`, `wait`, `user`, `server`, `server_args`, `only_from`, and `disable`. Modern systemd socket units implement the same broad activation idea.
+
+```bash
+xinetd -dontfork -stayalive -d           # foreground debug; use only in a lab
+systemctl list-sockets --all              # which systemd sockets activate services
+systemctl status ssh.socket ssh.service   # distinguish listener from worker service
+```
+
+### 27.5 Pure-FTPd and FTP reasoning
+
+FTP uses a control connection and a separate data connection; NAT/firewalls make passive port ranges important. Plain FTP exposes credentials unless TLS is correctly configured; prefer SFTP when SSH semantics fit.
+
+```bash
+pure-ftpd --help                          # implementation options vary by packaging
+ss -ltnp | grep ':21 '
+openssl s_client -connect ftp.example:21 -starttls ftp
+```
+
+For anonymous upload, separate upload and download directories, deny execution, prevent listing if required, enforce quotas, and scan/move uploaded content before publication.
+
+**Scenario lab:** build a two-client DHCP network and Squid proxy in isolated VMs. Validate configs before restart, capture DHCP packets, and prove the proxy allows only the intended subnet.
+
+---
+
+## Chapter 28: LPIC-3 Exam 300 Completion — Samba, FreeIPA, CIFS, and NFSv4
+
+Exam 300 is a mixed-environment administration exam. Knowing LDAP syntax alone is insufficient: you must operate Samba file servers and AD domains, map Windows/POSIX identities and ACLs, manage clients, and understand FreeIPA trusts.
+
+### 28.1 Samba validation, live state, and maintenance
+
+```bash
+testparm -s                              # parse smb.conf and print effective settings
+smbstatus --shares                       # live clients, shares, PIDs, and locks
+smbcontrol all reload-config             # ask running daemons to reload without restart
+smbcontrol smbd debug 3                  # temporary runtime debug level for smbd
+journalctl -u smbd -u nmbd -u winbind --since today
+```
+
+**Logic:** `testparm` proves syntax/effective configuration, not filesystem permission or client authentication. `smbstatus` observes runtime state. `smbcontrol` sends messages to daemons. Use all three in that order when a correct-looking configuration does not serve clients.
+
+Samba stores important state in TDB databases. Back them up consistently:
+
+```bash
+tdbbackup -s .bak /var/lib/samba/*.tdb   # create validated copies with suffix
+tdbbackup -v /var/lib/samba/private/idmap.ldb
+samba-tool domain backup online --targetdir=/backup --server=dc1
+samba-tool domain backup restore --backup-file=FILE --targetdir=/restore
+```
+
+`tdbbackup` protects individual databases; `samba-tool domain backup` captures AD DC state with domain-aware semantics. VM snapshots are not a substitute for supported AD backup and can interact with replication identity.
+
+### 28.2 Shares, POSIX modes, and Windows ACLs
+
+```ini
+[projects]
+  path = /srv/samba/projects
+  read only = no
+  valid users = @project
+  force group = project
+  create mask = 0660
+  directory mask = 2770
+  inherit acls = yes
+  vfs objects = acl_xattr
+  map acl inherit = yes
+  store dos attributes = yes
+  smb encrypt = desired
+```
+
+The final permission is the intersection of share authorization, Samba masks/forced identity, filesystem mode/ACL, and MAC policy such as SELinux. Diagnose each layer separately.
+
+```bash
+namei -l /srv/samba/projects/file        # permissions on every path component
+getfacl /srv/samba/projects
+smbcacls //server/projects path -U admin # view Windows-facing ACL
+sharesec //server/projects               # share security descriptor
+getfattr -d -m- /srv/samba/projects/file # extended attributes, including ACL storage
+```
+
+Granting `SeDiskOperatorPrivilege` lets designated administrators manage share ACLs without full domain administration:
+
+```bash
+net rpc rights grant 'EXAMPLE\File Admins' SeDiskOperatorPrivilege -U 'EXAMPLE\Administrator'
+net rpc rights list accounts -U 'EXAMPLE\Administrator'
+```
+
+### 28.3 AD DC, replication, and GPO
+
+```bash
+samba-tool drs showrepl                 # inbound/outbound replication status
+samba-tool dbcheck --cross-ncs          # AD database consistency report
+samba-tool dns query dc1 example.test @ ALL -U Administrator
+samba-tool gpo listall
+samba-tool gpo create 'Workstation Baseline'
+samba-tool gpo show GPO-GUID
+```
+
+`drs showrepl` answers “are directory changes replicating?”; `dbcheck` examines local database consistency; DNS checks validate records AD depends on. Do not “fix” replication by deleting databases before preserving logs and backups.
+
+### 28.4 Linux CIFS clients
+
+```bash
+smbclient -L //server -U alice           # enumerate shares and test authentication
+smbclient //server/projects -U alice     # interactive file operations
+mount -t cifs //server/projects /mnt/projects \
+  -o credentials=/root/.smb-projects,vers=3.1.1,seal
+cifscreds add server                     # cache credentials in a user keyring
+getcifsacl /mnt/projects/file
+setcifsacl -a 'ACL:EXAMPLE\alice:ALLOWED/0x0/FULL' /mnt/projects/file
+cifsiostat 1                             # per-mount CIFS throughput/latency
+```
+
+Credential files should be root-owned mode `0600`. `uid=`/`gid=` may control a client-side presentation when the server does not provide Unix ownership; they do not replace server authorization.
+
+### 28.5 FreeIPA
+
+```bash
+ipa-server-install                       # create integrated LDAP/Kerberos/DNS/CA server
+ipa-client-install --mkhomedir           # join a client and configure identity/auth
+ipactl status                            # state of the IPA service stack
+ipa user-add alice --first Alice --last Admin
+ipa group-add-member ops --users=alice
+ipa host-add web01.example.test
+ipa service-add HTTP/web01.example.test
+ipa-getkeytab -s ipa.example.test -p HTTP/web01.example.test -k /etc/http.keytab
+ipa hbacrule-add allow-web-ops
+ipa hbacrule-add-user allow-web-ops --groups=ops
+ipa hbacrule-add-host allow-web-ops --hosts=web01.example.test
+```
+
+The principal identifies a service; the keytab stores its long-term key and must be protected. HBAC decides which identities may access which hosts/services. `ipa permission-*`, `privilege-*`, and `role-*` compose delegated administration.
+
+AD integration uses `ipa-adtrust-install`, DNS reachability, time synchronization, ID ranges, and trust commands:
+
+```bash
+ipa trust-add ad.example.test --type=ad --admin Administrator --password
+ipa trust-fetch-domains ad.example.test
+ipa idrange-find
+```
+
+### 28.6 NFSv4, ID mapping, ACLs, and Kerberos
+
+NFSv4 uses a pseudo-filesystem and supports richer ACLs. Kerberos security flavors are `krb5` (authentication), `krb5i` (integrity), and `krb5p` (privacy/encryption).
+
+```exports
+/srv/nfs4 192.0.2.0/24(ro,fsid=0,crossmnt,sec=krb5p)
+/srv/nfs4/projects 192.0.2.0/24(rw,sec=krb5p)
+```
+
+```bash
+exportfs -rav                           # re-read exports and report changes
+exportfs -v                             # effective exports/options
+mount -t nfs4 -o sec=krb5p server:/projects /mnt/projects
+nfs4_getfacl /mnt/projects
+nfs4_setfacl -e /mnt/projects           # edit NFSv4 ACL; syntax differs from POSIX ACL
+nfsstat -m                              # client mount options actually negotiated
+```
+
+**Scenario lab:** break access deliberately at one of four layers—share ACL, filesystem ACL, identity mapping, or SELinux—then prove which layer failed using `testparm`, `smbclient`, `namei/getfacl`, and audit logs.
+
+---
+
+## Chapter 29: LPIC-3 Exam 303 Completion — PKI, Host Hardening, and Access Control
+
+### 29.1 Build and operate a small CA
+
+A CA is lifecycle and policy, not merely `openssl req -x509`. Protect the offline root, issue through an intermediate, constrain names/usages, maintain serial/index state, publish revocation, and practise recovery.
+
+```bash
+openssl req -new -newkey rsa:3072 -nodes -keyout server.key -out server.csr
+openssl req -in server.csr -noout -text   # inspect requested subject/extensions
+openssl ca -config intermediate.cnf -extensions server_cert -in server.csr -out server.crt
+openssl verify -purpose sslserver -CAfile root.crt -untrusted intermediate.crt server.crt
+openssl ca -config intermediate.cnf -revoke server.crt
+openssl ca -config intermediate.cnf -gencrl -out intermediate.crl
+openssl crl -in intermediate.crl -noout -text
+openssl ocsp -issuer intermediate.crt -cert server.crt -url http://ocsp.example.test
+```
+
+`req` creates a key/CSR; `ca` applies CA database and policy; `verify` builds/checks a chain for a purpose; `crl` inspects a signed revocation list; `ocsp` asks for current status. File permissions, backups, expiry monitoring, and private-key custody are part of the system.
+
+### 29.2 S/MIME and OpenPGP
+
+```bash
+openssl smime -sign -in message.txt -signer alice.crt -inkey alice.key -out signed.eml
+openssl smime -verify -in signed.eml -CAfile mail-ca.crt -out verified.txt
+openssl smime -encrypt -aes256 -in message.txt -out encrypted.eml bob.crt
+openssl smime -decrypt -in encrypted.eml -recip bob.crt -inkey bob.key
+```
+
+Signing proves origin/integrity under certificate trust; encryption protects content for recipients. It does not hide all mail metadata.
+
+### 29.3 OpenSSH certificates
+
+OpenSSH certificates let hosts/users trust a CA rather than distributing every public key:
+
+```bash
+ssh-keygen -t ed25519 -f user_ca
+ssh-keygen -s user_ca -I alice-2026 -n alice,ops -V +8h alice.pub
+ssh-keygen -Lf alice-cert.pub             # inspect principals, validity, options
+```
+
+Server configuration trusts the CA with `TrustedUserCAKeys /etc/ssh/user_ca.pub`; `AuthorizedPrincipalsFile` restricts allowed certificate principals. Keep the CA key offline or in a controlled signer, use short validity, record serial/identity, and publish revocation through `RevokedKeys`/KRL where appropriate.
+
+### 29.4 Capabilities and service sandboxing
+
+Linux capabilities split root privilege into narrower units:
+
+```bash
+getcap -r /usr/bin /usr/sbin 2>/dev/null  # audit file capabilities
+setcap cap_net_bind_service=+ep ./server  # allow low-port bind without full root
+getpcaps PID                              # process capabilities
+capsh --print                             # current shell capability sets
+```
+
+Capabilities remain powerful and interact with bounding, permitted, effective, inheritable, and ambient sets. Prefer service-manager confinement over casually modifying system binaries.
+
+```ini
+[Service]
+User=app
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/app
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallFilter=@system-service
+```
+
+```bash
+systemd-analyze security app.service     # score/explain exposure (guidance, not proof)
+systemctl edit app.service               # create drop-in, preserve vendor unit
+systemctl daemon-reload
+systemctl restart app.service
+journalctl -u app.service -b             # verify sandbox did not block required behavior
+```
+
+### 29.5 Namespaces, cgroups, and seccomp
+
+Namespaces isolate views (PID, mount, network, UTS, IPC, user, cgroup, time); cgroups account/limit resources; seccomp filters syscalls. None alone is a complete security boundary.
+
+```bash
+lsns                                     # namespaces and member processes
+nsenter -t PID -n ip address             # inspect target network namespace
+systemd-cgls                             # hierarchy and processes
+systemd-cgtop                            # live resource view
+unshare --user --map-root-user --mount-proc --pid --fork sh
+```
+
+`nsenter` changes the observer's namespace context and usually needs privilege. `unshare` creates new namespaces for the command; user namespace mappings can grant “root inside” without host root, subject to host policy.
+
+### 29.6 OpenSCAP workflow
+
+```bash
+oscap info benchmark.xml
+oscap xccdf eval --profile PROFILE --results results.xml --report report.html benchmark.xml
+oscap xccdf generate fix --profile PROFILE --fix-type bash benchmark.xml >remediate.sh
+```
+
+`info` discovers content/profiles; `eval` measures; `generate fix` produces candidate remediation. Review every fix, test in staging, account for local exceptions, and rescan. Compliance is not equivalent to absence of vulnerabilities.
+
+**Scenario lab:** harden a simple systemd web service, demonstrate it still serves content, prove denied filesystem access in the journal, and compare `systemd-analyze security` before/after.
+
+---
+
+## Chapter 30: LPIC-3 Exams 305/306 Completion — Provisioning, Isolation, and HA Operations
+
+### 30.1 QEMU images and libvirt diagnosis
+
+```bash
+qemu-img info disk.qcow2                  # format, virtual/actual size, backing file
+qemu-img create -f qcow2 -F qcow2 -b base.qcow2 child.qcow2
+qemu-img check child.qcow2                # consistency check; avoid repair without backup
+virsh domblklist vm --details             # map guest targets to host storage
+virsh domiflist vm                        # map guest interfaces to networks/bridges
+virsh qemu-monitor-command vm --hmp info-block
+virsh domstats vm --vcpu --balloon --block --interface
+```
+
+`qemu-img` operates on image metadata and should not modify an image actively used by a VM unless the operation explicitly supports it. `virsh` asks libvirt for managed state; monitor commands bypass some abstraction and are diagnostic tools.
+
+### 30.2 Repeatable provisioning with Vagrant and Packer
+
+```ruby
+Vagrant.configure("2") do |config|
+  config.vm.box = "debian/bookworm64"
+  config.vm.network "private_network", ip: "192.0.2.10"
+  config.vm.provision "shell", inline: "apt-get update && apt-get -y install nginx"
+end
+```
+
+`vagrant up` creates/converges a development VM, `vagrant ssh` enters it, `vagrant snapshot save clean` provides a lab rollback, and `vagrant destroy -f` removes it. Packer instead builds versioned machine images from a template; validate and pin source image checksums before building.
+
+```bash
+packer init .
+packer fmt -check .
+packer validate -var-file=lab.pkrvars.hcl .
+packer build -var-file=lab.pkrvars.hcl .
+```
+
+### 30.3 Open vSwitch
+
+```bash
+ovs-vsctl show
+ovs-vsctl add-br br-lab
+ovs-vsctl add-port br-lab vnet0
+ovs-ofctl show br-lab
+ovs-ofctl dump-flows br-lab
+```
+
+`ovs-vsctl` changes the OVS configuration database; `ovs-ofctl` inspects/programs OpenFlow behavior. Verify Linux links with `ip link` and packet paths with `tcpdump`; a port existing in OVS does not prove end-to-end reachability.
+
+### 30.4 Resource agents, quorum, and fencing
+
+Pacemaker resource agents implement actions such as `start`, `stop`, `monitor`, and metadata under a standard. Inspect before creating resources:
+
+```bash
+pcs resource standards
+pcs resource agents ocf:heartbeat
+pcs resource describe ocf:heartbeat:IPaddr2
+ocf-tester -n resource-name /usr/lib/ocf/resource.d/heartbeat/custom
+pcs status --full
+pcs config
+crm_mon -Arf1
+```
+
+Quorum answers whether a partition is allowed to manage resources. Fencing/STONITH forcibly isolates an uncertain node so two sides cannot write shared state. A cluster without tested fencing may be highly available at corrupting data.
+
+```bash
+pcs quorum status
+corosync-quorumtool -s
+pcs stonith config
+stonith_admin --list-installed
+stonith_admin --reboot NODE              # destructive: only during an approved fencing test
+```
+
+Use maintenance mode for planned work rather than disabling random resources:
+
+```bash
+pcs property set maintenance-mode=true
+pcs status
+# perform work and verify node/service health
+pcs property set maintenance-mode=false
+```
+
+### 30.5 LVS/IPVS and geo-clusters
+
+IPVS is an in-kernel layer-4 load balancer; `ipvsadm` configures virtual services and real servers:
+
+```bash
+ipvsadm -A -t 192.0.2.100:443 -s rr
+ipvsadm -a -t 192.0.2.100:443 -r 192.0.2.11:443 -m
+ipvsadm -a -t 192.0.2.100:443 -r 192.0.2.12:443 -m
+ipvsadm -Ln --stats --rate
+```
+
+`-A` creates the virtual service, `-a` adds a real server, `-s rr` chooses round-robin scheduling, and `-m` selects NAT forwarding. Verify counters and backend health; IPVS alone does not remove failed servers without a health-management layer such as Keepalived.
+
+Booth coordinates ticket ownership between geographically separated Pacemaker sites. A ticket constraint controls which site may run a resource; arbitrators help avoid two-site split brain. Test WAN loss, site loss, and ticket expiry in a lab before production.
+
+**Scenario lab:** create a two-node Pacemaker lab plus a fencing simulator, prove resource movement, enter/leave maintenance mode, break quorum communication, and explain why the observed fencing decision protects storage.
+
+---
+
+## Chapter 31: Safe Scenario Labs and LPIC-3 Exam Preparation
+
+### 31.1 Standard lab topology
+
+Use snapshots and host-only networks:
+
+```text
+client1 192.0.2.11 ─┐
+client2 192.0.2.12 ─┼─ router/dns/dhcp 192.0.2.1
+server1 192.0.2.21 ─┤
+server2 192.0.2.22 ─┘
+```
+
+Each lab must record: objective ID, starting snapshot, intended state, commands with reasoning cards, expected evidence, injected fault, diagnosis, rollback, and lessons. Never use production DNS domains, routable address space, or host disks.
+
+### 31.2 Capstone labs
+
+1. **LPIC-1 workstation:** users/groups, ACL shared directory, cron/at/timer jobs, locale conversion, CUPS queue, SSH keys, logs, and a recovery checklist.
+2. **LPIC-2 site:** DHCP + caching DNS + Squid + Apache + NFS/Samba + Postfix, routed through a stateful firewall. Break one service at a time and diagnose from client symptoms to logs/packets/config.
+3. **Exam 300:** Samba AD DC, member file server, Linux client, FreeIPA conceptual comparison, Windows/POSIX ACL translation, backup and replication failure.
+4. **Exam 303:** intermediate CA, SSH CA, SELinux/AppArmor policy, audit rules, systemd hardening, OpenSCAP assessment, and incident evidence bundle.
+5. **Exam 305:** cloud image built by Packer, provisioned VM, libvirt network/storage investigation, rootless container with resource/security controls.
+6. **Exam 306:** Pacemaker/Corosync service with fencing, DRBD or shared lab storage, HAProxy/Keepalived, quorum loss, maintenance, and recovery.
+
+### 31.3 LPIC-3 diagnostic questions
+
+**Exam 300**
+
+1. Which command checks `smb.conf` before reload? **`testparm -s`**—it parses and prints effective configuration.
+2. Which command diagnoses AD replication? **`samba-tool drs showrepl`**—it reports replication partners and failures.
+3. Why can `valid users` succeed while file open fails? The filesystem ACL/mode or MAC policy can still deny access.
+4. What does `sec=krb5p` add over `krb5i`? Privacy (encryption), in addition to authentication/integrity.
+5. Which FreeIPA object delegates administrative actions? Permissions combine into privileges, which combine into roles.
+
+**Exam 303**
+
+1. Which command verifies a TLS server chain for purpose? `openssl verify -purpose sslserver ...`.
+2. ECDSA versus ECDH? ECDSA signs; ECDH agrees on key material.
+3. Why is `audit2allow -a` dangerous? It can convert unrelated/misconfiguration denials into excessive policy.
+4. What prevents a service from gaining new privilege through exec? `NoNewPrivileges=yes` (subject to kernel semantics).
+5. Does a passing OpenSCAP profile prove security? No; it proves evaluated rules for that content/profile at that time.
+
+**Exam 305**
+
+1. What does a qcow2 backing file enable? Copy-on-write children referencing a base image.
+2. What must precede `qemu-img` mutation of a VM disk? Stop/coordinate the VM and back up; concurrent mutation can corrupt it.
+3. Namespace versus cgroup? Namespace isolates a view; cgroup accounts/limits resources.
+4. Why use Packer? To reproducibly build immutable/versioned machine images.
+5. `ovs-vsctl` versus `ovs-ofctl`? Configuration database/topology versus OpenFlow datapath inspection/programming.
+
+**Exam 306**
+
+1. Why is fencing required? To prove an uncertain node cannot access shared resources before recovery elsewhere.
+2. What is quorum? The cluster partition's authority to make resource-management decisions.
+3. What does an OCF monitor action do? Reports resource health at configured intervals/depth.
+4. What does IPVS provide? Layer-4 virtual service load balancing; health orchestration is separate.
+5. Why use maintenance mode? It pauses cluster recovery actions coherently during planned administration.
+
+### 31.4 Exam method
+
+- Study by objective weight, not chapter length.
+- For every utility know its intent, important options, input/config file, output, and nearest confusing alternative.
+- Practise fill-in answers with exact command/file spelling.
+- In scenarios, identify whether the question asks for observation, runtime change, persistence, verification, or recovery.
+- Reject unsafe distractors: force flags, editing generated files, checking a mounted writable filesystem, disabling MAC/firewall, or killing before inspecting.
+
+---
+
+## Chapter 32: Official Objective Master Checklist
+
+This chapter is the **coverage contract** for the handbook. Check an item only after you can explain it, use its principal commands, interpret failure output, and complete its lab without copying. The baseline is LPI's published objectives: LPIC-1 5.0, LPIC-2 4.5, and LPIC-3 3.0. A weight estimates relative exam emphasis; it is not a guaranteed question count.
+
+### 32.1 LPIC-1 101-500
+
+| Objective (weight) | Required outcome | Coverage |
+|---|---|---|
+| 101.1 (2) | Detect/configure hardware, modules, hotplug | Ch. 1, 24 |
+| 101.2 (3) | Trace firmware, bootloader, kernel, init startup | Ch. 1, 11 |
+| 101.3 (3) | Change targets/runlevels and shut down safely | Ch. 1, 11 |
+| 102.1 (2) | Design partitions, swap, LVM and mount layout | Ch. 2, 4, 12 |
+| 102.2 (2) | Install and recover GRUB 2 | Ch. 2, 11 |
+| 102.3 (1) | Inspect and configure shared libraries | Ch. 2 |
+| 102.4 (3) | Query/install/remove Debian packages | Ch. 2 |
+| 102.5 (3) | Query/install/remove RPM/DNF/YUM packages | Ch. 2 |
+| 102.6 (1) | Recognize Linux guests and cloud images | Ch. 2, 22 |
+| 103.1 (4) | Use shell syntax, quoting, history and variables | Ch. 3, 5, 24 |
+| 103.2 (3) | Transform text with core filters | Ch. 3 |
+| 103.3 (4) | Copy, move, remove, archive and glob safely | Ch. 3 |
+| 103.4 (4) | Use streams, redirection, pipes and `tee` | Ch. 3, 24 |
+| 103.5 (4) | Create, monitor, signal and background processes | Ch. 3 |
+| 103.6 (2) | Interpret and change process priority | Ch. 3 |
+| 103.7 (3) | Use BRE/ERE and `grep`/`sed` patterns | Ch. 3 |
+| 103.8 (3) | Perform basic editing with vi | Ch. 3 |
+| 104.1 (2) | Partition disks and create filesystems/swap | Ch. 4 |
+| 104.2 (2) | Check, tune and monitor filesystem integrity | Ch. 4 |
+| 104.3 (3) | Mount manually and persistently with correct options | Ch. 4 |
+| 104.5 (3) | Manage modes, ownership, special bits and umask | Ch. 4, 6 |
+| 104.6 (2) | Explain inode-based hard links and symlinks | Ch. 4 |
+| 104.7 (2) | Use FHS, `find`, `locate`, `whereis`, `which` | Ch. 3, 4 |
+
+### 32.2 LPIC-1 102-500
+
+| Objective (weight) | Required outcome | Coverage |
+|---|---|---|
+| 105.1 (4) | Customize shell environment and profiles | Ch. 5 |
+| 105.2 (4) | Write, test and debug portable basic scripts | Ch. 5, 24 |
+| 106.1 (2) | Understand/configure X11 and remote display access | Ch. 25 |
+| 106.2 (1) | Understand desktops, display/window managers | Ch. 25 |
+| 106.3 (1) | Identify accessibility settings and tools | Ch. 25 |
+| 107.1 (5) | Administer users/groups and account databases | Ch. 6 |
+| 107.2 (4) | Schedule with cron, at and systemd timers | Ch. 25 |
+| 107.3 (3) | Configure locales, time zones and encodings | Ch. 8, 25 |
+| 108.1 (3) | Maintain time with NTP/chrony and RTC | Ch. 8 |
+| 108.2 (4) | Configure/query syslog, rsyslog and journal | Ch. 8 |
+| 108.3 (3) | Understand MTA roles, aliases and mail queues | Ch. 18 |
+| 108.4 (2) | Manage CUPS queues and jobs | Ch. 25 |
+| 109.1 (4) | Explain IPv4/IPv6, TCP/UDP, ports and subnetting | Ch. 7 |
+| 109.2 (4) | Configure persistent host networking | Ch. 7 |
+| 109.3 (4) | Diagnose interfaces, routes, sockets and reachability | Ch. 7, 24 |
+| 109.4 (2) | Configure client resolver and NSS behavior | Ch. 7 |
+| 110.1 (3) | Audit security settings, sessions, limits and sudo | Ch. 6, 9 |
+| 110.2 (3) | Secure hosts with passwords, shadow and service control | Ch. 6, 9 |
+| 110.3 (3) | Use GnuPG encryption, signing and trust | Ch. 9, 21 |
+
+### 32.3 LPIC-2 201-450 and 202-450
+
+| Exam | Objectives and official weights | Coverage |
+|---|---|---|
+| 201 | 200.1(6), 200.2(2); 201.1(2), 201.2(3), 201.3(4) | Ch. 10, 26 |
+| 201 | 202.1(3), 202.2(4), 202.3(2) | Ch. 11, 26 |
+| 201 | 203.1(4), 203.2(3), 203.3(2) | Ch. 4, 12, 26 |
+| 201 | 204.1(3), 204.2(2), 204.3(3) | Ch. 12, 26 |
+| 201 | 205.1(3), 205.2(4), 205.3(4) | Ch. 13, 26 |
+| 201 | 206.1(2), 206.2(3), 206.3(1) | Ch. 14, 26 |
+| 202 | 207.1(3), 207.2(3), 207.3(2) | Ch. 15 |
+| 202 | 208.1(4), 208.2(3), 208.3(2), 208.4(2) | Ch. 16, 27 |
+| 202 | 209.1(5), 209.2(3) | Ch. 17 |
+| 202 | 210.1(2), 210.2(3), 210.3(2), 210.4(4) | Ch. 20, 27 |
+| 202 | 211.1(4), 211.2(2), 211.3(2) | Ch. 18 |
+| 202 | 212.1(3), 212.2(2), 212.3(4), 212.4(3), 212.5(2) | Ch. 9, 13, 17, 19, 27 |
+
+The objective names, in order, are: capacity measurement/prediction; kernel components/compilation/runtime; startup/recovery/alternate bootloaders; filesystem operation/maintenance/options; RAID/device access/LVM; basic/advanced networking/troubleshooting; source builds/backups/user notification; DNS configuration/zones/security; Apache/HTTPS/Squid/Nginx; Samba/NFS; DHCP/PAM/LDAP client/OpenLDAP server; mail servers/delivery/mailbox access; router/FTP/SSH/security tasks/OpenVPN.
+
+### 32.4 LPIC-3 300-300
+
+| Topic | Objectives (weight) |
+|---|---|
+| Samba basics | 301.1 Concepts/architecture (2); 301.2 configuration (4); 301.3 maintenance (2); 301.4 troubleshooting (3) |
+| Samba and AD | 302.1 AD DC (5); 302.2 name resolution (2); 302.3 user management (4); 302.4 domain membership (4); 302.5 local users (2) |
+| Shares | 303.1 file shares (4); 303.2 share security (3); 303.3 DFS (1); 303.4 printing (2) |
+| Clients | 304.1 Linux authentication (5); 304.2 Linux CIFS (3); 304.3 Windows clients (3) |
+| Linux identity/sharing | 305.1 FreeIPA install/maintenance (2); 305.2 entities (4); 305.3 AD integration (2); 305.4 NFS (3) |
+
+### 32.5 LPIC-3 303-300, 305-300 and 306-300
+
+| Exam | Complete objective set with weights |
+|---|---|
+| 303 | 331.1 PKI(5), 331.2 X.509 applications(4), 331.3 encrypted filesystems(3), 331.4 DNS cryptography(5); 332.1 hardening(5), 332.2 HIDS(5), 332.3 resource control(3); 333.1 DAC(3), 333.2 MAC(5); 334.1 network hardening(4), 334.2 NIDS(4), 334.3 packet filtering(5), 334.4 VPN(4); 335.1 threats(2), 335.2 penetration testing(3) |
+| 305 | 351.1 concepts(6), 351.2 Xen(3), 351.3 QEMU(4), 351.4 libvirt(9), 351.5 images(3); 352.1 container concepts(7), 352.2 LXC(6), 352.3 Docker(9), 352.4 orchestration(3); 353.1 cloud tools(2), 353.2 Packer(2), 353.3 cloud-init(3), 353.4 Vagrant(3) |
+| 306 | 361.1 HA concepts(6), 361.2 load balancing(8), 361.3 failover(8); 362.1 DRBD(6), 362.2 shared storage access(3), 362.3 clustered filesystems(4); 363.1 GlusterFS(5), 363.2 Ceph(8); 364.1 hardware/resource HA(2), 364.2 advanced RAID(2), 364.3 advanced LVM(3), 364.4 network HA(5) |
+
+---
+
+## Chapter 33: Exam 300 Advanced Operations Supplement
+
+### 33.1 Samba databases, registry, and maintenance
+
+Samba stores state in TDB/LDB databases. Do not treat these as text files.
+
+```bash
+testparm -s                         # parse smb.conf and show effective settings
+smbcontrol all reload-config        # ask running processes to reload safely
+net conf list                       # read registry-backed service configuration
+net conf addshare docs /srv/docs    # persist a registry-backed share
+samba-regedit                       # interactive registry database editor
+tdbbackup -s .bak /var/lib/samba/*.tdb
+tdbdump FILE.tdb                    # diagnostic dump; may expose sensitive data
+ldbsearch -H /var/lib/samba/private/sam.ldb '(sAMAccountName=alice)'
+rpcclient -U Administrator SERVER   # exercise RPC independently of a GUI client
+```
+
+`tdbbackup` creates consistent backup copies and validates readability; `tdbrestore` restores a dump when recovery is justified. Stop the relevant service and preserve the original before repair. `net registry`/`net conf` manipulate registry-backed settings; `samba-regedit` provides a registry view. Verify configuration with both `testparm` and a real `smbclient` request.
+
+### 33.2 AD DC lifecycle and diagnosis
+
+```bash
+samba-tool domain provision --use-rfc2307 --realm=EXAMPLE.COM --domain=EXAMPLE
+samba-tool domain join EXAMPLE.COM DC -U Administrator
+samba-tool domain info 192.0.2.10
+samba-tool domain level show
+samba-tool fsmo show
+samba-tool drs showrepl
+samba-tool dbcheck --cross-ncs
+samba-tool ntacl sysvolcheck
+samba-tool user syncpasswords --cache-ldb-initialize
+```
+
+Provision creates the directory, DNS and Kerberos identity of the first DC; joining as `DC` adds a replication partner. AD depends on DNS SRV records and close time synchronization. FSMO roles are single-master duties, not evidence that other directory data is single-master. `drs showrepl` checks replication, `dbcheck` checks directory consistency, and `ntacl sysvolcheck` compares SYSVOL ACL expectations. Back up with `samba-tool domain backup online`; test restore into an isolated network.
+
+Know sites/subnets, global catalog, trusts, forest/domain functional levels, tombstones, SPNs, keytabs, SIDs, GUIDs, DNs and UPNs. A duplicate SPN can break Kerberos even when passwords and DNS look correct.
+
+```bash
+samba-tool user create alice
+samba-tool group addmembers 'Domain Admins' alice
+samba-tool domain passwordsettings show
+samba-tool domain passwordsettings pso list
+samba-tool spn list alice
+samba-tool sites list
+samba-tool domain trust list
+```
+
+### 33.3 Domain members, id mapping, and NSS/PAM
+
+`winbindd` maps AD identities into Unix NSS/PAM views. The idmap backend choice is architectural: `tdb` allocates locally, `rid` derives IDs from RID, `ad` reads RFC2307 attributes, and `autorid` allocates ranges for multiple domains. Never change a production mapping scheme casually: file ownership is stored as numeric IDs.
+
+```bash
+net ads join -U Administrator       # establish machine account and keytab/trust
+net ads testjoin                    # verify machine trust
+wbinfo --ping-dc                    # verify winbind-to-DC path
+wbinfo -t                           # verify workstation trust secret
+wbinfo -u                           # enumerate domain users when permitted
+getent passwd 'EXAMPLE\\alice'      # test complete NSS path, not only winbind
+pam-auth-update                     # Debian PAM profile selection
+authselect current                  # RHEL-family managed NSS/PAM profile
+sssctl config-check                 # validate SSSD configuration
+sssctl domain-status example.com
+```
+
+Use `wbinfo` to isolate winbind and `getent` to test NSS end to end. For SSSD, `/etc/sssd/sssd.conf` must be root-owned and mode 0600. `pam_mkhomedir` creates homes at first login; `pam_faillock` tracks failed authentication. PAM order and control flags are security logic, not decoration.
+
+### 33.4 DFS, printing, CIFS, and NFSv4
+
+A DFS root gives clients a stable namespace whose links refer to other shares. Samba uses `msdfs root = yes` and link-like entries such as `msdfs:server\\share`. Printing requires CUPS integration, printer shares, spool permissions and driver strategy; diagnose CUPS first, then Samba publication, then client drivers.
+
+```bash
+smbclient -L //server -U alice      # enumerate server-visible shares
+smbclient //server/docs -U alice    # test SMB without mounting
+mount -t cifs //server/docs /mnt -o credentials=/root/.smbcred,vers=3.1.1
+cifscreds add server                # cache credentials without fstab plaintext
+nfs4_getfacl /srv/project
+nfs4_setfacl -a 'A:g:devs@:rwaDxtTnNcCy' /srv/project
+showmount -e server                 # useful for v3; incomplete view of an NFSv4 pseudo-tree
+```
+
+SMB share authorization and Unix filesystem/MAC authorization all have to allow the operation. NFSv4 uses a pseudo-root, stateful locking, identities such as `name@domain`, and richer ACLs. Kerberos flavors are `krb5` (authentication), `krb5i` (+integrity), and `krb5p` (+privacy).
+
+---
+
+## Chapter 34: Exam 303 Security Operations Supplement
+
+### 34.1 DNSSEC and encrypted storage
+
+DNSSEC authenticates DNS data; it does not encrypt queries. A ZSK signs ordinary RRsets, a KSK signs the DNSKEY set, and the parent publishes a DS digest to extend the chain of trust. RRSIG carries signatures; NSEC/NSEC3 proves non-existence.
+
+```bash
+dnssec-keygen -a ECDSAP256SHA256 -n ZONE example.com
+dnssec-signzone -S -o example.com db.example.com
+delv @192.0.2.53 www.example.com A   # validate and explain trust chain
+dig +dnssec +multi example.com DNSKEY
+dig +trace example.com DS
+rndc signing -list example.com
+```
+
+For encryption, decide the layer: LUKS/dm-crypt protects a block device; eCryptfs encrypts per-file content/metadata and is retained in the objective for legacy understanding; Clevis can bind LUKS unlocking to TPM2 or Tang policy.
+
+```bash
+cryptsetup luksDump /dev/mapper/labdisk
+cryptsetup luksHeaderBackup /dev/mapper/labdisk --header-backup-file lab.header
+cryptsetup open /dev/mapper/labdisk securelab
+clevis luks list -d /dev/mapper/labdisk
+mount -t ecryptfs /srv/plain /srv/private    # legacy lab only
+```
+
+Header backup is recovery material and must be encrypted/offline. Verify that ciphertext is unreadable while closed and that recovery works before trusting it.
+
+### 34.2 HIDS, NIDS, vulnerability work, and evidence
+
+| Tool | Purpose and logic | Primary verification |
+|---|---|---|
+| AIDE | Baseline and compare filesystem metadata/hashes | Review changed-object report against approved change |
+| auditd | Record policy-selected kernel audit events | `ausearch`, `aureport`, backlog/lost counters |
+| fail2ban | Convert repeated log evidence into temporary bans | jail status plus firewall rule and expiry |
+| rkhunter/chkrootkit | Heuristic rootkit indicators | Correlate; never treat one alert as proof |
+| Suricata | Decode traffic and apply IDS/IPS rules | `suricata -T`, EVE JSON, counters |
+| Zeek | Produce protocol/behavior logs | `zeekctl status`, `conn.log`, notice logs |
+| nmap | Discover hosts/services and selected fingerprints | Confirm from target socket/config |
+| OpenVAS/Greenbone | Authenticated/unauthenticated vulnerability assessment | Manually validate finding and remediation |
+| arpwatch | Detect new or changed IP-to-MAC observations | Confirm against DHCP/switch inventory; changes may be legitimate |
+| dsniff/Ettercap | Authorized lab analysis of credentials/MITM exposure | Packet evidence and endpoint configuration |
+| ssldump | Decode inspectable TLS sessions when key exchange permits | Compare with `openssl s_client` and capture metadata |
+| SSLsplit | Authorized TLS interception using a controlled CA | Confirm client trust path and remove lab CA afterward |
+| stunnel | Wrap a plaintext TCP service in TLS | Test both wrapped listener and backend; inspect certificate |
+| Tripwire | Policy-based filesystem integrity monitoring | Initialize trusted baseline, then review signed reports |
+
+```bash
+aide --init && aide --check
+auditctl -w /etc/sudoers -p wa -k sudoers-change
+ausearch -k sudoers-change -i
+suricata -T -c /etc/suricata/suricata.yaml
+zeek -r capture.pcap
+nmap -sS -sV -O --reason 192.0.2.0/28
+arpwatch -i eth0
+ssldump -i eth0 -k server.key 'port 443'  # legacy RSA lab; modern PFS usually prevents decryption
+stunnel /etc/stunnel/service.conf
+```
+
+Only scan or intercept systems you own or are explicitly authorized to test. `dsniff`, Ettercap and SSLsplit are dual-use assessment tools: isolate the lab, install interception CAs only on lab clients, and remove them afterward. Preserve packet captures and logs read-only, record hashes and timestamps, and distinguish observation from remediation.
+
+### 34.3 Resource control, DAC, MAC, and network controls
+
+DAC uses ownership, mode bits, ACLs and capabilities. MAC adds policy independent of owner discretion (SELinux labels/types; AppArmor path-based profiles). Cgroups limit/account resources; PAM limits apply to eligible login sessions; shell `ulimit` changes the current process and descendants.
+
+```bash
+getfacl -p FILE; namei -l /path/to/FILE
+getcap FILE; getpcaps PID
+prlimit --pid PID
+systemctl set-property app.service MemoryMax=512M CPUQuota=50%
+getenforce; matchpathcon /srv/app/file; ausearch -m AVC -ts recent
+aa-status; aa-logprof
+```
+
+Network-hardening order: enumerate listeners (`ss -lntup`), identify owner/config, remove unnecessary service, bind narrowly, authenticate/encrypt, filter, then monitor. Packet filters decide on packet/connection attributes; application proxies understand higher-level protocols.
+
+```bash
+nft --check -f /etc/nftables.conf
+nft monitor trace
+iptables-save                         # know legacy interface and migration implications
+ip xfrm state; ip xfrm policy        # IPsec kernel state/policy
+openvpn --config client.conf
+wg show                               # WireGuard awareness and runtime state
+```
+
+For a penetration test, define written scope, time, allowed techniques, data handling and emergency contacts. Follow discovery → validation → controlled exploitation → evidence → cleanup → retest. Never confuse a scanner's severity with business risk.
+
+---
+
+## Chapter 35: Exam 305 Virtualization and Containerization Supplement
+
+### 35.1 Xen, QEMU, libvirt, and image decisions
+
+Xen's privileged control domain is Dom0; guests are DomU. PV guests cooperate with the hypervisor, HVM guests use hardware virtualization, and PVH combines relevant properties. `xl` talks to the Xen toolstack.
+
+```bash
+xl info; xl list; xl dmesg
+xl create guest.cfg
+xl console GUEST
+xl shutdown GUEST
+```
+
+QEMU provides machine/device emulation; KVM supplies kernel hardware acceleration; libvirt supplies a management API and persistent domain/network/storage definitions. `virsh start` starts an existing persistent domain, while `virsh create XML` creates a transient running domain. `define` persists XML; `undefine` removes that definition, not necessarily every disk.
+
+```bash
+virt-host-validate
+virsh list --all; virsh dominfo VM
+virsh dumpxml VM >vm.xml
+virsh net-list --all; virsh pool-list --all
+virsh snapshot-list VM
+qemu-img info --backing-chain child.qcow2
+qemu-img convert -p -O raw source.qcow2 target.raw
+```
+
+Raw is simple/predictable; qcow2 supports sparse allocation, backing files, snapshots and optional compression/encryption with overhead. Never mutate an actively used image offline.
+
+### 35.2 LXC and container internals
+
+LXC is system-container tooling: it runs a userspace that resembles a small Linux system while sharing the host kernel. Namespaces isolate views; cgroups control resources; capabilities/seccomp/MAC narrow privilege; overlay filesystems layer images. A container is not a VM and cannot supply a different kernel.
+
+```bash
+lxc-checkconfig
+lxc-create -n lab -t download
+lxc-start -n lab -d
+lxc-info -n lab
+lxc-attach -n lab
+lxc-stop -n lab; lxc-destroy -n lab
+```
+
+Know `/var/lib/lxc/NAME/config`, network veth/bridge setup, UID/GID maps for unprivileged containers, and why device mounts/privileged mode weaken isolation.
+
+### 35.3 Docker and orchestration reasoning
+
+```bash
+docker image inspect IMAGE
+docker container inspect CONTAINER
+docker exec -it CONTAINER sh
+docker logs --since 10m CONTAINER
+docker stats --no-stream
+docker network inspect NET
+docker volume inspect VOL
+docker compose config                 # render/validate merged model
+```
+
+An image is immutable content plus metadata; a container adds a writable layer and runtime configuration. Bind mounts expose a host path; named volumes have engine-managed lifecycle. `EXPOSE` documents a port; publishing (`-p`) creates host reachability. `CMD` supplies defaults; `ENTRYPOINT` selects the executable. Multi-stage builds reduce final contents, but secrets must use build-secret mechanisms and must not be copied into layers.
+
+Orchestrators reconcile desired state: scheduling, service discovery, health, rollout, secrets and persistent storage. Understand Kubernetes Pods, Deployments, Services, ConfigMaps, Secrets and volumes; Docker Swarm services/stacks; and the difference between liveness and readiness.
+
+```bash
+kubectl get pods -o wide
+kubectl describe pod NAME
+kubectl logs NAME --previous
+kubectl rollout status deployment/APP
+docker service ls; docker service ps SERVICE
+```
+
+### 35.4 Cloud management, cloud-init, Packer, and Vagrant
+
+IaaS managers such as OpenStack manage compute, network and storage resources; tools such as Terraform declare infrastructure; cloud-init performs first-boot instance customization. Packer builds images; Vagrant coordinates reproducible development machines. These layers solve different problems.
+
+```yaml
+#cloud-config
+users:
+  - name: ops
+    groups: [sudo]
+    ssh_authorized_keys: ["ssh-ed25519 AAAA..."]
+packages: [nginx]
+runcmd:
+  - [systemctl, enable, --now, nginx]
+```
+
+```bash
+cloud-init schema --config-file user-data
+cloud-init status --long
+cloud-init analyze blame
+cloud-init clean --logs                 # lab image preparation; changes next boot behavior
+packer validate .; vagrant validate
+```
+
+---
+
+## Chapter 36: Exam 306 High Availability and Storage Supplement
+
+### 36.1 Load balancing and failover
+
+Keepalived can run VRRP for a floating address and health-driven IPVS configuration. HAProxy provides L4/L7 proxying and rich health checks. Pacemaker/Corosync manages resources and membership; fencing protects shared state. These are complementary, not interchangeable.
+
+```bash
+keepalived --config-test
+ip -br address; ipvsadm -Ln --stats
+haproxy -c -f /etc/haproxy/haproxy.cfg
+echo 'show stat' | socat stdio /run/haproxy/admin.sock
+corosync-cfgtool -s; corosync-quorumtool -s
+pcs resource config; pcs constraint config
+crm_simulate -Ls
+```
+
+Understand active/passive versus active/active, shared-disk versus shared-nothing, stickiness, colocation and ordering constraints, failure counts, migration thresholds, quorum devices and watchdog/SBD fencing. Test the actual fence path; a configured but ineffective STONITH agent is not safety.
+
+### 36.2 DRBD and shared storage access
+
+DRBD replicates a block device between nodes. Primary/Secondary describes write authority; protocol C acknowledges after remote disk commit. Dual-primary requires a cluster-aware filesystem and strict fencing.
+
+```bash
+drbdadm dump all; drbdadm status
+drbdsetup status --verbose --statistics
+drbdadm create-md RESOURCE
+drbdadm up RESOURCE
+drbdadm primary --force RESOURCE          # destructive initialization: lab only
+```
+
+Read `/proc/drbd` on older versions and resource files under `/etc/drbd.d/`. Know split-brain policies and why manual survivor selection must follow evidence. For shared SAN access, understand iSCSI initiator/target sessions, WWIDs, device mapper multipath and persistent reservations.
+
+```bash
+iscsiadm -m discovery -t sendtargets -p 192.0.2.30
+iscsiadm -m session -P 3
+multipath -ll
+sg_persist --in --read-keys /dev/mapper/mpatha
+```
+
+### 36.3 Clustered and distributed filesystems
+
+GFS2/OCFS2 permit coordinated access to shared block storage and require functioning membership/locking/fencing. GlusterFS aggregates bricks into distributed/replicated volumes. Ceph uses MONs for maps/quorum, OSDs for data, MGRs for management, and optionally MDS for CephFS; RADOS underlies RBD and CephFS.
+
+```bash
+gfs2_tool sb /dev/mapper/vg-lv all
+mount -t gfs2 -o locktable=cluster:data /dev/vg/lv /data
+gluster peer status; gluster volume info
+gluster volume status; gluster volume heal VOL info
+ceph -s; ceph health detail
+ceph osd tree; ceph osd df
+ceph quorum_status; ceph pg stat
+rbd info POOL/IMAGE
+```
+
+In Ceph diagnosis, start with health detail, quorum, OSD topology/capacity, then placement groups. Do not mark an OSD lost or force PG repair before understanding data-redundancy consequences.
+
+### 36.4 Single-node availability
+
+Availability also depends on redundant power, paths, NICs and storage. RAID improves availability, not backup. Know hot spares, write-intent bitmaps, reshape, consistency policy and failure replacement.
+
+```bash
+mdadm --detail /dev/md0
+cat /proc/mdstat
+mdadm --examine /dev/sdX1
+mdadm --manage /dev/md0 --fail /dev/sdX1 --remove /dev/sdX1
+lvs -a -o +devices,segtype,data_percent,metadata_percent
+lvconvert --type raid1 -m1 vg/lv
+lvconvert --type thin-pool vg/pool
+```
+
+LVM RAID provides redundancy inside an LV; thin pools overcommit and require monitoring of both data and metadata; snapshots are not independent backups. Network HA includes bonding/teaming, LACP switch coordination, multipath routing, VRRP and redundant DNS/routes. Verify failure behavior, not merely configuration syntax.
+
+---
+
+## Chapter 37: Distribution-Aware Labs and Final Readiness Gate
+
+### 37.1 Translate concepts across distributions
+
+| Intent | Debian/Ubuntu | RHEL-family | Verification |
+|---|---|---|---|
+| Install | `apt install PKG` | `dnf install PKG` | package query + binary version |
+| Apache service | `apache2` | `httpd` | `systemctl status`, `curl` |
+| SSH service | commonly `ssh` | commonly `sshd` | `ss -lntp`, `ssh -v` |
+| Firewall | nftables/ufw variants | firewalld/nftables | `nft list ruleset` plus traffic test |
+| PAM profiles | `pam-auth-update` | `authselect` | inspect generated stack; test spare session |
+| SELinux/AppArmor | often AppArmor | usually SELinux | `aa-status` / `getenforce` |
+| Network persistence | netplan/ifupdown/NM | NetworkManager profiles | reboot or profile reactivate, then `ip` |
+
+Never infer package, service or path names blindly. Use `systemctl list-unit-files`, package search, `command -v`, `man`, and the installed configuration include tree.
+
+### 37.2 Runnable lab protocol
+
+For every high-risk lab, use two disposable VMs, snapshots and console access. Record this worksheet:
+
+```text
+Objective ID:
+Initial state and snapshot:
+Intent / expected state:
+Read-only discovery commands:
+Candidate configuration and syntax check:
+Mutation command:
+Independent functional verification:
+Injected fault and observed evidence:
+Rollback and proof of restoration:
+What would differ on the other distribution family:
+```
+
+Minimum practical gates:
+
+1. **101/102:** recover GRUB, repair a broken fstab from rescue mode, build a pipeline safe for hostile filenames, write a defensive Bash script, diagnose DNS and permissions.
+2. **201/202:** locate a CPU/I/O/network bottleneck, build/recover mdraid+LVM on loop devices, compile a kernel module, operate DNS/web/mail/file-sharing services, route and filter a lab network.
+3. **300:** provision an isolated AD DC/member/client; break DNS, time, trust, idmap and ACLs one at a time; back up and restore.
+4. **303:** operate a CA and DNSSEC zone; configure LUKS, MAC, audit, IDS and VPN; validate a scan finding and document evidence.
+5. **305:** manage Xen concepts and a libvirt VM/image/network; build LXC and Docker labs; diagnose cloud-init/Packer/Vagrant failures.
+6. **306:** demonstrate load-balancer failover, quorum and fencing; build DRBD and one distributed-storage lab; diagnose degraded Ceph/Gluster state.
+
+### 37.3 Final readiness gate
+
+You are ready to book **one specific exam** only when all of these are true:
+
+- Every objective row for that exam is marked explain/use/troubleshoot—not merely “read.”
+- You score at least 85% twice on fresh, timed, objective-weighted practice sets.
+- You can state the purpose, important input/config, output, side effect and verification for every utility in the official partial command list.
+- You can solve representative failures from symptoms without immediately reading a solution.
+- You have repeated destructive labs from a clean snapshot and proven rollback.
+- You re-check the official objective page and exam code immediately before scheduling.
+
+This handbook is objective-complete for the versions stated above, but no handbook can guarantee every live question or a passing score. LPI's official objectives are the authority if wording or versions change.
+
+---
+
 # Final Section: Exam Preparation
 
 ## Mock Exam 1 — LPIC-1 (Exam 101)
 
 ### Questions
 
-1. Which command shows the kernel ring buffer with human-readable timestamps? — A) `dmesg -t` B) `dmesg -T` C) `dmesg -h` D) `journalctl -T`
+1. Which command shows the kernel ring buffer with estimated human-readable wall-clock timestamps? — A) `dmesg -t` B) `dmesg -T` C) `dmesg -h` D) `journalctl -T`
 2. The GRUB menu file `grub.cfg` should be edited by — A) Directly with vi B) Running `update-grub` after editing `/etc/default/grub` C) Running `grub-mkpasswd` D) Editing `/boot/grub.lst`
 3. Which `find` expression matches files larger than 50 MB modified less than 7 days ago? — A) `-size +50M -mtime -7` B) `-size 50M -mtime 7` C) `-size +50M -mtime +7` D) `-size -50M -mtime -7`
-4. The default umask for a non-root user on most distros is — A) 0000 B) 0002 C) 0022 D) 0077
+4. If a process has umask `0022`, what mode does a newly created regular file normally receive from base mode `0666`? — A) 0666 B) 0600 C) 0644 D) 0755
 5. Which permission bit causes new files in a directory to inherit its group? — A) SUID B) SGID C) Sticky D) ACL
 6. Which `tar` flag uses bzip2 compression? — A) `-z` B) `-j` C) `-J` D) `-Z`
 7. Which command shows the inode number of a file? — A) `ls -i` B) `stat -i` C) `inode` D) `file -i`
@@ -8137,7 +9647,7 @@ Devices appear as `/dev/mapper/mpathX`. Use that name in `/etc/fstab` or LVM PV 
 39. Which `parted` flag identifies the EFI System Partition? — A) `boot` B) `esp` C) `bios_grub` D) `efi`
 40. Which filesystem cannot be shrunk? — A) ext4 B) xfs C) btrfs D) ext2
 41. Which command shows block devices in tree form with UUIDs? — A) `lsblk -f` B) `lsdev` C) `findmnt` D) `blkid -t`
-42. The fastest way to copy a directory preserving everything is — A) `cp -r src dst` B) `cp -a src dst` C) `mv src dst` D) `tar -cf - src \| (cd dst && tar -xf -)`
+42. Which `cp` invocation requests archive-style preservation of a directory tree? — A) `cp -r src dst` B) `cp -a src dst` C) `mv src dst` D) `cp -f src dst`
 43. Which command extracts only specific files from a tarball? — A) `tar -xzf archive.tar.gz path/in/archive` B) `tar -xzf archive.tar.gz -f path` C) `tar -only path` D) `tar -e path`
 44. Which `find` option deletes matches without `-exec rm`? — A) `-erase` B) `-delete` C) `-purge` D) `-rm`
 45. Which command lists open TCP listening sockets with their processes? — A) `ss -tlnp` B) `lsof -i tcp` C) `netstat -tlnp` D) All of the above
@@ -8149,7 +9659,11 @@ Devices appear as `/dev/mapper/mpathX`. Use that name in `/etc/fstab` or LVM PV 
 
 ### Answers
 
-1. **B** — `dmesg -T` uses real timestamps. 2. **B** — never edit `grub.cfg` directly. 3. **A** — `-size +50M` is greater than 50 MB; `-mtime -7` is less than 7 days. 4. **C** — `0022` gives `0644` files. 5. **B** — SGID on dir. 6. **B** — `-j` is bzip2. 7. **A** — `ls -i`. 8. **C** — `5` is the MD5 column. 9. **B** — `-L` for installed; `-c` shows .deb contents. 10. **B** — `/etc/shadow`. 11. **D** — both work. 12. **D**. 13. **B** — SUID. 14. **B** — `/usr/local`. 15. **B**. 16. **A** — `'1,3d'`. 17. **B** — `NR` count of records. 18. **A**. 19. **C** — nsswitch dictates order. 20. **B** — `-m`. 21. **A** — `-n` renames. 22. **D**. 23. **A** — minute. 24. **B**. 25. **B** — BSD `aux`. 26. **B** — SIGKILL (9). 27. **B** — renice on running process. 28. **B**. 29. **B** — `-0` pairs with `find -print0`. 30. **A** — nohup. 31. **D**. 32. **D**. 33. **B**. 34. **B** — `-p` preserves perms (default for root extract). 35. **A**. 36. **A** — cannot span filesystems. 37. **A**. 38. **B**. 39. **B** — `esp`. 40. **B** — XFS. 41. **A**. 42. **B** — `cp -a` is archive copy. 43. **A**. 44. **B**. 45. **D**. 46. **A** — `/etc/securetty`. 47. **A**. 48. **A**. 49. **C**. 50. **D**.
+1. **B** — `dmesg -T` estimates wall-clock time; journal timestamps are preferable for correlation. 2. **B** — do not edit generated `grub.cfg` directly. 3. **A**. 4. **C** — `0666 & ~0022 = 0644`. 5. **B**. 6. **B**. 7. **A**. 8. **C**. 9. **B**. 10. **B**.
+11. **D**. 12. **D**. 13. **B**. 14. **B**. 15. **B**. 16. **A**. 17. **B**. 18. **A**. 19. **C** — `nsswitch.conf` defines lookup order. 20. **B**.
+21. **A**. 22. **D**. 23. **A**. 24. **B**. 25. **B**. 26. **B**. 27. **B**. 28. **B**. 29. **B**. 30. **A**.
+31. **D**. 32. **D**. 33. **B**. 34. **B**. 35. **A**. 36. **A**. 37. **A**. 38. **B**. 39. **B**. 40. **B**.
+41. **A**. 42. **B** — archive mode preserves recursive metadata subject to filesystem support and privilege. 43. **A**. 44. **B**. 45. **D**. 46. **A**. 47. **A**. 48. **A**. 49. **C**. 50. **D**.
 
 ---
 
@@ -8161,7 +9675,7 @@ Devices appear as `/dev/mapper/mpathX`. Use that name in `/etc/fstab` or LVM PV 
 2. Which command shows the IP routing table? — A) `ip route` B) `route -n` C) `netstat -rn` D) All of the above
 3. Which port does SMTP use by default? — A) 25 B) 110 C) 143 D) 587
 4. The CIDR /28 corresponds to netmask — A) 255.255.255.240 B) 255.255.255.224 C) 255.255.255.192 D) 255.255.255.248
-5. Which command lists currently established TCP connections? — A) `ss -t state established` B) `netstat -t` C) `lsof -i :*` D) All work
+5. Which modern command filters TCP sockets specifically to the established state? — A) `ss -t state established` B) `netstat -t` C) `lsof -i :*` D) `ip tcp established`
 6. Which `journalctl` flag shows kernel-only messages? — A) `-k` B) `-K` C) `--kernel` D) `-K all`
 7. The systemd-equivalent of runlevel 5 is — A) `rescue.target` B) `multi-user.target` C) `graphical.target` D) `default.target`
 8. Which DNS record type maps name → IPv4? — A) A B) AAAA C) CNAME D) PTR
@@ -8201,7 +9715,7 @@ Devices appear as `/dev/mapper/mpathX`. Use that name in `/etc/fstab` or LVM PV 
 39. Which command lists `xinetd`-style services? — A) `xinetd -d list` B) `systemctl list-unit-files --type=socket` C) `chkconfig --list` D) Depends on the distribution
 40. The `at` queue files live under — A) `/var/spool/cron/atjobs` B) `/var/spool/at/` C) `/var/at/queue` D) `/var/lib/at`
 41. Which directive in `sshd_config` allows only members of group `wheel`? — A) `AllowGroups wheel` B) `RequireGroup wheel` C) `Match Group wheel` D) `Allowed wheel`
-42. Which file controls which dial-out PPP devices a normal user may use? — A) `/etc/ppp/options` B) `/etc/ppp/peers/` C) `/etc/sudoers` D) `/etc/group`
+42. Which file records local supplementary-group membership such as membership in the historical `dialout` group? — A) `/etc/ppp/options` B) `/etc/ppp/peers/` C) `/etc/sudoers` D) `/etc/group`
 43. Which command shows the public DNS for a domain's MX? — A) `dig MX example.com` B) `host -t MX example.com` C) Both A and B D) `nslookup -mx example.com`
 44. Which `ip` command adds a default gateway? — A) `ip route add default via 192.168.1.1` B) `ip route add 0.0.0.0 192.168.1.1` C) `ip add default 192.168.1.1` D) `ip gw 192.168.1.1`
 45. Which file lists swap areas in use? — A) `/proc/swaps` B) `/etc/swap` C) `/proc/sys/swap` D) `/sys/class/swap`
@@ -8213,7 +9727,11 @@ Devices appear as `/dev/mapper/mpathX`. Use that name in `/etc/fstab` or LVM PV 
 
 ### Answers
 
-1. **A** 2. **D** 3. **A** 4. **A** 5. **D** 6. **A** 7. **C** 8. **A** 9. **A** 10. **B** 11. **B** 12. **A** 13. **B** 14. **A** 15. **B** 16. **B** 17. **A** 18. **B** 19. **A** 20. **B** (the symlink to zoneinfo decides the timezone; `/etc/timezone` is a tag file on some distros) 21. **A** 22. **A** 23. **D** 24. **B** 25. **A** 26. **C** 27. **A** 28. **A** 29. **A** 30. **B** 31. **A** 32. **C** 33. **C** 34. **A** 35. **C** 36. (all valid) 37. **B** 38. **B** 39. **D** 40. **B** 41. **A** 42. **D** (dialer group historically) 43. **C** 44. **A** 45. **A** 46. **B** 47. **A** 48. **A** 49. **B** 50. **A**
+1. **A** 2. **D** 3. **A** 4. **A** 5. **A** 6. **A** 7. **C** 8. **A** 9. **A** 10. **B**
+11. **B** 12. **A** 13. **B** 14. **A** 15. **B** 16. **B** 17. **A** 18. **B** 19. **A** 20. **B**
+21. **A** 22. **A** 23. **D** 24. **B** 25. **A** 26. **C** 27. **A** 28. **A** 29. **A** 30. **B**
+31. **A** 32. **C** 33. **C** 34. **A** 35. **C** 36. **All listed options exist.** 37. **B** 38. **B** 39. **D** 40. **B**
+41. **A** 42. **D** 43. **C** 44. **A** 45. **A** 46. **B** 47. **A** 48. **A** 49. **B** 50. **A**
 
 ---
 
@@ -8282,12 +9800,12 @@ Devices appear as `/dev/mapper/mpathX`. Use that name in `/etc/fstab` or LVM PV 
 
 ### Questions
 
-1. Which command shows zone transfer activity in BIND? — A) `rndc dumpdb` B) `rndc stats` C) `dig AXFR @master example.com` D) Either B or C
+1. Which command actively requests a full zone transfer from a named authoritative server? — A) `rndc dumpdb` B) `rndc stats` C) `dig AXFR example.com @master` D) `named-checkzone -x example.com`
 2. Which BIND statement restricts zone transfers? — A) `allow-transfer` B) `transfer-acl` C) `allow-axfr` D) `xfer-allow`
 3. Which command requests an HTTPS-only TLS connection to test SMTP STARTTLS? — A) `openssl s_client -connect host:25 -starttls smtp` B) `nc -ssl host 25` C) `tls-test host 25` D) `gnutls-cli host:25`
 4. Which Apache directive enables HTTP/2? — A) `Protocols h2 http/1.1` B) `EnableHTTP2 On` C) `H2 On` D) `mod_h2 enable`
 5. Which file is the default DocumentRoot on RHEL Apache? — A) `/var/www/html` B) `/srv/http` C) `/usr/share/httpd/www` D) `/var/httpd/www`
-6. Which Nginx command gracefully reloads config? — A) `nginx -s reload` B) `nginx -reload` C) `nginx --hup` D) `systemctl reload nginx` (sends SIGHUP)
+6. Which direct Nginx CLI command requests a graceful configuration reload? — A) `nginx -s reload` B) `nginx -reload` C) `nginx --hup` D) `nginx -k reload`
 7. Which Squid directive denies all then allows internal? — A) `http_access deny all` then `http_access allow internal` B) Order matters: `allow internal` before `deny all` C) Use `acl` D) Both B and C
 8. Which command tests TLS cipher support of a server? — A) `nmap --script ssl-enum-ciphers -p 443 host` B) `openssl ciphers -v` C) `testssl.sh host` D) Both A and C are external tools that work
 9. Which directory holds Samba's PDB user database (tdbsam)? — A) `/var/lib/samba/private/` B) `/etc/samba/` C) `/var/cache/samba` D) `/srv/samba/users`
@@ -8327,15 +9845,19 @@ Devices appear as `/dev/mapper/mpathX`. Use that name in `/etc/fstab` or LVM PV 
 43. Which Apache directive sets MaxRequestWorkers? — A) `MaxRequestWorkers` B) `MaxClients` (legacy alias) C) Both A and B (B deprecated) D) `WorkerCount`
 44. Which command moves an IP/route into another routing table? — A) `ip rule add ...` (decision) then `ip route add ... table NAME` B) `ip route move` C) `ip route swap` D) `ip table mv`
 45. Which file lists user-defined cron jobs centrally? — A) `/etc/crontab` (with user field) B) `/var/spool/cron/<user>` (per user) C) Both A (system-wide) and B (per-user) D) `/etc/cron.tab`
-46. Which command shows live cluster membership in Pacemaker? — A) `pcs status` B) `crm status` C) Both A or B D) `cluster status`
-47. Which DRBD command initiates a verify of consistency? — A) `drbdadm verify resname` B) `drbdadm check` C) `drbdsetup verify` D) `drbdadm diff`
-48. Which HAProxy frontend directive routes based on hostname? — A) `acl is_site hdr(host) -i www.example.com` then `use_backend` B) `route host` C) `match host` D) `vhost`
-49. Which Ceph component must reach quorum? — A) MON B) OSD C) MDS D) MGR
-50. Which storage interface in Ceph behaves like a block device? — A) RBD B) RGW C) CephFS D) RADOS
+46. Which command validates ISC DHCP configuration without starting the daemon? — A) `dhcpd -t -cf /etc/dhcp/dhcpd.conf` B) `dhcpd --reload` C) `dhcpctl check` D) `named-checkconf`
+47. Which command parses Squid configuration before reload? — A) `squid -k parse` B) `squid -k check-cache` C) `squidctl validate` D) `squid --dry-run`
+48. What does `UPDATE users SET active=false;` do without a `WHERE` clause? — A) Updates every row B) Updates no rows C) Updates the current user D) Syntax error
+49. Which command tests an SSH server configuration before restart? — A) `sshd -t` B) `ssh -t` C) `ssh-keygen -t` D) `sshd --check-hosts`
+50. Which sysctl enables IPv4 forwarding at runtime? — A) `sysctl -w net.ipv4.ip_forward=1` B) `ip route forwarding on` C) `nft enable forward` D) `route -F`
 
 ### Answers
 
-1. **D** 2. **A** 3. **A** 4. **A** 5. **A** 6. **A** (and D also works) 7. **D** 8. **D** 9. **A** 10. **A** 11. **A** 12. **D** 13. **A** 14. **A** 15. **A** 16. **A** 17. **A** 18. **A** 19. **A** 20. **A** 21. **B** 22. **A** 23. **C** 24. **C** 25. **A** 26. **A** 27. **A** 28. **A** (literal name) 29. **A** 30. **A** 31. **D** 32. **A** 33. **A** 34. **D** 35. **A** 36. **A** 37. **A** 38. **A** 39. **A** 40. **A** 41. **D** 42. **A** 43. **C** 44. **A** 45. **C** 46. **C** 47. **A** 48. **A** 49. **A** 50. **A**
+1. **C** 2. **A** 3. **A** 4. **A** 5. **A** 6. **A** 7. **D** 8. **D** 9. **A** 10. **A**
+11. **A** 12. **D** 13. **A** 14. **A** 15. **A** 16. **A** 17. **A** 18. **A** 19. **A** 20. **A**
+21. **B** 22. **A** 23. **C** 24. **C** 25. **A** 26. **A** 27. **A** 28. **A** 29. **A** 30. **A**
+31. **D** 32. **A** 33. **A** 34. **D** 35. **A** 36. **A** 37. **A** 38. **A** 39. **A** 40. **A**
+41. **D** 42. **A** 43. **C** 44. **A** 45. **C** 46. **A** 47. **A** 48. **A** 49. **A** 50. **A**
 
 ---
 
@@ -8636,7 +10158,7 @@ python3 -m http.server 8000
 # Pipe one command's output to several
 cmd | tee >(grep ERROR > errs) >(wc -l > lines) >/dev/null
 
-# Decrypt and re-encrypt a LUKS header backup
+# Back up a LUKS header (store the result encrypted and offline)
 cryptsetup luksHeaderBackup /dev/sdb1 --header-backup-file luks.hdr
 
 # Stream a tar over SSH without writing to disk
@@ -8660,5 +10182,3 @@ Good luck. Once you can teach a chapter to someone else, you've passed it.
 ---
 
 *End of handbook.*
-
-

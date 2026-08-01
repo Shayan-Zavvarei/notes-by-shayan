@@ -11,10 +11,14 @@
             "id": "d52bdc143eac9ec6",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "lpic-handbook.md",
+                "mode": "preview",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "lpic-handbook"
             }
           }
         ]
